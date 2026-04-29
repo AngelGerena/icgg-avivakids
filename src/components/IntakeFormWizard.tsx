@@ -231,6 +231,19 @@ export const IntakeFormWizard = () => {
     return URL.createObjectURL(pdfBlob);
   };
 
+  const generateUniqueNumber = async (): Promise<string> => {
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const candidate = Math.floor(10000 + Math.random() * 90000).toString();
+      const { data } = await supabase
+        .from('children')
+        .select('id')
+        .eq('unique_number', candidate)
+        .maybeSingle();
+      if (!data) return candidate;
+    }
+    return Date.now().toString().slice(-5);
+  };
+
   const handleSubmit = async () => {
     if (!validateStep(5)) {
       alert('Por favor complete todos los campos requeridos');
@@ -240,18 +253,16 @@ export const IntakeFormWizard = () => {
     setLoading(true);
 
     try {
-      const uniqueNumber = Math.floor(Math.random() * 10000)
-        .toString()
-        .padStart(4, '0');
+      const uniqueNumber = await generateUniqueNumber();
 
       const { data: childData, error: childError } = await supabase
         .from('children')
         .insert({
           full_name: sectionA.fullName,
-          nickname: sectionA.nickname,
+          nickname: sectionA.nickname || null,
           dob: sectionA.dob,
-          gender: sectionA.gender,
-          photo_url: sectionA.photoUrl,
+          gender: sectionA.gender || null,
+          photo_url: sectionA.photoUrl || null,
           room: 'general',
           unique_number: uniqueNumber,
           checked_in_today: false,
@@ -261,40 +272,40 @@ export const IntakeFormWizard = () => {
 
       if (childError) throw childError;
 
-      await supabase.from('parents').insert({
+      const { error: parentError } = await supabase.from('parents').insert({
         child_id: childData.id,
         primary_name: sectionB.primaryName,
         primary_relationship: sectionB.primaryRelationship,
         primary_phone: sectionB.primaryPhone,
         primary_email: sectionB.primaryEmail,
-        secondary_name: sectionB.secondaryName,
-        secondary_relationship: sectionB.secondaryRelationship,
-        secondary_phone: sectionB.secondaryPhone,
+        secondary_name: sectionB.secondaryName || null,
+        secondary_relationship: sectionB.secondaryRelationship || null,
+        secondary_phone: sectionB.secondaryPhone || null,
       });
 
-      await supabase.from('intake_forms').insert({
+      if (parentError) throw parentError;
+
+      const { error: intakeError } = await supabase.from('intake_forms').insert({
         child_id: childData.id,
         allergies: sectionC.allergies,
-        restricted_foods: sectionC.restrictedFoods,
-        medications: medications,
-        medical_conditions: sectionC.medicalConditions,
-        special_needs: sectionC.specialNeeds,
-        doctor_name: sectionC.doctorName,
-        doctor_phone: sectionC.doctorPhone,
-        behavioral_notes: sectionD.behavioralNotes,
-        triggers: sectionD.triggers,
-        communication_notes: sectionD.communicationNotes,
+        restricted_foods: sectionC.restrictedFoods || null,
+        medications: medications.length > 0 ? medications : null,
+        medical_conditions: sectionC.medicalConditions || null,
+        special_needs: sectionC.specialNeeds || null,
+        doctor_name: sectionC.doctorName || null,
+        doctor_phone: sectionC.doctorPhone || null,
+        behavioral_notes: sectionD.behavioralNotes || null,
+        triggers: sectionD.triggers || null,
+        communication_notes: sectionD.communicationNotes || null,
         photo_consent: sectionE.photoConsent,
         medical_consent: sectionE.medicalConsent,
         digital_signature: sectionE.digitalSignature,
       });
 
-      const pdfUrl = generatePDF(childData.id, sectionA.fullName);
+      if (intakeError) throw intakeError;
 
-      await supabase
-        .from('children')
-        .update({ intake_form_pdf_url: pdfUrl })
-        .eq('id', childData.id);
+      // Generate PDF for local download only — blob URLs cannot be stored in DB
+      generatePDF(childData.id, sectionA.fullName);
 
       setSuccess(true);
       confetti({
@@ -303,9 +314,10 @@ export const IntakeFormWizard = () => {
         origin: { y: 0.6 },
         colors: ['#FFD700', '#4FC3F7', '#FF6B6B', '#69F0AE', '#CE93D8'],
       });
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error submitting intake form:', error);
-      alert('Error al enviar el formulario. Por favor intente de nuevo.');
+      const msg = error instanceof Error ? error.message : JSON.stringify(error);
+      alert(`Error al enviar el formulario: ${msg}`);
     } finally {
       setLoading(false);
     }

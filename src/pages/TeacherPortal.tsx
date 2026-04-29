@@ -19,6 +19,7 @@ import {
   X,
   BookOpen,
   CheckCircle,
+  KeyRound,
 } from 'lucide-react';
 import { QRScanner } from '../components/QRScanner';
 import { Analytics } from '../components/Analytics';
@@ -34,6 +35,12 @@ export const TeacherPortal = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [forgotPasswordSent, setForgotPasswordSent] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
+  const [resetSuccess, setResetSuccess] = useState(false);
   const [activeTab, setActiveTab] = useState<
     'dashboard' | 'alerts' | 'events' | 'birthdays' | 'analytics' | 'children'
   >('dashboard');
@@ -77,6 +84,13 @@ export const TeacherPortal = () => {
     const { data } = await supabase.auth.getSession();
     setAuthenticated(!!data.session);
     setLoading(false);
+
+    supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsResettingPassword(true);
+        setAuthenticated(false);
+      }
+    });
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -128,6 +142,46 @@ export const TeacherPortal = () => {
       setConfirmPassword('');
     } catch (error: any) {
       alert(error.message || 'Error al crear la cuenta');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/admin`,
+      });
+      if (error) throw error;
+      setForgotPasswordSent(true);
+    } catch (error: any) {
+      alert(error.message || 'Error al enviar el correo');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== newPasswordConfirm) {
+      alert('Las contraseñas no coinciden');
+      return;
+    }
+    if (newPassword.length < 6) {
+      alert('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      setResetSuccess(true);
+      setNewPassword('');
+      setNewPasswordConfirm('');
+    } catch (error: any) {
+      alert(error.message || 'Error al actualizar la contraseña');
     } finally {
       setLoading(false);
     }
@@ -404,7 +458,7 @@ export const TeacherPortal = () => {
     );
   }
 
-  if (!authenticated) {
+  if (isResettingPassword) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <motion.div
@@ -413,86 +467,285 @@ export const TeacherPortal = () => {
           className="bg-white/95 backdrop-blur-xl rounded-bubbly p-8 sm:p-12 shadow-2xl max-w-md w-full border-2 border-white/20"
         >
           <div className="text-center mb-8">
-            <LogIn className="w-16 h-16 text-kids-purple mx-auto mb-4" />
-            <h1 className="text-4xl font-black text-kids-purple mb-2">
-              {isSignUp ? 'Crear Cuenta' : t.teacherPortal.title}
+            <KeyRound className="w-16 h-16 text-kids-blue mx-auto mb-4" />
+            <h1 className="text-4xl font-black text-kids-blue mb-2">
+              Nueva Contrasena
             </h1>
             <p className="text-gray-600 font-semibold">
-              {isSignUp
-                ? 'Regístrate para acceder al portal'
-                : 'Inicia sesión para continuar'}
+              Elige una contrasena segura para tu cuenta
             </p>
           </div>
 
-          <form onSubmit={isSignUp ? handleSignUp : handleLogin} className="space-y-6">
-            <div>
-              <label className="block text-lg font-bold text-gray-700 mb-2">
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-purple focus:outline-none font-semibold"
-              />
+          {resetSuccess ? (
+            <div className="space-y-6 text-center">
+              <div className="bg-green-50 border-2 border-green-400 rounded-bubbly p-6">
+                <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3" />
+                <p className="text-green-800 font-bold text-lg">
+                  Contrasena actualizada exitosamente
+                </p>
+                <p className="text-green-700 text-sm mt-2">
+                  Ya puedes iniciar sesion con tu nueva contrasena.
+                </p>
+              </div>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  setIsResettingPassword(false);
+                  setResetSuccess(false);
+                }}
+                className="w-full py-4 bg-gradient-to-r from-kids-purple to-kids-blue text-white text-xl font-black rounded-bubbly shadow-lg"
+              >
+                Ir al inicio de sesion
+              </motion.button>
             </div>
-
-            <div>
-              <label className="block text-lg font-bold text-gray-700 mb-2">
-                {t.teacherPortal.password}
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                className="w-full px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-purple focus:outline-none font-semibold"
-              />
-            </div>
-
-            {isSignUp && (
+          ) : (
+            <form onSubmit={handleResetPassword} className="space-y-6">
               <div>
                 <label className="block text-lg font-bold text-gray-700 mb-2">
-                  Confirmar Contraseña
+                  Nueva Contrasena
                 </label>
                 <input
                   type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
                   required
                   minLength={6}
-                  className="w-full px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-purple focus:outline-none font-semibold"
+                  placeholder="Minimo 6 caracteres"
+                  className="w-full px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-blue focus:outline-none font-semibold"
                 />
               </div>
-            )}
-
-            <motion.button
-              type="submit"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="w-full py-4 bg-gradient-to-r from-kids-purple to-kids-blue text-white text-xl font-black rounded-bubbly shadow-lg"
-            >
-              {isSignUp ? 'Crear Cuenta' : t.teacherPortal.loginButton}
-            </motion.button>
-
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsSignUp(!isSignUp);
-                  setPassword('');
-                  setConfirmPassword('');
-                }}
-                className="text-kids-purple font-bold hover:underline"
+              <div>
+                <label className="block text-lg font-bold text-gray-700 mb-2">
+                  Confirmar Nueva Contrasena
+                </label>
+                <input
+                  type="password"
+                  value={newPasswordConfirm}
+                  onChange={(e) => setNewPasswordConfirm(e.target.value)}
+                  required
+                  minLength={6}
+                  placeholder="Repite la contrasena"
+                  className="w-full px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-blue focus:outline-none font-semibold"
+                />
+              </div>
+              <motion.button
+                type="submit"
+                disabled={loading}
+                whileHover={{ scale: loading ? 1 : 1.05 }}
+                whileTap={{ scale: loading ? 1 : 0.95 }}
+                className="w-full py-4 bg-gradient-to-r from-kids-blue to-kids-mint text-white text-xl font-black rounded-bubbly shadow-lg disabled:opacity-60"
               >
-                {isSignUp
-                  ? '¿Ya tienes cuenta? Inicia sesión'
-                  : '¿No tienes cuenta? Regístrate'}
-              </button>
-            </div>
-          </form>
+                {loading ? 'Guardando...' : 'Guardar Nueva Contrasena'}
+              </motion.button>
+            </form>
+          )}
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (!authenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white/95 backdrop-blur-xl rounded-bubbly p-8 sm:p-12 shadow-2xl max-w-md w-full border-2 border-white/20"
+        >
+          <AnimatePresence mode="wait">
+            {isForgotPassword ? (
+              <motion.div
+                key="forgot"
+                initial={{ opacity: 0, x: 30 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="text-center mb-8">
+                  <KeyRound className="w-16 h-16 text-kids-blue mx-auto mb-4" />
+                  <h1 className="text-4xl font-black text-kids-blue mb-2">
+                    Recuperar Contrasena
+                  </h1>
+                  <p className="text-gray-600 font-semibold">
+                    Te enviaremos un enlace para restablecer tu contrasena
+                  </p>
+                </div>
+
+                {forgotPasswordSent ? (
+                  <div className="space-y-6 text-center">
+                    <div className="bg-green-50 border-2 border-green-400 rounded-bubbly p-6">
+                      <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3" />
+                      <p className="text-green-800 font-bold text-lg">
+                        Correo enviado exitosamente
+                      </p>
+                      <p className="text-green-700 text-sm mt-2">
+                        Revisa tu bandeja de entrada en{' '}
+                        <span className="font-black">{email}</span> y sigue el
+                        enlace para restablecer tu contrasena.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsForgotPassword(false);
+                        setForgotPasswordSent(false);
+                        setEmail('');
+                      }}
+                      className="text-kids-blue font-bold hover:underline"
+                    >
+                      Volver al inicio de sesion
+                    </button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleForgotPassword} className="space-y-6">
+                    <div>
+                      <label className="block text-lg font-bold text-gray-700 mb-2">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        placeholder="tu@email.com"
+                        className="w-full px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-blue focus:outline-none font-semibold"
+                      />
+                    </div>
+
+                    <motion.button
+                      type="submit"
+                      disabled={loading}
+                      whileHover={{ scale: loading ? 1 : 1.05 }}
+                      whileTap={{ scale: loading ? 1 : 0.95 }}
+                      className="w-full py-4 bg-gradient-to-r from-kids-blue to-kids-mint text-white text-xl font-black rounded-bubbly shadow-lg disabled:opacity-60"
+                    >
+                      {loading ? 'Enviando...' : 'Enviar Enlace'}
+                    </motion.button>
+
+                    <div className="text-center">
+                      <button
+                        type="button"
+                        onClick={() => setIsForgotPassword(false)}
+                        className="text-kids-blue font-bold hover:underline"
+                      >
+                        Volver al inicio de sesion
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </motion.div>
+            ) : (
+              <motion.div
+                key={isSignUp ? 'signup' : 'login'}
+                initial={{ opacity: 0, x: 30 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="text-center mb-8">
+                  <LogIn className="w-16 h-16 text-kids-purple mx-auto mb-4" />
+                  <h1 className="text-4xl font-black text-kids-purple mb-2">
+                    {isSignUp ? 'Crear Cuenta' : t.teacherPortal.title}
+                  </h1>
+                  <p className="text-gray-600 font-semibold">
+                    {isSignUp
+                      ? 'Registrate para acceder al portal'
+                      : 'Inicia sesion para continuar'}
+                  </p>
+                </div>
+
+                <form onSubmit={isSignUp ? handleSignUp : handleLogin} className="space-y-6">
+                  <div>
+                    <label className="block text-lg font-bold text-gray-700 mb-2">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="w-full px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-purple focus:outline-none font-semibold"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-lg font-bold text-gray-700">
+                        {t.teacherPortal.password}
+                      </label>
+                      {!isSignUp && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsForgotPassword(true);
+                            setForgotPasswordSent(false);
+                          }}
+                          className="text-sm font-bold text-kids-blue hover:underline"
+                        >
+                          Olvide mi contrasena
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      minLength={6}
+                      className="w-full px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-purple focus:outline-none font-semibold"
+                    />
+                  </div>
+
+                  {isSignUp && (
+                    <div>
+                      <label className="block text-lg font-bold text-gray-700 mb-2">
+                        Confirmar Contrasena
+                      </label>
+                      <input
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                        minLength={6}
+                        className="w-full px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-purple focus:outline-none font-semibold"
+                      />
+                    </div>
+                  )}
+
+                  <motion.button
+                    type="submit"
+                    disabled={loading}
+                    whileHover={{ scale: loading ? 1 : 1.05 }}
+                    whileTap={{ scale: loading ? 1 : 0.95 }}
+                    className="w-full py-4 bg-gradient-to-r from-kids-purple to-kids-blue text-white text-xl font-black rounded-bubbly shadow-lg disabled:opacity-60"
+                  >
+                    {loading
+                      ? 'Cargando...'
+                      : isSignUp
+                      ? 'Crear Cuenta'
+                      : t.teacherPortal.loginButton}
+                  </motion.button>
+
+                  <div className="text-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsSignUp(!isSignUp);
+                        setPassword('');
+                        setConfirmPassword('');
+                      }}
+                      className="text-kids-purple font-bold hover:underline"
+                    >
+                      {isSignUp
+                        ? 'Ya tienes cuenta? Inicia sesion'
+                        : 'No tienes cuenta? Registrate'}
+                    </button>
+                  </div>
+                </form>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       </div>
     );

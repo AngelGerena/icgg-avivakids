@@ -34,6 +34,7 @@ export const IntakeFormWizard = () => {
     dob: '',
     gender: '',
     photoUrl: '',
+    room: '',
   });
 
   const [sectionB, setSectionB] = useState({
@@ -260,10 +261,10 @@ export const IntakeFormWizard = () => {
         .insert({
           full_name: sectionA.fullName,
           nickname: sectionA.nickname || null,
-          dob: sectionA.dob,
+          dob: new Date(sectionA.dob).toISOString().split('T')[0],
           gender: sectionA.gender || null,
           photo_url: sectionA.photoUrl || null,
-          room: 'general',
+          room: sectionA.room || 'general',
           unique_number: uniqueNumber,
           checked_in_today: false,
         })
@@ -473,6 +474,20 @@ export const IntakeFormWizard = () => {
                       className="w-full px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-yellow focus:outline-none font-semibold"
                     />
                   </div>
+                  <select
+                    value={sectionA.room}
+                    onChange={(e) =>
+                      setSectionA({ ...sectionA, room: e.target.value })
+                    }
+                    required
+                    className="w-full px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-yellow focus:outline-none font-semibold"
+                  >
+                    <option value="">{language === 'es' ? 'Sala/Clase *' : 'Classroom *'}</option>
+                    <option value="babies">{language === 'es' ? 'Bebés (0-2 años)' : 'Babies (0-2 yrs)'}</option>
+                    <option value="explorers">{language === 'es' ? 'Exploradores (3-4 años)' : 'Explorers (3-4 yrs)'}</option>
+                    <option value="adventurers">{language === 'es' ? 'Principiantes/Primarios (5-8 años)' : 'Beginners/Primary (5-8 yrs)'}</option>
+                    <option value="youth">{language === 'es' ? 'Jóvenes (9-12 años)' : 'Youth (9-12 yrs)'}</option>
+                  </select>
                 </div>
               </div>
             )}

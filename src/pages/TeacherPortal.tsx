@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase, Child, Event, Alert } from '../lib/supabase';
 import {
+  ChevronLeft,
   LogIn,
   LogOut,
   Users,
@@ -643,6 +644,16 @@ export const TeacherPortal = () => {
                 exit={{ opacity: 0, x: -30 }}
                 transition={{ duration: 0.2 }}
               >
+                <div className="flex justify-center mb-6">
+                  <a
+                    href="/"
+                    className="flex items-center gap-2 text-kids-blue font-bold text-sm hover:underline"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    Volver al sitio principal
+                  </a>
+                </div>
+
                 <div className="text-center mb-8">
                   <LogIn className="w-16 h-16 text-kids-purple mx-auto mb-4" />
                   <h1 className="text-4xl font-black text-kids-purple mb-2">

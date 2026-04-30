@@ -27,6 +27,7 @@ export const IntakeFormWizard = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [validationError, setValidationError] = useState('');
 
   const [sectionA, setSectionA] = useState({
     fullName: '',
@@ -108,10 +109,14 @@ export const IntakeFormWizard = () => {
     setMedications(updated);
   };
 
+  const getStepName = (step: typeof STEPS[number]) => {
+    return language === 'es' ? step.nameEs : step.nameEn;
+  };
+
   const validateStep = (step: number): boolean => {
     switch (step) {
       case 1:
-        return !!(sectionA.fullName && sectionA.dob);
+        return !!(sectionA.fullName && sectionA.dob && sectionA.room);
       case 2:
         return !!(
           sectionB.primaryName &&
@@ -130,16 +135,44 @@ export const IntakeFormWizard = () => {
     }
   };
 
+  const getValidationMessage = (step: number): string => {
+    if (language === 'es') {
+      switch (step) {
+        case 1:
+          return 'Por favor complete: nombre completo, fecha de nacimiento y sala/clase';
+        case 2:
+          return 'Por favor complete: nombre del tutor, relación, teléfono y correo electrónico';
+        case 5:
+          return 'Por favor acepte el consentimiento médico y proporcione su firma digital';
+        default:
+          return 'Por favor complete todos los campos requeridos';
+      }
+    } else {
+      switch (step) {
+        case 1:
+          return 'Please complete: full name, date of birth, and classroom';
+        case 2:
+          return 'Please complete: guardian name, relationship, phone, and email';
+        case 5:
+          return 'Please accept the medical consent and provide your digital signature';
+        default:
+          return 'Please complete all required fields';
+      }
+    }
+  };
+
   const nextStep = () => {
     if (validateStep(currentStep) && currentStep < 5) {
+      setValidationError('');
       setCurrentStep(currentStep + 1);
     } else if (!validateStep(currentStep)) {
-      alert('Por favor complete todos los campos requeridos');
+      setValidationError(getValidationMessage(currentStep));
     }
   };
 
   const prevStep = () => {
     if (currentStep > 1) {
+      setValidationError('');
       setCurrentStep(currentStep - 1);
     }
   };
@@ -247,11 +280,12 @@ export const IntakeFormWizard = () => {
 
   const handleSubmit = async () => {
     if (!validateStep(5)) {
-      alert('Por favor complete todos los campos requeridos');
+      setValidationError(getValidationMessage(5));
       return;
     }
 
     setLoading(true);
+    setValidationError('');
 
     try {
       const uniqueNumber = await generateUniqueNumber();
@@ -318,7 +352,8 @@ export const IntakeFormWizard = () => {
     } catch (error: unknown) {
       console.error('Error submitting intake form:', error);
       const msg = error instanceof Error ? error.message : JSON.stringify(error);
-      alert(`Error al enviar el formulario: ${msg}`);
+      const errorPrefix = language === 'es' ? 'Error al enviar el formulario' : 'Error submitting form';
+      alert(`${errorPrefix}: ${msg}`);
     } finally {
       setLoading(false);
     }
@@ -356,7 +391,7 @@ export const IntakeFormWizard = () => {
   }
 
   const slideVariants = {
-    enter: (direction: number) => ({
+    enter: () => ({
       y: 30,
       opacity: 0,
     }),
@@ -364,7 +399,7 @@ export const IntakeFormWizard = () => {
       y: 0,
       opacity: 1,
     },
-    exit: (direction: number) => ({
+    exit: () => ({
       y: -30,
       opacity: 0,
     }),
@@ -401,7 +436,7 @@ export const IntakeFormWizard = () => {
                     )}
                   </motion.div>
                   <div className="text-xs md:text-sm font-bold text-gray-700 mt-2 text-center">
-                    {language === 'es' ? step.nameEs : step.nameEn}
+                    {getStepName(step)}
                   </div>
                 </div>
                 {index < STEPS.length - 1 && (
@@ -418,6 +453,20 @@ export const IntakeFormWizard = () => {
           </div>
         </motion.div>
 
+        {/* Validation error banner */}
+        <AnimatePresence>
+          {validationError && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="mb-4 p-4 bg-red-50 border-2 border-red-300 rounded-bubbly text-red-700 font-semibold text-center"
+            >
+              {validationError}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <AnimatePresence mode="wait" custom={1}>
           <motion.div
             key={currentStep}
@@ -431,7 +480,7 @@ export const IntakeFormWizard = () => {
             {currentStep === 1 && (
               <div className="bg-white rounded-bubbly p-8 shadow-xl border-4 border-kids-yellow">
                 <h2 className="text-3xl font-black text-kids-yellow mb-6">
-                  {STEPS[0].nameEs}
+                  {getStepName(STEPS[0])}
                 </h2>
                 <div className="space-y-4">
                   <input
@@ -454,16 +503,20 @@ export const IntakeFormWizard = () => {
                     className="w-full px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-yellow focus:outline-none font-semibold"
                   />
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input
-                      type="date"
-                      placeholder={t.intakeForm.dob}
-                      value={sectionA.dob}
-                      onChange={(e) =>
-                        setSectionA({ ...sectionA, dob: e.target.value })
-                      }
-                      required
-                      className="w-full px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-yellow focus:outline-none font-semibold"
-                    />
+                    <div>
+                      <label className="block text-sm font-bold text-gray-600 mb-1">
+                        {t.intakeForm.dob} *
+                      </label>
+                      <input
+                        type="date"
+                        value={sectionA.dob}
+                        onChange={(e) =>
+                          setSectionA({ ...sectionA, dob: e.target.value })
+                        }
+                        required
+                        className="w-full px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-yellow focus:outline-none font-semibold"
+                      />
+                    </div>
                     <input
                       type="text"
                       placeholder={t.intakeForm.gender}
@@ -495,7 +548,7 @@ export const IntakeFormWizard = () => {
             {currentStep === 2 && (
               <div className="bg-white rounded-bubbly p-8 shadow-xl border-4 border-kids-blue">
                 <h2 className="text-3xl font-black text-kids-blue mb-6">
-                  {STEPS[1].nameEs}
+                  {getStepName(STEPS[1])}
                 </h2>
                 <div className="space-y-4">
                   <input
@@ -588,7 +641,7 @@ export const IntakeFormWizard = () => {
             {currentStep === 3 && (
               <div className="bg-white rounded-bubbly p-8 shadow-xl border-4 border-kids-coral">
                 <h2 className="text-3xl font-black text-kids-coral mb-6">
-                  {STEPS[2].nameEs}
+                  {getStepName(STEPS[2])}
                 </h2>
                 <div className="space-y-6">
                   <div>
@@ -729,7 +782,7 @@ export const IntakeFormWizard = () => {
             {currentStep === 4 && (
               <div className="bg-white rounded-bubbly p-8 shadow-xl border-4 border-kids-mint">
                 <h2 className="text-3xl font-black text-kids-mint mb-6">
-                  {STEPS[3].nameEs}
+                  {getStepName(STEPS[3])}
                 </h2>
                 <div className="space-y-4">
                   <textarea
@@ -778,40 +831,42 @@ export const IntakeFormWizard = () => {
             {currentStep === 5 && (
               <div className="bg-white rounded-bubbly p-8 shadow-xl border-4 border-kids-purple">
                 <h2 className="text-3xl font-black text-kids-purple mb-6">
-                  {STEPS[4].nameEs}
+                  {getStepName(STEPS[4])}
                 </h2>
 
                 <div className="bg-gray-50 rounded-bubbly p-6 mb-6">
                   <h3 className="text-2xl font-black text-kids-blue mb-4">
-                    Resumen del Formulario
+                    {language === 'es' ? 'Resumen del Formulario' : 'Form Summary'}
                   </h3>
                   <div className="space-y-2 text-sm">
                     <div>
-                      <strong>Niño:</strong> {sectionA.fullName}
+                      <strong>{language === 'es' ? 'Niño' : 'Child'}:</strong> {sectionA.fullName}
                     </div>
                     <div>
-                      <strong>Fecha de Nacimiento:</strong> {sectionA.dob}
+                      <strong>{language === 'es' ? 'Fecha de Nacimiento' : 'Date of Birth'}:</strong> {sectionA.dob}
                     </div>
                     <div>
-                      <strong>Padre/Tutor:</strong> {sectionB.primaryName}
+                      <strong>{language === 'es' ? 'Padre/Tutor' : 'Parent/Guardian'}:</strong> {sectionB.primaryName}
                     </div>
                     <div>
-                      <strong>Teléfono:</strong> {sectionB.primaryPhone}
+                      <strong>{language === 'es' ? 'Teléfono' : 'Phone'}:</strong> {sectionB.primaryPhone}
                     </div>
                     <div>
-                      <strong>Alergias:</strong>{' '}
-                      {sectionC.allergies.join(', ') || 'Ninguna'}
+                      <strong>{language === 'es' ? 'Alergias' : 'Allergies'}:</strong>{' '}
+                      {sectionC.allergies.join(', ') || (language === 'es' ? 'Ninguna' : 'None')}
                     </div>
                   </div>
                 </div>
 
                 <div className="bg-amber-50 border-2 border-amber-400 rounded-bubbly p-6 mb-6">
                   <h3 className="text-lg font-black text-amber-800 mb-3">
-                    Confidencialidad y Privacidad / Confidentiality & Privacy
+                    {language === 'es' ? 'Confidencialidad y Privacidad' : 'Confidentiality & Privacy'}
                   </h3>
                   <div className="space-y-3 text-sm text-gray-700">
                     <p className="font-semibold">
-                      Esta información es confidencial y será utilizada únicamente para el cuidado del menor.
+                      {language === 'es'
+                        ? 'Esta información es confidencial y será utilizada únicamente para el cuidado del menor.'
+                        : 'This information is confidential and will be used solely for the care of the child.'}
                     </p>
                     <p className="text-xs leading-relaxed">
                       This information is confidential and will be used solely for the care of the child.
@@ -901,7 +956,7 @@ export const IntakeFormWizard = () => {
               className="flex items-center space-x-2 px-6 py-4 bg-gray-300 text-gray-700 rounded-bubbly font-bold shadow-lg"
             >
               <ChevronLeft className="w-6 h-6" />
-              <span>Anterior</span>
+              <span>{language === 'es' ? 'Anterior' : 'Previous'}</span>
             </motion.button>
           )}
 
@@ -912,7 +967,7 @@ export const IntakeFormWizard = () => {
               onClick={nextStep}
               className="flex items-center space-x-2 px-6 py-4 bg-gradient-to-r from-kids-blue to-kids-purple text-white rounded-bubbly font-bold shadow-lg ml-auto"
             >
-              <span>Siguiente</span>
+              <span>{language === 'es' ? 'Siguiente' : 'Next'}</span>
               <ChevronRight className="w-6 h-6" />
             </motion.button>
           ) : (
@@ -923,7 +978,7 @@ export const IntakeFormWizard = () => {
               disabled={loading}
               className="flex items-center space-x-2 px-6 py-4 bg-gradient-to-r from-kids-mint to-kids-coral text-white rounded-bubbly font-bold shadow-lg ml-auto disabled:opacity-50"
             >
-              <span>{loading ? 'Enviando...' : 'Enviar Formulario'}</span>
+              <span>{loading ? (language === 'es' ? 'Enviando...' : 'Submitting...') : (language === 'es' ? 'Enviar Formulario' : 'Submit Form')}</span>
               <Check className="w-6 h-6" />
             </motion.button>
           )}

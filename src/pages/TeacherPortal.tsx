@@ -938,7 +938,7 @@ export const TeacherPortal = () => {
                   placeholder={t.teacherPortal.searchPlaceholder}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                   className="flex-1 px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-purple focus:outline-none font-semibold"
                 />
                 <button

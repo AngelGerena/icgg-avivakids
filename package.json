@@ -27,6 +27,7 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@types/canvas-confetti": "^1.6.4",
     "@eslint/js": "^9.9.1",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^18.3.5",

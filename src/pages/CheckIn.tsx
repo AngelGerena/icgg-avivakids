@@ -21,13 +21,11 @@ export const CheckIn = () => {
   const [success, setSuccess] = useState(false);
   const [childNumber, setChildNumber] = useState('');
   const [childId, setChildId] = useState('');
+  const [successChildName, setSuccessChildName] = useState('');
 
   const generateUniqueNumber = async (): Promise<string> => {
-    let unique = false;
-    let number = '';
-
-    while (!unique) {
-      number = Math.floor(Math.random() * 10000)
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const number = Math.floor(Math.random() * 10000)
         .toString()
         .padStart(4, '0');
 
@@ -38,11 +36,11 @@ export const CheckIn = () => {
         .maybeSingle();
 
       if (!data) {
-        unique = true;
+        return number;
       }
     }
 
-    return number;
+    return Date.now().toString().slice(-4);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,7 +65,7 @@ export const CheckIn = () => {
 
       if (childError) throw childError;
 
-      await supabase.from('parents').insert({
+      const { error: parentError } = await supabase.from('parents').insert({
         child_id: childData.id,
         primary_name: formData.parentName,
         primary_relationship: 'Parent',
@@ -75,6 +73,10 @@ export const CheckIn = () => {
         primary_email: formData.parentEmail,
       });
 
+      if (parentError) throw parentError;
+
+      // Store child name BEFORE resetting form
+      setSuccessChildName(formData.childName);
       setChildNumber(uniqueNumber);
       setChildId(childData.id);
       setSuccess(true);
@@ -95,9 +97,10 @@ export const CheckIn = () => {
         childDob: '',
         room: '',
       });
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error checking in child:', error);
-      alert('Error al registrar. Por favor intente de nuevo.');
+      const msg = error instanceof Error ? error.message : JSON.stringify(error);
+      alert(`Error al registrar: ${msg}`);
     } finally {
       setLoading(false);
     }
@@ -279,7 +282,7 @@ export const CheckIn = () => {
 
               <div className="bg-white rounded-bubbly p-8 mb-6">
                 <p className="text-xl font-bold text-gray-700 mb-4">
-                  {t.checkIn.successMessage.replace('{name}', formData.childName || 'el niño')}
+                  {t.checkIn.successMessage.replace('{name}', successChildName)}
                 </p>
                 <div className="text-8xl font-black text-kids-purple mb-4">
                   {childNumber}
@@ -293,7 +296,7 @@ export const CheckIn = () => {
                     Tarjeta QR del Niño
                   </h3>
                   <QRCodeBadge
-                    childName={formData.childName || 'Niño'}
+                    childName={successChildName}
                     childNumber={childNumber}
                     childId={childId}
                   />
@@ -305,15 +308,7 @@ export const CheckIn = () => {
                 whileTap={{ scale: 0.95 }}
                 onClick={() => {
                   setSuccess(false);
-                  setFormData({
-                    childName: '',
-                    parentName: '',
-                    parentPhone: '',
-                    parentEmail: '',
-                    childAge: '',
-                    childDob: '',
-                    room: '',
-                  });
+                  setSuccessChildName('');
                 }}
                 className="px-8 py-4 bg-white text-kids-purple text-xl font-black rounded-bubbly shadow-lg hover:shadow-xl transition-all duration-300"
               >

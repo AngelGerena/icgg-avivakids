@@ -52,40 +52,20 @@ export const CheckIn = () => {
     try {
       const uniqueNumber = await generateUniqueNumber();
 
-      const qrData = JSON.stringify({
-        childId: '',
-        childNumber: uniqueNumber,
-        childName: formData.childName,
-        type: 'child-profile',
-      });
-
       const { data: childData, error: childError } = await supabase
         .from('children')
         .insert({
           full_name: formData.childName,
-          dob: formData.childDob,
+          dob: new Date(formData.childDob).toISOString().split('T')[0],
           room: formData.room,
           unique_number: uniqueNumber,
           checked_in_today: true,
           check_in_time: new Date().toISOString(),
-          qr_code_data: qrData,
         })
         .select()
         .single();
 
       if (childError) throw childError;
-
-      await supabase
-        .from('children')
-        .update({
-          qr_code_data: JSON.stringify({
-            childId: childData.id,
-            childNumber: uniqueNumber,
-            childName: formData.childName,
-            type: 'child-profile',
-          }),
-        })
-        .eq('id', childData.id);
 
       await supabase.from('parents').insert({
         child_id: childData.id,

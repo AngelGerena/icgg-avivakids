@@ -502,6 +502,18 @@ export const TeacherPortal = () => {
     fetchDashboardData();
   };
 
+  const deleteAlert = async (alertId: string) => {
+    await supabase.from('alerts').delete().eq('id', alertId);
+    fetchDashboardData();
+  };
+
+  const clearResolvedAlerts = async () => {
+    if (!confirm('¿Limpiar todo el historial de alertas resueltas?')) return;
+    await supabase.from('alerts').delete().eq('resolved', true);
+    fetchDashboardData();
+  };
+  };
+
   const addEvent = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -1207,10 +1219,26 @@ export const TeacherPortal = () => {
             </div>
 
             <div className="bg-white rounded-bubbly p-8 shadow-xl border border-gray-100 mt-8">
-              <h2 className="text-3xl font-black text-kids-purple mb-6">
-                Historial de Alertas
-              </h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-3xl font-black text-kids-purple">
+                  Historial de Alertas
+                </h2>
+                {alertHistory.some(a => a.resolved) && (
+                  <button
+                    onClick={clearResolvedAlerts}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-100 text-red-600 border-2 border-red-200 rounded-bubbly font-bold text-sm hover:bg-red-500 hover:text-white hover:border-red-500 transition-all"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Limpiar Historial
+                  </button>
+                )}
+              </div>
               <div className="space-y-4">
+                {alertHistory.length === 0 && (
+                  <div className="text-center py-8 text-gray-400 font-semibold">
+                    No hay alertas registradas.
+                  </div>
+                )}
                 {alertHistory.map((alert) => (
                   <div
                     key={alert.id}
@@ -1257,6 +1285,13 @@ export const TeacherPortal = () => {
                         <span>Resolver</span>
                       </button>
                     )}
+                    <button
+                      onClick={() => deleteAlert(alert.id)}
+                      className="p-2 ml-2 bg-red-100 text-red-500 rounded-bubbly hover:bg-red-500 hover:text-white transition-all flex-shrink-0"
+                      title="Eliminar alerta"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 ))}
               </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Search, X, Camera, CameraOff, Keyboard } from 'lucide-react';
+import { Search, X, Camera, Keyboard } from 'lucide-react';
 
 interface QRScannerProps {
   onScanSuccess: (data: any) => void;

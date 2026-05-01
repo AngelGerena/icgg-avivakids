@@ -21,6 +21,7 @@ import {
   BookOpen,
   CheckCircle,
   KeyRound,
+  ClipboardCheck,
 } from 'lucide-react';
 import { QRScanner } from '../components/QRScanner';
 import { Analytics } from '../components/Analytics';
@@ -981,6 +982,7 @@ export const TeacherPortal = () => {
         <div className="flex flex-wrap gap-4 mb-8">
           {[
             { id: 'dashboard', label: t.teacherPortal.dashboard, icon: Users },
+            { id: 'checkin', label: 'Registro de Niños', icon: ClipboardCheck },
             { id: 'children', label: 'Todos los Niños', icon: Users },
             { id: 'alerts', label: t.teacherPortal.alertPanel, icon: Bell },
             { id: 'events', label: t.teacherPortal.eventManager, icon: Calendar },
@@ -1004,6 +1006,25 @@ export const TeacherPortal = () => {
 
         {activeTab === 'dashboard' && (
           <div className="space-y-8">
+
+            {/* QR Scanner — prominently at the top */}
+            <div className="bg-gradient-to-r from-kids-purple to-kids-blue rounded-bubbly p-6 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="text-white">
+                <div className="text-2xl font-black mb-1">Escanear QR del Niño</div>
+                <div className="text-white/80 font-semibold text-sm">
+                  Apunte la camara al codigo QR del padre para registrar la entrada del nino
+                </div>
+              </div>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowQRScanner(true)}
+                className="flex items-center gap-3 px-8 py-4 bg-white text-kids-purple font-black text-lg rounded-bubbly shadow-lg hover:shadow-xl transition-all flex-shrink-0"
+              >
+                <QrCode className="w-7 h-7" />
+                Escanear QR
+              </motion.button>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
@@ -1063,22 +1084,13 @@ export const TeacherPortal = () => {
                   <Users className="w-8 h-8 mr-3" />
                   {t.teacherPortal.checkInList}
                 </h2>
-                <div className="flex space-x-4">
-                  <button
-                    onClick={() => setShowQRScanner(true)}
-                    className="flex items-center space-x-2 px-4 py-2 bg-kids-purple text-white rounded-bubbly font-bold hover:scale-105 transition-transform"
-                  >
-                    <QrCode className="w-5 h-5" />
-                    <span>Escanear QR</span>
-                  </button>
-                  <button
-                    onClick={exportCSV}
-                    className="flex items-center space-x-2 px-4 py-2 bg-kids-mint text-white rounded-bubbly font-bold hover:scale-105 transition-transform"
-                  >
-                    <Download className="w-5 h-5" />
-                    <span>{t.teacherPortal.exportCSV}</span>
-                  </button>
-                </div>
+                <button
+                  onClick={exportCSV}
+                  className="flex items-center space-x-2 px-4 py-2 bg-kids-mint text-white rounded-bubbly font-bold hover:scale-105 transition-transform"
+                >
+                  <Download className="w-5 h-5" />
+                  <span>{t.teacherPortal.exportCSV}</span>
+                </button>
               </div>
 
               {checkedInChildren.length > 0 ? (
@@ -1549,6 +1561,28 @@ export const TeacherPortal = () => {
         )}
 
         {activeTab === 'analytics' && <Analytics />}
+
+        {activeTab === 'checkin' && (
+          <div className="bg-white rounded-bubbly shadow-xl border border-gray-100 overflow-hidden">
+            <div className="bg-gradient-to-r from-kids-blue to-kids-purple p-6">
+              <h2 className="text-3xl font-black text-white flex items-center gap-3">
+                <ClipboardCheck className="w-8 h-8" />
+                Registro de Niños
+              </h2>
+              <p className="text-white/80 font-semibold text-sm mt-1">
+                Use el PIN de personal para registrar la entrada de un nuevo niño
+              </p>
+            </div>
+            <div className="p-4">
+              <iframe
+                src="/check-in"
+                className="w-full rounded-bubbly border-0"
+                style={{ height: '85vh' }}
+                title="Check-In"
+              />
+            </div>
+          </div>
+        )}
 
         {activeTab === 'children' && (
           <div className="bg-white rounded-bubbly p-8 shadow-xl border border-gray-100">

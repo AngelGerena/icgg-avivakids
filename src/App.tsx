@@ -5,7 +5,6 @@ import { Navbar } from './components/Navbar';
 import { FloatingShapes } from './components/FloatingShapes';
 import { AlertBanner } from './components/AlertBanner';
 import { MouseTrail } from './components/MouseTrail';
-import { ProtectedRoute } from './components/ProtectedRoute';
 import { Home } from './pages/Home';
 import { CheckIn } from './pages/CheckIn';
 import { IntakeForm } from './pages/IntakeForm';

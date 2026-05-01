@@ -7,7 +7,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, Cell,
 } from 'recharts';
-import { Download, TrendingUp, Users, FileText, Baby, Star, Smile, Zap } from 'lucide-react';
+import { Download, TrendingUp, Users, FileText, Star, Zap } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 

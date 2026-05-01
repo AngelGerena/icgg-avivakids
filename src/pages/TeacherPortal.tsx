@@ -1263,16 +1263,29 @@ export const TeacherPortal = () => {
                           {new Date(child.dob).toLocaleDateString('es-ES', { month: 'long', day: 'numeric' })}
                         </div>
                       </div>
-                      <button
-                        onClick={() => toggleBirthdayCelebrated(child.id, child.birthday_celebrated)}
-                        className={`px-4 py-2 rounded-bubbly font-bold transition-all ${
-                          child.birthday_celebrated
-                            ? 'bg-kids-mint text-white'
-                            : 'bg-gray-200 text-gray-700 hover:bg-kids-yellow hover:text-white'
-                        }`}
-                      >
-                        {child.birthday_celebrated ? t.birthdays.celebrated : t.teacherPortal.markCelebrated}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => toggleBirthdayCelebrated(child.id, child.birthday_celebrated)}
+                          className={`px-4 py-2 rounded-bubbly font-bold transition-all ${
+                            child.birthday_celebrated
+                              ? 'bg-kids-mint text-white'
+                              : 'bg-gray-200 text-gray-700 hover:bg-kids-yellow hover:text-white'
+                          }`}
+                        >
+                          {child.birthday_celebrated ? t.birthdays.celebrated : t.teacherPortal.markCelebrated}
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (!confirm(`¿Eliminar a ${child.full_name}? Esta acción no se puede deshacer.`)) return;
+                            const { error } = await supabase.from('children').delete().eq('id', child.id);
+                            if (error) alert(`Error: ${error.message}`);
+                            else fetchDashboardData();
+                          }}
+                          className="p-2 bg-red-100 text-red-500 rounded-bubbly hover:bg-red-500 hover:text-white transition-all"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1315,6 +1328,17 @@ export const TeacherPortal = () => {
                       }}
                       className="px-3 py-2 rounded-bubbly border-2 border-kids-blue focus:border-kids-purple focus:outline-none text-sm font-semibold"
                     />
+                    <button
+                      onClick={async () => {
+                        if (!confirm(`¿Eliminar a ${child.full_name}? Esta acción no se puede deshacer.`)) return;
+                        const { error } = await supabase.from('children').delete().eq('id', child.id);
+                        if (error) alert(`Error: ${error.message}`);
+                        else fetchDashboardData();
+                      }}
+                      className="p-2 bg-red-100 text-red-500 rounded-bubbly hover:bg-red-500 hover:text-white transition-all flex-shrink-0"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 ))}
               </div>

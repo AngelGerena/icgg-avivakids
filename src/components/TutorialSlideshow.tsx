@@ -799,12 +799,23 @@ export const TutorialSlideshow = ({ isOpen, onClose }: TutorialSlideshowProps) =
               <p className="text-white font-black text-base leading-tight">{slide.title}</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="w-9 h-9 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-colors"
-          >
-            <X className="w-5 h-5 text-white" />
-          </button>
+          <div className="flex items-center gap-2">
+            <a
+              href="/guia-del-maestro-aviva-kids.pdf"
+              download="Guia-del-Maestro-Aviva-Kids.pdf"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-full text-white text-xs font-bold transition-colors"
+              title="Descargar Guía PDF"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Guía PDF</span>
+            </a>
+            <button
+              onClick={onClose}
+              className="w-9 h-9 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-colors"
+            >
+              <X className="w-5 h-5 text-white" />
+            </button>
+          </div>
         </div>
 
         {/* Progress bar */}

@@ -97,25 +97,40 @@ export const Home = () => {
             initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.5 }}
-            className="text-3xl sm:text-4xl md:text-6xl font-black mb-4 drop-shadow-2xl text-center leading-tight"
+            className="text-4xl sm:text-5xl md:text-7xl font-black mb-4 drop-shadow-2xl text-center leading-tight"
           >
-            {['¡', 'B', 'i', 'e', 'n', 'v', 'e', 'n', 'i', 'd', 'o', 's', ' ', 'a', ' ', 'I', 'C', 'G', 'G', ' ', 'A', 'v', 'i', 'v', 'a', ' ', 'K', 'i', 'd', 's', '!'].map((letter, i) => {
-              const colors = ['#FFD700', '#FF6B6B', '#4FC3F7', '#69F0AE', '#CE93D8', '#FFD700', '#FF6B6B', '#4FC3F7', '#69F0AE', '#CE93D8'];
+            {[
+              { text: '¡Bienvenidos', color: 0 },
+              { text: ' ', color: -1 },
+              { text: 'a', color: 5 },
+              { text: ' ', color: -1 },
+              { text: 'ICGG', color: 2 },
+              { text: ' ', color: -1 },
+              { text: 'Aviva', color: 7 },
+              { text: ' ', color: -1 },
+              { text: 'Kids!', color: 1 },
+            ].map((word, wi) => {
+              const colors = ['#FFD700', '#FF6B6B', '#4FC3F7', '#69F0AE', '#CE93D8', '#FF9800', '#00E5FF', '#E91E63'];
+              if (word.text === ' ') return <span key={wi}>&nbsp;</span>;
               return (
-                <motion.span
-                  key={i}
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: 0.5 + i * 0.04 }}
-                  style={{
-                    color: letter === ' ' ? 'transparent' : colors[i % colors.length],
-                    WebkitTextStroke: letter === ' ' ? 'none' : '1.5px rgba(0,0,0,0.25)',
-                    display: 'inline-block',
-                    textShadow: '2px 3px 0px rgba(0,0,0,0.2)',
-                  }}
-                >
-                  {letter}
-                </motion.span>
+                <span key={wi} style={{ display: 'inline-block', marginRight: '0.15em' }}>
+                  {word.text.split('').map((letter, li) => (
+                    <motion.span
+                      key={li}
+                      initial={{ opacity: 0, y: -20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4, delay: 0.5 + (wi * 5 + li) * 0.03 }}
+                      style={{
+                        color: colors[(word.color + li) % colors.length],
+                        WebkitTextStroke: '1.5px rgba(0,0,0,0.3)',
+                        display: 'inline-block',
+                        textShadow: '2px 3px 0px rgba(0,0,0,0.25)',
+                      }}
+                    >
+                      {letter}
+                    </motion.span>
+                  ))}
+                </span>
               );
             })}
           </motion.h1>
@@ -124,7 +139,12 @@ export const Home = () => {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.7 }}
-            className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-6 drop-shadow-lg"
+            style={{
+              color: '#AAFF00',
+              WebkitTextStroke: '1px rgba(0,0,0,0.5)',
+              textShadow: '2px 3px 6px rgba(0,0,0,0.4)',
+            }}
+            className="text-xl sm:text-2xl md:text-3xl font-black mb-6"
           >
             {t.home.subtitle}
           </motion.p>

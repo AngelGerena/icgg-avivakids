@@ -13,28 +13,48 @@ interface Alert {
 
 type Screen = 'login' | 'watching' | 'alert';
 
-// Cute chime sound generated via Web Audio API — no file needed
+// Audio context created once and reused — must be resumed after user gesture
+let audioCtx: AudioContext | null = null;
+
+const initAudio = () => {
+  try {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    // Resume in case browser suspended it
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+  } catch (e) {
+    console.warn('Audio init failed:', e);
+  }
+};
+
 const playChime = () => {
   try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    if (!audioCtx) return;
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume().then(() => playChime());
+      return;
+    }
 
     const notes = [523.25, 659.25, 783.99, 1046.50]; // C5 E5 G5 C6
     notes.forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
+      const osc = audioCtx!.createOscillator();
+      const gain = audioCtx!.createGain();
       osc.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(audioCtx!.destination);
       osc.type = 'sine';
       osc.frequency.value = freq;
-      const start = ctx.currentTime + i * 0.18;
+      const start = audioCtx!.currentTime + i * 0.18;
       gain.gain.setValueAtTime(0, start);
-      gain.gain.linearRampToValueAtTime(0.4, start + 0.05);
-      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.6);
+      gain.gain.linearRampToValueAtTime(0.5, start + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.7);
       osc.start(start);
-      osc.stop(start + 0.6);
+      osc.stop(start + 0.7);
     });
   } catch (e) {
-    // Audio not available — fail silently
+    console.warn('Audio playback failed:', e);
   }
 };
 
@@ -67,6 +87,8 @@ export const ParentWatch = () => {
       setLoginError(es ? 'Por favor complete ambos campos.' : 'Please fill in both fields.');
       return;
     }
+    // Initialize audio on user gesture — this unlocks audio for the session
+    initAudio();
     setLoginLoading(true);
     setLoginError('');
 
@@ -105,6 +127,9 @@ export const ParentWatch = () => {
 
       setChildName(child.full_name.trim().split(' ')[0]);
       setChildId(child.id);
+
+      // Play a soft confirmation tone so parent knows audio is active
+      setTimeout(() => playChime(), 300);
 
       // Subscribe to realtime alerts for this child number
       const channel = supabase

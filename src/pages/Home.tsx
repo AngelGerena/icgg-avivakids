@@ -208,10 +208,10 @@ export const Home = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {ageGroups.map((group, index) => {
               const cardStyles = [
-                { iconColor: '#6C00FF', textColor: '#3D00B8', stroke: '1.5px rgba(255,255,255,0.6)' }, // yellow → deep violet
-                { iconColor: '#00BFA5', textColor: '#00796B', stroke: '1.5px rgba(255,255,255,0.6)' }, // coral → deep teal
-                { iconColor: '#FFB300', textColor: '#FF6F00', stroke: '1.5px rgba(255,255,255,0.6)' }, // blue → warm amber
-                { iconColor: '#E91E63', textColor: '#880E4F', stroke: '1.5px rgba(255,255,255,0.6)' }, // teal → deep magenta
+                { iconColor: '#6C00FF', textColor: '#6C00FF' }, // yellow card → deep violet
+                { iconColor: '#00897B', textColor: '#00897B' }, // coral card → deep teal
+                { iconColor: '#FF8F00', textColor: '#FF8F00' }, // blue card → warm amber
+                { iconColor: '#C2185B', textColor: '#C2185B' }, // teal card → deep magenta
               ];
               const style = cardStyles[index % cardStyles.length];
               return (
@@ -233,27 +233,26 @@ export const Home = () => {
                     />
                   </div>
 
-                  {/* Subtle color tint at very top */}
-                  <div className={`absolute inset-0 bg-gradient-to-b from-${group.color}/30 via-transparent to-transparent`} />
+                  {/* Soft color tint over entire card */}
+                  <div className={`absolute inset-0 bg-${group.color}/50`} />
 
-                  {/* Dark overlay bottom half so text/icon pops */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                  {/* Solid dark overlay on bottom third only */}
+                  <div className="absolute bottom-0 left-0 right-0 h-2/5 bg-black/70" />
 
                   {/* Content */}
                   <div className="relative z-10 flex flex-col items-center justify-end h-full pb-6 px-4">
                     <group.icon
-                      className="w-12 h-12 mb-3 drop-shadow-lg"
+                      className="w-12 h-12 mb-3"
                       style={{
                         color: style.iconColor,
-                        filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.6))',
+                        filter: 'drop-shadow(0px 2px 6px rgba(0,0,0,0.9))',
                       }}
                     />
                     <h3
                       className="text-xl font-black text-center leading-tight"
                       style={{
                         color: style.textColor,
-                        WebkitTextStroke: style.stroke,
-                        textShadow: '1px 2px 6px rgba(0,0,0,0.8)',
+                        textShadow: '1px 2px 8px rgba(0,0,0,1)',
                       }}
                     >
                       {t.checkIn.rooms[group.titleKey]}

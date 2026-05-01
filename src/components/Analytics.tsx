@@ -80,25 +80,29 @@ export const Analytics = () => {
       }
       setMonthlyGrowth(monthlyData);
 
-      // Weekly attendance — real check_in_time for last 4 weeks grouped by room
+      // Weekly attendance — pull from attendance history table
+      const { data: attendanceRecords } = await supabase
+        .from('attendance')
+        .select('room, checked_in_at, service_date')
+        .gte('checked_in_at', new Date(today.getTime() - 28 * 24 * 60 * 60 * 1000).toISOString());
+
       const weeklyData = [];
       for (let i = 3; i >= 0; i--) {
         const weekStart = new Date(today.getTime() - (i + 1) * 7 * 24 * 60 * 60 * 1000);
         const weekEnd = new Date(today.getTime() - i * 7 * 24 * 60 * 60 * 1000);
         const weekLabel = `Sem ${4 - i}`;
 
-        const weekChildren = allChildren.filter(c => {
-          if (!c.check_in_time) return false;
-          const d = new Date(c.check_in_time);
+        const weekRecords = (attendanceRecords || []).filter(r => {
+          const d = new Date(r.checked_in_at);
           return d >= weekStart && d < weekEnd;
         });
 
         weeklyData.push({
           name: weekLabel,
-          'Bebés 0-2': weekChildren.filter(c => c.room === 'babies').length,
-          'Exploradores 3-5': weekChildren.filter(c => c.room === 'explorers').length,
-          'Aventureros 6-9': weekChildren.filter(c => c.room === 'adventurers').length,
-          'Jóvenes 10-12': weekChildren.filter(c => c.room === 'youth').length,
+          'Bebés 0-2': weekRecords.filter(r => r.room === 'babies').length,
+          'Exploradores 3-5': weekRecords.filter(r => r.room === 'explorers').length,
+          'Aventureros 6-9': weekRecords.filter(r => r.room === 'adventurers').length,
+          'Jóvenes 10-12': weekRecords.filter(r => r.room === 'youth').length,
         });
       }
       setWeeklyAttendance(weeklyData);

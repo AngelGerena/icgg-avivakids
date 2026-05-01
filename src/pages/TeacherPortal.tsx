@@ -274,30 +274,65 @@ export const TeacherPortal = () => {
       return;
     }
 
-    if (childData) {
-      setSelectedChild(childData);
+    // Fallback: search by name
+    if (!childData) {
+      const { data: nameResults } = await supabase
+        .from('children')
+        .select('*, parents(*), intake_forms(*)')
+        .ilike('full_name', `%${childNumber}%`)
+        .limit(1)
+        .maybeSingle();
+
+      if (!nameResults) {
+        alert(`No se encontró ningún niño con el número o nombre: "${childNumber}"`);
+        return;
+      }
+
+      // Mark check-in and record attendance
+      await recordCheckIn(nameResults);
+      setSelectedChild(nameResults);
       setShowQRScanner(false);
       return;
     }
 
-    // Fallback: search by name if number not found
-    const { data: nameResults, error: nameError } = await supabase
+    // Mark check-in and record attendance
+    await recordCheckIn(childData);
+    setSelectedChild(childData);
+    setShowQRScanner(false);
+  };
+
+  const recordCheckIn = async (child: any) => {
+    const now = new Date().toISOString();
+    const today = new Date().toISOString().split('T')[0];
+
+    // Update child checked_in_today
+    await supabase
       .from('children')
-      .select('*, parents(*), intake_forms(*)')
-      .ilike('full_name', `%${childNumber}%`)
-      .limit(1)
+      .update({ checked_in_today: true, check_in_time: now })
+      .eq('id', child.id);
+
+    // Check if already recorded attendance today to avoid duplicates
+    const { data: existing } = await supabase
+      .from('attendance')
+      .select('id')
+      .eq('child_id', child.id)
+      .eq('service_date', today)
       .maybeSingle();
 
-    if (nameError) {
-      console.error('Name search error:', nameError);
+    if (!existing) {
+      await supabase.from('attendance').insert({
+        child_id: child.id,
+        child_number: child.unique_number,
+        child_name: child.full_name,
+        room: child.room,
+        checked_in_at: now,
+        service_date: today,
+        checked_in_by: 'qr-scan',
+      });
     }
 
-    if (nameResults) {
-      setSelectedChild(nameResults);
-      setShowQRScanner(false);
-    } else {
-      alert(`No se encontró ningún niño con el número o nombre: "${childNumber}"`);
-    }
+    // Refresh dashboard
+    fetchDashboardData();
   };
 
   const handleSearch = async () => {

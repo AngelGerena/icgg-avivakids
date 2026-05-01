@@ -512,7 +512,6 @@ export const TeacherPortal = () => {
     await supabase.from('alerts').delete().eq('resolved', true);
     fetchDashboardData();
   };
-  };
 
   const addEvent = async (e: React.FormEvent) => {
     e.preventDefault();

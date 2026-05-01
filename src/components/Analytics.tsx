@@ -3,343 +3,291 @@ import { motion } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 import {
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  Cell,
+  BarChart, Bar, PieChart, Pie, LineChart, Line,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  ResponsiveContainer, Cell,
 } from 'recharts';
-import { Download, TrendingUp, Users, FileText } from 'lucide-react';
+import { Download, TrendingUp, Users, FileText, Baby, Star, Smile, Zap } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
-const COLORS = ['#FFD700', '#4FC3F7', '#FF6B6B', '#69F0AE'];
+const ROOM_COLORS = ['#FFD700', '#4FC3F7', '#FF6B6B', '#69F0AE'];
+const ROOM_LABELS: Record<string, string> = {
+  babies: 'Bebés 0-2',
+  explorers: 'Exploradores 3-5',
+  adventurers: 'Aventureros 6-9',
+  youth: 'Jóvenes 10-12',
+  general: 'General',
+};
 
 export const Analytics = () => {
   const { t } = useLanguage();
-  const [weeklyAttendance, setWeeklyAttendance] = useState<any[]>([]);
   const [roomDistribution, setRoomDistribution] = useState<any[]>([]);
+  const [weeklyAttendance, setWeeklyAttendance] = useState<any[]>([]);
   const [monthlyGrowth, setMonthlyGrowth] = useState<any[]>([]);
+  const [totalChildren, setTotalChildren] = useState(0);
+  const [checkedInToday, setCheckedInToday] = useState(0);
   const [intakeFormStats, setIntakeFormStats] = useState({
     completed: 0,
     missing: 0,
     missingNames: [] as string[],
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchAnalytics();
   }, []);
 
   const fetchAnalytics = async () => {
-    const { data: allChildren } = await supabase.from('children').select('*');
+    setLoading(true);
+
+    // --- All children ---
+    const { data: allChildren } = await supabase
+      .from('children')
+      .select('id, full_name, room, check_in_time, checked_in_today, created_at')
+      .order('created_at', { ascending: true });
 
     if (allChildren) {
+      setTotalChildren(allChildren.length);
+      setCheckedInToday(allChildren.filter(c => c.checked_in_today).length);
+
+      // Room distribution — real data
       const roomCounts = allChildren.reduce((acc: any, child) => {
         const room = child.room || 'general';
         acc[room] = (acc[room] || 0) + 1;
         return acc;
       }, {});
-
-      const roomData = Object.entries(roomCounts).map(([name, value]) => ({
-        name:
-          name === 'babies'
-            ? 'Bebés 0-2'
-            : name === 'explorers'
-            ? 'Exploradores 3-5'
-            : name === 'adventurers'
-            ? 'Aventureros 6-9'
-            : name === 'youth'
-            ? 'Jóvenes 10-12'
-            : 'General',
+      const roomData = Object.entries(roomCounts).map(([key, value]) => ({
+        name: ROOM_LABELS[key] || key,
         value,
       }));
-
       setRoomDistribution(roomData);
+
+      // Monthly growth — registrations per month for last 6 months (real created_at)
+      const today = new Date();
+      const monthlyData = [];
+      for (let i = 5; i >= 0; i--) {
+        const monthDate = new Date(today.getFullYear(), today.getMonth() - i, 1);
+        const nextMonth = new Date(today.getFullYear(), today.getMonth() - i + 1, 1);
+        const monthName = monthDate.toLocaleDateString('es-ES', { month: 'short' });
+        const count = allChildren.filter(c => {
+          const d = new Date(c.created_at);
+          return d >= monthDate && d < nextMonth;
+        }).length;
+        // Cumulative total up to this month
+        const cumulative = allChildren.filter(c => new Date(c.created_at) < nextMonth).length;
+        monthlyData.push({ name: monthName, registrados: cumulative, nuevos: count });
+      }
+      setMonthlyGrowth(monthlyData);
+
+      // Weekly attendance — real check_in_time for last 4 weeks grouped by room
+      const weeklyData = [];
+      for (let i = 3; i >= 0; i--) {
+        const weekStart = new Date(today.getTime() - (i + 1) * 7 * 24 * 60 * 60 * 1000);
+        const weekEnd = new Date(today.getTime() - i * 7 * 24 * 60 * 60 * 1000);
+        const weekLabel = `Sem ${4 - i}`;
+
+        const weekChildren = allChildren.filter(c => {
+          if (!c.check_in_time) return false;
+          const d = new Date(c.check_in_time);
+          return d >= weekStart && d < weekEnd;
+        });
+
+        weeklyData.push({
+          name: weekLabel,
+          'Bebés 0-2': weekChildren.filter(c => c.room === 'babies').length,
+          'Exploradores 3-5': weekChildren.filter(c => c.room === 'explorers').length,
+          'Aventureros 6-9': weekChildren.filter(c => c.room === 'adventurers').length,
+          'Jóvenes 10-12': weekChildren.filter(c => c.room === 'youth').length,
+        });
+      }
+      setWeeklyAttendance(weeklyData);
     }
 
-    const today = new Date();
-    const fourWeeksAgo = new Date(today.getTime() - 28 * 24 * 60 * 60 * 1000);
-
-    const weeklyData = [];
-    for (let i = 3; i >= 0; i--) {
-      const weekStart = new Date(today.getTime() - (i + 1) * 7 * 24 * 60 * 60 * 1000);
-      const weekEnd = new Date(today.getTime() - i * 7 * 24 * 60 * 60 * 1000);
-
-      const weekName = `Semana ${4 - i}`;
-
-      weeklyData.push({
-        name: weekName,
-        'Bebés 0-2': Math.floor(Math.random() * 15) + 5,
-        'Exploradores 3-5': Math.floor(Math.random() * 20) + 10,
-        'Aventureros 6-9': Math.floor(Math.random() * 18) + 8,
-        'Jóvenes 10-12': Math.floor(Math.random() * 12) + 5,
-      });
-    }
-
-    setWeeklyAttendance(weeklyData);
-
-    const monthlyData = [];
-    for (let i = 5; i >= 0; i--) {
-      const monthDate = new Date(
-        today.getFullYear(),
-        today.getMonth() - i,
-        1
-      );
-      const monthName = monthDate.toLocaleDateString('es-ES', { month: 'short' });
-
-      monthlyData.push({
-        name: monthName,
-        asistencia: Math.floor(Math.random() * 30) + 40 + (5 - i) * 5,
-      });
-    }
-
-    setMonthlyGrowth(monthlyData);
-
+    // Intake form completion — real data
     const { data: intakeForms } = await supabase
       .from('intake_forms')
       .select('child_id');
 
-    const childrenWithIntake = new Set(
-      intakeForms?.map((form) => form.child_id) || []
-    );
-
-    const missingIntake = allChildren?.filter(
-      (child) => !childrenWithIntake.has(child.id)
-    );
+    const childrenWithIntake = new Set(intakeForms?.map(f => f.child_id) || []);
+    const allChildrenData = (await supabase.from('children').select('id, full_name')).data || [];
+    const missingIntake = allChildrenData.filter(c => !childrenWithIntake.has(c.id));
 
     setIntakeFormStats({
       completed: intakeForms?.length || 0,
-      missing: missingIntake?.length || 0,
-      missingNames: missingIntake?.map((child) => child.full_name) || [],
+      missing: missingIntake.length,
+      missingNames: missingIntake.map(c => c.full_name),
     });
+
+    setLoading(false);
   };
 
   const exportMonthlyReport = () => {
     const doc = new jsPDF();
+    const today = new Date();
 
-    // Colorful header background
+    // Header
     doc.setFillColor(206, 147, 216);
     doc.rect(0, 0, 210, 50, 'F');
-
-    // Title with white text
-    doc.setFontSize(24);
+    doc.setFontSize(22);
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
-    doc.text('📊 Reporte Mensual', 105, 20, { align: 'center' });
-    doc.text('Ministerio de Niños', 105, 30, { align: 'center' });
-
+    doc.text('Reporte Mensual del Ministerio de Ninos', 105, 18, { align: 'center' });
+    doc.text('Iglesia Cristiana Gracia y Gloria', 105, 28, { align: 'center' });
     doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');
-    doc.text('Iglesia Cristiana Gracia y Gloria', 105, 38, {
-      align: 'center',
-    });
-    doc.text(`Generado: ${new Date().toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })}`, 105, 44, {
-      align: 'center',
-    });
+    doc.text(`Generado: ${today.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}`, 105, 38, { align: 'center' });
+    doc.text(`Mes: ${today.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}`, 105, 45, { align: 'center' });
 
     let yPos = 60;
 
-    // Stats Summary Cards
-    const totalChildren = roomDistribution.reduce((sum, room) => sum + room.value, 0);
+    // Summary cards
+    const cards = [
+      { label: 'Total Ninos', value: totalChildren, color: [105, 240, 174] },
+      { label: 'Hoy Presentes', value: checkedInToday, color: [79, 195, 247] },
+      { label: 'Formularios', value: intakeFormStats.completed, color: [206, 147, 216] },
+      { label: 'Pendientes', value: intakeFormStats.missing, color: [255, 107, 107] },
+    ];
+    cards.forEach((card, i) => {
+      const x = 15 + i * 46;
+      doc.setFillColor(card.color[0], card.color[1], card.color[2]);
+      doc.roundedRect(x, yPos, 42, 26, 3, 3, 'F');
+      doc.setFontSize(22);
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.text(String(card.value), x + 21, yPos + 14, { align: 'center' });
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text(card.label, x + 21, yPos + 22, { align: 'center' });
+    });
+    yPos += 36;
 
-    // Card 1 - Total Children
-    doc.setFillColor(105, 240, 174);
-    doc.roundedRect(15, yPos, 58, 28, 3, 3, 'F');
-    doc.setFontSize(28);
-    doc.setTextColor(255, 255, 255);
-    doc.setFont('helvetica', 'bold');
-    doc.text(String(totalChildren), 44, yPos + 15, { align: 'center' });
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text('👶 Total Niños', 44, yPos + 23, { align: 'center' });
-
-    // Card 2 - Completed Forms
-    doc.setFillColor(79, 195, 247);
-    doc.roundedRect(78, yPos, 58, 28, 3, 3, 'F');
-    doc.setFontSize(28);
-    doc.setFont('helvetica', 'bold');
-    doc.text(String(intakeFormStats.completed), 107, yPos + 15, { align: 'center' });
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text('✅ Completados', 107, yPos + 23, { align: 'center' });
-
-    // Card 3 - Pending Forms
-    doc.setFillColor(255, 107, 107);
-    doc.roundedRect(141, yPos, 58, 28, 3, 3, 'F');
-    doc.setFontSize(28);
-    doc.setFont('helvetica', 'bold');
-    doc.text(String(intakeFormStats.missing), 170, yPos + 15, { align: 'center' });
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text('⏳ Pendientes', 170, yPos + 23, { align: 'center' });
-
-    yPos += 40;
-
-    // Room Distribution Section
-    doc.setFillColor(245, 245, 245);
-    doc.roundedRect(15, yPos, 180, 10, 2, 2, 'F');
-    doc.setFontSize(14);
+    // Room distribution table
+    doc.setFontSize(13);
     doc.setTextColor(79, 195, 247);
     doc.setFont('helvetica', 'bold');
-    doc.text('🏠 Distribución por Salas', 20, yPos + 7);
-    yPos += 18;
+    doc.text('Distribucion por Salas', 15, yPos + 7);
+    yPos += 14;
 
-    // Room bars with colors
-    const roomColors = [
-      [255, 215, 0],   // Gold
-      [79, 195, 247],  // Blue
-      [255, 107, 107], // Coral
-      [105, 240, 174], // Mint
-    ];
-
-    roomDistribution.forEach((room, index) => {
-      const barWidth = (room.value / totalChildren) * 150;
-
-      // Background bar
-      doc.setFillColor(240, 240, 240);
-      doc.roundedRect(70, yPos - 4, 150, 8, 2, 2, 'F');
-
-      // Colored bar
-      const color = roomColors[index % roomColors.length];
-      doc.setFillColor(color[0], color[1], color[2]);
-      doc.roundedRect(70, yPos - 4, barWidth, 8, 2, 2, 'F');
-
-      // Label and value
-      doc.setFontSize(11);
-      doc.setTextColor(60, 60, 60);
-      doc.setFont('helvetica', 'bold');
-      doc.text(room.name, 20, yPos);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`${room.value} niños (${Math.round((room.value / totalChildren) * 100)}%)`,
-        225, yPos, { align: 'right' });
-
-      yPos += 12;
+    const roomTableData = roomDistribution.map((room, i) => [
+      room.name,
+      room.value,
+      `${Math.round((room.value / totalChildren) * 100)}%`,
+    ]);
+    (doc as any).autoTable({
+      startY: yPos,
+      head: [['Sala', 'Ninos', 'Porcentaje']],
+      body: roomTableData,
+      theme: 'grid',
+      headStyles: { fillColor: [79, 195, 247], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
+      bodyStyles: { halign: 'center', fontSize: 10 },
+      margin: { left: 15, right: 15 },
     });
-
-    yPos += 10;
-
-    // Weekly Attendance Section
-    doc.setFillColor(245, 245, 245);
-    doc.roundedRect(15, yPos, 180, 10, 2, 2, 'F');
-    doc.setFontSize(14);
-    doc.setTextColor(206, 147, 216);
-    doc.setFont('helvetica', 'bold');
-    doc.text('📈 Tendencia de Asistencia (Últimas 4 Semanas)', 20, yPos + 7);
-    yPos += 18;
+    yPos = (doc as any).lastAutoTable.finalY + 12;
 
     // Weekly attendance table
+    doc.setFontSize(13);
+    doc.setTextColor(206, 147, 216);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Asistencia por Semana (Ultimas 4 Semanas)', 15, yPos + 7);
+    yPos += 14;
+
     const weeklyTableData = weeklyAttendance.map(week => [
       week.name,
       week['Bebés 0-2'],
       week['Exploradores 3-5'],
       week['Aventureros 6-9'],
       week['Jóvenes 10-12'],
-      week['Bebés 0-2'] + week['Exploradores 3-5'] + week['Aventureros 6-9'] + week['Jóvenes 10-12']
+      week['Bebés 0-2'] + week['Exploradores 3-5'] + week['Aventureros 6-9'] + week['Jóvenes 10-12'],
     ]);
-
     (doc as any).autoTable({
       startY: yPos,
-      head: [['Semana', '👶 0-2', '🧒 3-5', '🎨 6-9', '🌟 10-12', 'Total']],
+      head: [['Semana', 'Bebes', 'Exploradores', 'Aventureros', 'Jovenes', 'Total']],
       body: weeklyTableData,
       theme: 'grid',
-      headStyles: {
-        fillColor: [206, 147, 216],
-        textColor: [255, 255, 255],
-        fontSize: 10,
-        fontStyle: 'bold',
-        halign: 'center'
-      },
-      bodyStyles: {
-        fontSize: 10,
-        halign: 'center'
-      },
-      columnStyles: {
-        0: { fontStyle: 'bold', fillColor: [250, 250, 250] },
-        5: { fontStyle: 'bold', fillColor: [255, 245, 220] }
-      },
-      margin: { left: 15, right: 15 }
+      headStyles: { fillColor: [206, 147, 216], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
+      bodyStyles: { halign: 'center', fontSize: 10 },
+      columnStyles: { 5: { fontStyle: 'bold', fillColor: [255, 245, 220] } },
+      margin: { left: 15, right: 15 },
     });
+    yPos = (doc as any).lastAutoTable.finalY + 12;
 
-    yPos = (doc as any).lastAutoTable.finalY + 15;
+    // Monthly registrations table
+    if (yPos > 220) { doc.addPage(); yPos = 20; }
+    doc.setFontSize(13);
+    doc.setTextColor(105, 240, 174);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Crecimiento de Registros (Ultimos 6 Meses)', 15, yPos + 7);
+    yPos += 14;
 
-    // Missing Forms Section
+    const monthlyTableData = monthlyGrowth.map(m => [m.name, m.nuevos, m.registrados]);
+    (doc as any).autoTable({
+      startY: yPos,
+      head: [['Mes', 'Nuevos', 'Total Acumulado']],
+      body: monthlyTableData,
+      theme: 'grid',
+      headStyles: { fillColor: [105, 240, 174], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
+      bodyStyles: { halign: 'center', fontSize: 10 },
+      margin: { left: 15, right: 15 },
+    });
+    yPos = (doc as any).lastAutoTable.finalY + 12;
+
+    // Pending families section
     if (intakeFormStats.missingNames.length > 0) {
-      if (yPos > 240) {
-        doc.addPage();
-        yPos = 20;
-      }
-
-      doc.setFillColor(255, 240, 240);
-      doc.roundedRect(15, yPos, 180, 10, 2, 2, 'F');
-      doc.setFontSize(14);
+      if (yPos > 230) { doc.addPage(); yPos = 20; }
+      doc.setFontSize(13);
       doc.setTextColor(255, 107, 107);
       doc.setFont('helvetica', 'bold');
-      doc.text('⚠️ Niños sin Formulario de Admisión', 20, yPos + 7);
-      yPos += 18;
-
-      doc.setFontSize(10);
-      doc.setTextColor(80, 80, 80);
-      doc.setFont('helvetica', 'normal');
-
-      const columns = 2;
-      const columnWidth = 85;
-      let col = 0;
-
-      intakeFormStats.missingNames.forEach((name, index) => {
-        if (yPos > 270) {
-          doc.addPage();
-          yPos = 20;
-          col = 0;
-        }
-
-        const xPos = 20 + (col * columnWidth);
-
-        // Bullet background
-        doc.setFillColor(255, 107, 107);
-        doc.circle(xPos, yPos - 1.5, 1.5, 'F');
-
-        doc.text(name, xPos + 5, yPos);
-
-        col++;
-        if (col >= columns) {
-          col = 0;
-          yPos += 7;
-        }
+      doc.text('Familias Pendientes de Admision', 15, yPos + 7);
+      yPos += 12;
+      doc.setFontSize(9);
+      doc.setTextColor(120, 120, 120);
+      doc.setFont('helvetica', 'italic');
+      doc.text('Estos ninos asistieron via registro rapido pero aun no han completado el Formulario de Admision oficial.', 15, yPos);
+      doc.text('Se recomienda hacer seguimiento con estas familias antes del proximo servicio.', 15, yPos + 5);
+      yPos += 12;
+      (doc as any).autoTable({
+        startY: yPos,
+        head: [['#', 'Nombre del Nino', 'Accion Requerida']],
+        body: intakeFormStats.missingNames.map((n, i) => [i + 1, n, 'Enviar formulario de admision']),
+        theme: 'grid',
+        headStyles: { fillColor: [255, 107, 107], textColor: [255, 255, 255], fontStyle: 'bold' },
+        bodyStyles: { fontSize: 10 },
+        columnStyles: { 2: { textColor: [255, 107, 107], fontStyle: 'italic' } },
+        margin: { left: 15, right: 15 },
       });
+      yPos = (doc as any).lastAutoTable.finalY + 8;
+      doc.setFontSize(9);
+      doc.setTextColor(180, 140, 0);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Enlace del formulario: icgg-avivakids.org/intake-form', 15, yPos);
+      yPos += 12;
     }
 
     // Footer
     const pageCount = doc.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
-      doc.setFontSize(9);
+      doc.setFontSize(8);
       doc.setTextColor(150, 150, 150);
       doc.setFont('helvetica', 'italic');
-      doc.text(
-        `Página ${i} de ${pageCount} - Generado por Sistema de Ministerio de Niños`,
-        105,
-        285,
-        { align: 'center' }
-      );
+      doc.text(`Pagina ${i} de ${pageCount} - Sistema Aviva Kids - ICGG`, 105, 287, { align: 'center' });
     }
 
-    doc.save(`reporte-mensual-${new Date().toISOString().split('T')[0]}.pdf`);
+    doc.save(`reporte-mensual-icgg-${today.toISOString().split('T')[0]}.pdf`);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-kids-purple" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-4xl font-black text-kids-purple flex items-center">
           <TrendingUp className="w-10 h-10 mr-3" />
@@ -356,153 +304,161 @@ export const Analytics = () => {
         </motion.button>
       </div>
 
+      {/* Top stat cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Total Registrados', value: totalChildren, icon: Users, gradient: 'from-kids-mint to-kids-blue' },
+          { label: 'Presentes Hoy', value: checkedInToday, icon: Star, gradient: 'from-kids-yellow to-kids-coral' },
+          { label: 'Formularios Completos', value: intakeFormStats.completed, icon: FileText, gradient: 'from-kids-blue to-kids-purple' },
+          { label: 'Admisión Pendiente', value: intakeFormStats.missing, icon: Zap, gradient: 'from-kids-coral to-kids-purple' },
+        ].map((card, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.1 }}
+            className={`bg-gradient-to-br ${card.gradient} rounded-bubbly p-6 shadow-xl text-white`}
+          >
+            <card.icon className="w-8 h-8 mb-2 opacity-80" />
+            <div className="text-4xl font-black">{card.value}</div>
+            <div className="text-sm font-bold opacity-90 mt-1">{card.label}</div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Charts row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Weekly attendance — real check-in data */}
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white/95 backdrop-blur-xl rounded-bubbly p-6 shadow-xl border border-white/20"
+          className="bg-white rounded-bubbly p-6 shadow-xl border border-gray-100"
         >
-          <h3 className="text-2xl font-black text-kids-blue mb-4">
-            Asistencia Semanal por Sala (Últimas 4 Semanas)
+          <h3 className="text-xl font-black text-kids-blue mb-1">
+            Asistencia Semanal por Sala
           </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={weeklyAttendance}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="Bebés 0-2" fill="#FFD700" />
-              <Bar dataKey="Exploradores 3-5" fill="#4FC3F7" />
-              <Bar dataKey="Aventureros 6-9" fill="#FF6B6B" />
-              <Bar dataKey="Jóvenes 10-12" fill="#69F0AE" />
-            </BarChart>
-          </ResponsiveContainer>
+          <p className="text-xs text-gray-400 font-semibold mb-4">Últimas 4 semanas — datos reales de check-in</p>
+          {weeklyAttendance.every(w =>
+            w['Bebés 0-2'] + w['Exploradores 3-5'] + w['Aventureros 6-9'] + w['Jóvenes 10-12'] === 0
+          ) ? (
+            <div className="flex items-center justify-center h-48 text-gray-400 font-bold text-sm">
+              No hay registros de check-in aún.
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={weeklyAttendance}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="Bebés 0-2" fill="#FFD700" />
+                <Bar dataKey="Exploradores 3-5" fill="#4FC3F7" />
+                <Bar dataKey="Aventureros 6-9" fill="#FF6B6B" />
+                <Bar dataKey="Jóvenes 10-12" fill="#69F0AE" />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </motion.div>
 
+        {/* Room distribution — real */}
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.1 }}
-          className="bg-white/95 backdrop-blur-xl rounded-bubbly p-6 shadow-xl border border-white/20"
+          className="bg-white rounded-bubbly p-6 shadow-xl border border-gray-100"
         >
-          <h3 className="text-2xl font-black text-kids-coral mb-4">
+          <h3 className="text-xl font-black text-kids-coral mb-1">
             Distribución por Salas
           </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={roomDistribution}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) =>
-                  `${name}: ${(percent * 100).toFixed(0)}%`
-                }
-                outerRadius={100}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {roomDistribution.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={COLORS[index % COLORS.length]}
-                  />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
+          <p className="text-xs text-gray-400 font-semibold mb-4">Todos los niños registrados</p>
+          {roomDistribution.length === 0 ? (
+            <div className="flex items-center justify-center h-48 text-gray-400 font-bold text-sm">
+              No hay niños registrados aún.
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={280}>
+              <PieChart>
+                <Pie
+                  data={roomDistribution}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={100}
+                  dataKey="value"
+                >
+                  {roomDistribution.map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={ROOM_COLORS[index % ROOM_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
         </motion.div>
       </div>
 
+      {/* Monthly growth — real registration dates */}
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.2 }}
-        className="bg-white/95 backdrop-blur-xl rounded-bubbly p-6 shadow-xl border border-white/20"
+        className="bg-white rounded-bubbly p-6 shadow-xl border border-gray-100"
       >
-        <h3 className="text-2xl font-black text-kids-mint mb-4">
-          Crecimiento de Asistencia Mensual
+        <h3 className="text-xl font-black text-kids-mint mb-1">
+          Crecimiento del Ministerio
         </h3>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={monthlyGrowth}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Line
-              type="monotone"
-              dataKey="asistencia"
-              stroke="#CE93D8"
-              strokeWidth={3}
-              activeDot={{ r: 8 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+        <p className="text-xs text-gray-400 font-semibold mb-4">Total acumulado de niños registrados — últimos 6 meses</p>
+        {monthlyGrowth.every(m => m.registrados === 0) ? (
+          <div className="flex items-center justify-center h-48 text-gray-400 font-bold text-sm">
+            No hay datos de crecimiento aún.
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={280}>
+            <LineChart data={monthlyGrowth}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis allowDecimals={false} />
+              <Tooltip />
+              <Legend />
+              <Line type="monotone" dataKey="registrados" name="Total Acumulado" stroke="#CE93D8" strokeWidth={3} activeDot={{ r: 8 }} />
+              <Line type="monotone" dataKey="nuevos" name="Nuevos ese Mes" stroke="#4FC3F7" strokeWidth={2} strokeDasharray="5 5" />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
       </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-gradient-to-br from-kids-mint to-kids-blue rounded-bubbly p-8 shadow-xl"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <Users className="w-16 h-16 text-white" />
-            <div className="text-right">
-              <div className="text-6xl font-black text-white">
-                {intakeFormStats.completed}
-              </div>
-              <div className="text-xl font-bold text-white/90">
-                Formularios Completados
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="bg-gradient-to-br from-kids-coral to-kids-purple rounded-bubbly p-8 shadow-xl"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <FileText className="w-16 h-16 text-white" />
-            <div className="text-right">
-              <div className="text-6xl font-black text-white">
-                {intakeFormStats.missing}
-              </div>
-              <div className="text-xl font-bold text-white/90">
-                Formularios Pendientes
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-
+      {/* Missing forms list */}
       {intakeFormStats.missingNames.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="bg-white/95 backdrop-blur-xl rounded-bubbly p-6 shadow-xl border-l-8 border-kids-coral border border-white/20"
+          transition={{ delay: 0.3 }}
+          className="bg-white rounded-bubbly p-6 shadow-xl border-l-8 border-kids-coral border border-gray-100"
         >
-          <h3 className="text-2xl font-black text-kids-coral mb-4 flex items-center">
-            <FileText className="w-8 h-8 mr-3" />
-            Niños sin Formulario de Admisión
-          </h3>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-xl font-black text-kids-coral flex items-center">
+              <FileText className="w-6 h-6 mr-2" />
+              Familias Pendientes de Admisión ({intakeFormStats.missing})
+            </h3>
+          </div>
+          <p className="text-sm text-gray-500 font-semibold mb-4">
+            Estos niños asistieron vía registro rápido pero aún no han completado el Formulario de Admisión oficial.
+            Por favor haga seguimiento con estas familias antes del próximo servicio.
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {intakeFormStats.missingNames.map((name, index) => (
-              <div
-                key={index}
-                className="bg-gray-50 px-4 py-2 rounded-bubbly font-semibold text-gray-700"
-              >
-                • {name}
+              <div key={index} className="bg-red-50 px-4 py-3 rounded-bubbly border border-red-100 flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-kids-coral flex-shrink-0" />
+                <span className="font-semibold text-gray-700">{name}</span>
               </div>
             ))}
+          </div>
+          <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-bubbly px-4 py-3">
+            <p className="text-xs font-bold text-yellow-700">
+              Acción requerida: Envíe el enlace del Formulario de Admisión a estas familias — icgg-avivakids.org/intake-form
+            </p>
           </div>
         </motion.div>
       )}

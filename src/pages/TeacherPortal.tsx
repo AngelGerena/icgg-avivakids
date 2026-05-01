@@ -22,6 +22,8 @@ import {
   CheckCircle,
   KeyRound,
   ClipboardCheck,
+  Lock,
+  Delete,
 } from 'lucide-react';
 import { QRScanner } from '../components/QRScanner';
 import { Analytics } from '../components/Analytics';

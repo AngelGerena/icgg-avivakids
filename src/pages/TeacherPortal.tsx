@@ -445,7 +445,11 @@ export const TeacherPortal = () => {
   const addEvent = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    await supabase.from('events').insert(newEvent);
+    const fixedDate = newEvent.date
+      ? new Date(newEvent.date + 'T12:00:00').toISOString().split('T')[0]
+      : newEvent.date;
+
+    await supabase.from('events').insert({ ...newEvent, date: fixedDate });
 
     setNewEvent({
       title: '',
@@ -1399,98 +1403,51 @@ export const TeacherPortal = () => {
                 <div className="text-lg font-bold text-gray-600">
                   Total: {allChildren.length}
                 </div>
-                <div className="relative">
-                  <button
-                    onClick={() => setShowExportMenu(!showExportMenu)}
-                    className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-kids-mint to-kids-blue text-white rounded-bubbly font-bold hover:scale-105 transition-transform shadow-lg"
-                  >
-                    <Download className="w-5 h-5" />
-                    <span>Exportar Registros</span>
-                  </button>
+              </div>
+            </div>
 
-                  <AnimatePresence>
-                    {showExportMenu && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="absolute right-0 mt-2 w-80 bg-white rounded-bubbly shadow-2xl border-2 border-kids-blue z-50 p-4"
-                      >
-                        <h3 className="text-lg font-black text-kids-purple mb-4">
-                          Seleccione el formato de exportación
-                        </h3>
+            {/* Export buttons — always visible */}
+            <div className="mb-6 space-y-3">
+              <p className="text-sm font-bold text-gray-500 uppercase tracking-wide">Exportar Registros</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={async () => { try { await exportToPDF(allChildren as any, true); } catch(e) { alert('Error al exportar PDF'); } }}
+                  className="flex items-center gap-3 px-5 py-4 bg-gradient-to-r from-kids-blue to-kids-purple text-white rounded-bubbly font-bold shadow-lg"
+                >
+                  <Download className="w-5 h-5 flex-shrink-0" />
+                  <div className="text-left">
+                    <div className="font-black">PDF Detallado</div>
+                    <div className="text-xs opacity-80">Fotos, QR, info médica completa</div>
+                  </div>
+                </motion.button>
 
-                        <div className="space-y-3 mb-4">
-                          <label className="flex items-start space-x-3 cursor-pointer p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                            <input
-                              type="radio"
-                              name="export-format"
-                              value="pdf-detailed"
-                              checked={exportFormat === 'pdf-detailed'}
-                              onChange={(e) => setExportFormat(e.target.value as any)}
-                              className="mt-1 w-5 h-5 text-kids-purple"
-                            />
-                            <div>
-                              <div className="font-bold text-gray-800">PDF Detallado</div>
-                              <div className="text-xs text-gray-600">
-                                Incluye foto, QR code, información completa de padres, contactos, dirección, y todos los datos médicos y de emergencia
-                              </div>
-                            </div>
-                          </label>
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => { try { exportSummaryTable(allChildren as any); } catch(e) { alert('Error al exportar PDF'); } }}
+                  className="flex items-center gap-3 px-5 py-4 bg-gradient-to-r from-kids-mint to-kids-blue text-white rounded-bubbly font-bold shadow-lg"
+                >
+                  <Download className="w-5 h-5 flex-shrink-0" />
+                  <div className="text-left">
+                    <div className="font-black">PDF Resumen</div>
+                    <div className="text-xs opacity-80">Tabla compacta de referencia rápida</div>
+                  </div>
+                </motion.button>
 
-                          <label className="flex items-start space-x-3 cursor-pointer p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                            <input
-                              type="radio"
-                              name="export-format"
-                              value="pdf-summary"
-                              checked={exportFormat === 'pdf-summary'}
-                              onChange={(e) => setExportFormat(e.target.value as any)}
-                              className="mt-1 w-5 h-5 text-kids-purple"
-                            />
-                            <div>
-                              <div className="font-bold text-gray-800">PDF Tabla Resumen</div>
-                              <div className="text-xs text-gray-600">
-                                Tabla compacta con información esencial en formato horizontal
-                              </div>
-                            </div>
-                          </label>
-
-                          <label className="flex items-start space-x-3 cursor-pointer p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                            <input
-                              type="radio"
-                              name="export-format"
-                              value="excel"
-                              checked={exportFormat === 'excel'}
-                              onChange={(e) => setExportFormat(e.target.value as any)}
-                              className="mt-1 w-5 h-5 text-kids-purple"
-                            />
-                            <div>
-                              <div className="font-bold text-gray-800">Excel (XLSX)</div>
-                              <div className="text-xs text-gray-600">
-                                Hoja de cálculo con toda la información en columnas editables
-                              </div>
-                            </div>
-                          </label>
-                        </div>
-
-                        <div className="flex gap-2">
-                          <button
-                            onClick={handleExport}
-                            className="flex-1 py-3 bg-kids-mint text-white rounded-bubbly font-bold hover:scale-105 transition-transform"
-                          >
-                            Exportar
-                          </button>
-                          <button
-                            onClick={() => setShowExportMenu(false)}
-                            className="px-4 py-3 bg-gray-300 text-gray-700 rounded-bubbly font-bold hover:scale-105 transition-transform"
-                          >
-                            Cancelar
-                          </button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => { try { exportToExcel(allChildren as any); } catch(e) { alert('Error al exportar Excel'); } }}
+                  className="flex items-center gap-3 px-5 py-4 bg-gradient-to-r from-kids-yellow to-kids-mint text-gray-800 rounded-bubbly font-bold shadow-lg"
+                >
+                  <Download className="w-5 h-5 flex-shrink-0" />
+                  <div className="text-left">
+                    <div className="font-black">Excel</div>
+                    <div className="text-xs opacity-70">Hoja de cálculo editable con todos los datos</div>
+                  </div>
+                </motion.button>
               </div>
             </div>
 

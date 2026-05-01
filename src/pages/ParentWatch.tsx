@@ -62,7 +62,7 @@ export const ParentWatch = () => {
   const { language } = useLanguage();
   const [screen, setScreen] = useState<Screen>('login');
   const [childNumber, setChildNumber] = useState('');
-  const [parentEmail, setParentEmail] = useState('');
+  const [parentPhone, setParentPhone] = useState('');
   const [childName, setChildName] = useState('');
   const [childId, setChildId] = useState('');
   const [parentName, setParentName] = useState('');
@@ -84,7 +84,7 @@ export const ParentWatch = () => {
   }, []);
 
   const handleLogin = async () => {
-    if (!childNumber.trim() || !parentEmail.trim()) {
+    if (!childNumber.trim() || !parentPhone.trim()) {
       setLoginError(es ? 'Por favor complete ambos campos.' : 'Please fill in both fields.');
       return;
     }
@@ -92,6 +92,9 @@ export const ParentWatch = () => {
     initAudio();
     setLoginLoading(true);
     setLoginError('');
+
+    // Strip all non-numeric characters for comparison
+    const stripPhone = (p: string) => p.replace(/\D/g, '');
 
     try {
       // Verify child exists
@@ -107,10 +110,10 @@ export const ParentWatch = () => {
         return;
       }
 
-      // Verify parent email matches
+      // Verify parent phone matches — strip formatting before comparing
       const { data: parent, error: parentError } = await supabase
         .from('parents')
-        .select('primary_email, primary_name')
+        .select('primary_phone, primary_name')
         .eq('child_id', child.id)
         .maybeSingle();
 
@@ -120,15 +123,15 @@ export const ParentWatch = () => {
         return;
       }
 
-      if (parent.primary_email.toLowerCase() !== parentEmail.trim().toLowerCase()) {
-        setLoginError(es ? 'El correo no coincide con nuestros registros.' : 'Email does not match our records.');
+      if (stripPhone(parent.primary_phone) !== stripPhone(parentPhone.trim())) {
+        setLoginError(es ? 'El teléfono no coincide con nuestros registros.' : 'Phone number does not match our records.');
         setLoginLoading(false);
         return;
       }
 
       setChildName(child.full_name.trim().split(' ')[0]);
       setChildId(child.id);
-      setParentName(parent.primary_name || parentEmail.split('@')[0]);
+      setParentName(parent.primary_name || parentPhone.trim());
 
       // Play a soft confirmation tone so parent knows audio is active
       setTimeout(() => playChime(), 300);
@@ -249,14 +252,14 @@ export const ParentWatch = () => {
 
             <div>
               <label className="block text-sm font-bold text-gray-600 mb-1">
-                {es ? 'Su correo electrónico registrado' : 'Your registered email'}
+                {es ? 'Su número de teléfono registrado' : 'Your registered phone number'}
               </label>
               <input
-                type="email"
-                value={parentEmail}
-                onChange={(e) => { setParentEmail(e.target.value); setLoginError(''); }}
+                type="tel"
+                value={parentPhone}
+                onChange={(e) => { setParentPhone(e.target.value); setLoginError(''); }}
                 onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-                placeholder={es ? 'correo@ejemplo.com' : 'email@example.com'}
+                placeholder={es ? '787-000-0000' : '(555) 000-0000'}
                 className="w-full px-4 py-3 rounded-bubbly border-4 border-kids-coral focus:border-kids-purple focus:outline-none text-lg font-semibold"
               />
             </div>
@@ -444,7 +447,7 @@ export const ParentWatch = () => {
             if (channelRef.current) supabase.removeChannel(channelRef.current);
             setScreen('login');
             setChildNumber('');
-            setParentEmail('');
+            setParentPhone('');
             setChildName('');
             setActiveAlert(null);
           }}

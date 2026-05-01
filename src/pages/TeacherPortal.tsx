@@ -76,6 +76,8 @@ export const TeacherPortal = () => {
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [alertHistory, setAlertHistory] = useState<Alert[]>([]);
   const [ackNotification, setAckNotification] = useState<{ parentName: string; childNumber: string } | null>(null);
+  const [editingParentId, setEditingParentId] = useState<string | null>(null);
+  const [editParentForm, setEditParentForm] = useState({ primary_name: '', primary_phone: '', primary_email: '', secondary_name: '', secondary_phone: '' });
   const [selectedChild, setSelectedChild] = useState<any>(null);
   const [showTutorial, setShowTutorial] = useState(false);
 
@@ -505,6 +507,26 @@ export const TeacherPortal = () => {
   const deleteAlert = async (alertId: string) => {
     await supabase.from('alerts').delete().eq('id', alertId);
     fetchDashboardData();
+  };
+
+  const saveParentEdit = async (childId: string) => {
+    const { error } = await supabase
+      .from('parents')
+      .update({
+        primary_name: editParentForm.primary_name.trim(),
+        primary_phone: editParentForm.primary_phone.trim(),
+        primary_email: editParentForm.primary_email.trim(),
+        secondary_name: editParentForm.secondary_name.trim() || null,
+        secondary_phone: editParentForm.secondary_phone.trim() || null,
+      })
+      .eq('child_id', childId);
+
+    if (error) {
+      alert(`Error al guardar: ${error.message}`);
+    } else {
+      setEditingParentId(null);
+      fetchDashboardData();
+    }
   };
 
   const clearResolvedAlerts = async () => {
@@ -1670,6 +1692,26 @@ export const TeacherPortal = () => {
                           Ver QR Code
                         </button>
                         <button
+                          onClick={() => {
+                            const p = child.parents?.[0];
+                            setEditParentForm({
+                              primary_name: p?.primary_name || '',
+                              primary_phone: p?.primary_phone || '',
+                              primary_email: p?.primary_email || '',
+                              secondary_name: p?.secondary_name || '',
+                              secondary_phone: p?.secondary_phone || '',
+                            });
+                            setEditingParentId(editingParentId === child.id ? null : child.id);
+                          }}
+                          className={`px-4 py-2 rounded-bubbly font-bold transition-all w-full border-2 ${
+                            editingParentId === child.id
+                              ? 'bg-kids-purple text-white border-kids-purple'
+                              : 'bg-white text-kids-purple border-kids-purple hover:bg-kids-purple hover:text-white'
+                          }`}
+                        >
+                          {editingParentId === child.id ? 'Cancelar' : 'Editar Contacto'}
+                        </button>
+                        <button
                           onClick={async () => {
                             const confirmed = window.confirm(
                               `¿Está seguro que desea eliminar a ${child.full_name}? Esta acción no se puede deshacer.`
@@ -1691,6 +1733,88 @@ export const TeacherPortal = () => {
                         </button>
                       </div>
                     </div>
+
+                    {/* Inline edit form */}
+                    <AnimatePresence>
+                      {editingParentId === child.id && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.25 }}
+                          className="mt-5 pt-5 border-t-2 border-kids-purple/20"
+                        >
+                          <p className="text-sm font-black text-kids-purple mb-4 uppercase tracking-wide">
+                            Editar Información de Contacto
+                          </p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-xs font-bold text-gray-500 mb-1">Nombre del Padre/Madre</label>
+                              <input
+                                type="text"
+                                value={editParentForm.primary_name}
+                                onChange={(e) => setEditParentForm({ ...editParentForm, primary_name: e.target.value })}
+                                className="w-full px-3 py-2 rounded-bubbly border-2 border-gray-300 focus:border-kids-purple focus:outline-none text-sm font-semibold"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-bold text-gray-500 mb-1">Teléfono Principal</label>
+                              <input
+                                type="tel"
+                                value={editParentForm.primary_phone}
+                                onChange={(e) => setEditParentForm({ ...editParentForm, primary_phone: e.target.value })}
+                                className="w-full px-3 py-2 rounded-bubbly border-2 border-gray-300 focus:border-kids-purple focus:outline-none text-sm font-semibold"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-bold text-gray-500 mb-1">Correo Electrónico</label>
+                              <input
+                                type="email"
+                                value={editParentForm.primary_email}
+                                onChange={(e) => setEditParentForm({ ...editParentForm, primary_email: e.target.value })}
+                                className="w-full px-3 py-2 rounded-bubbly border-2 border-gray-300 focus:border-kids-purple focus:outline-none text-sm font-semibold"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-bold text-gray-500 mb-1">Contacto Secundario (opcional)</label>
+                              <input
+                                type="text"
+                                value={editParentForm.secondary_name}
+                                onChange={(e) => setEditParentForm({ ...editParentForm, secondary_name: e.target.value })}
+                                placeholder="Nombre"
+                                className="w-full px-3 py-2 rounded-bubbly border-2 border-gray-300 focus:border-kids-purple focus:outline-none text-sm font-semibold"
+                              />
+                            </div>
+                            <div className="md:col-span-2">
+                              <label className="block text-xs font-bold text-gray-500 mb-1">Teléfono Secundario (opcional)</label>
+                              <input
+                                type="tel"
+                                value={editParentForm.secondary_phone}
+                                onChange={(e) => setEditParentForm({ ...editParentForm, secondary_phone: e.target.value })}
+                                placeholder="Teléfono del contacto secundario"
+                                className="w-full px-3 py-2 rounded-bubbly border-2 border-gray-300 focus:border-kids-purple focus:outline-none text-sm font-semibold"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex gap-3 mt-4">
+                            <motion.button
+                              whileHover={{ scale: 1.03 }}
+                              whileTap={{ scale: 0.97 }}
+                              onClick={() => saveParentEdit(child.id)}
+                              className="flex-1 py-3 bg-gradient-to-r from-kids-mint to-kids-blue text-white font-black rounded-bubbly shadow-lg"
+                            >
+                              Guardar Cambios
+                            </motion.button>
+                            <button
+                              onClick={() => setEditingParentId(null)}
+                              className="px-6 py-3 bg-gray-100 text-gray-600 font-bold rounded-bubbly hover:bg-gray-200 transition-colors"
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 ))}
               </div>

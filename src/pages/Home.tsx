@@ -208,10 +208,34 @@ export const Home = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {ageGroups.map((group, index) => {
               const cardStyles = [
-                { iconColor: '#6C00FF', textColor: '#6C00FF' }, // yellow card → deep violet
-                { iconColor: '#00897B', textColor: '#00897B' }, // coral card → deep teal
-                { iconColor: '#FF8F00', textColor: '#FF8F00' }, // blue card → warm amber
-                { iconColor: '#C2185B', textColor: '#C2185B' }, // teal card → deep magenta
+                {
+                  // Yellow card — violet complements yellow
+                  topColor: 'rgba(255,213,0,0.55)',
+                  bottomColor: 'rgba(180,140,0,0.92)',
+                  iconColor: '#4A00BF',
+                  textColor: '#3A0099',
+                },
+                {
+                  // Coral/red card — deep teal complements coral
+                  topColor: 'rgba(255,100,90,0.55)',
+                  bottomColor: 'rgba(180,40,30,0.92)',
+                  iconColor: '#00695C',
+                  textColor: '#004D40',
+                },
+                {
+                  // Blue card — amber complements blue
+                  topColor: 'rgba(79,195,247,0.55)',
+                  bottomColor: 'rgba(20,100,180,0.92)',
+                  iconColor: '#FF8F00',
+                  textColor: '#E65100',
+                },
+                {
+                  // Teal/mint card — magenta complements teal
+                  topColor: 'rgba(77,208,174,0.55)',
+                  bottomColor: 'rgba(0,105,92,0.92)',
+                  iconColor: '#AD1457',
+                  textColor: '#880E4F',
+                },
               ];
               const style = cardStyles[index % cardStyles.length];
               return (
@@ -233,11 +257,13 @@ export const Home = () => {
                     />
                   </div>
 
-                  {/* Soft color tint over entire card */}
-                  <div className={`absolute inset-0 bg-${group.color}/50`} />
-
-                  {/* Solid dark overlay on bottom third only */}
-                  <div className="absolute bottom-0 left-0 right-0 h-2/5 bg-black/70" />
+                  {/* Full card color tint — light at top */}
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      background: `linear-gradient(to bottom, ${style.topColor} 0%, ${style.bottomColor} 100%)`,
+                    }}
+                  />
 
                   {/* Content */}
                   <div className="relative z-10 flex flex-col items-center justify-end h-full pb-6 px-4">
@@ -245,14 +271,14 @@ export const Home = () => {
                       className="w-12 h-12 mb-3"
                       style={{
                         color: style.iconColor,
-                        filter: 'drop-shadow(0px 2px 6px rgba(0,0,0,0.9))',
+                        filter: 'drop-shadow(0px 1px 4px rgba(255,255,255,0.6))',
                       }}
                     />
                     <h3
                       className="text-xl font-black text-center leading-tight"
                       style={{
                         color: style.textColor,
-                        textShadow: '1px 2px 8px rgba(0,0,0,1)',
+                        textShadow: '0px 1px 6px rgba(255,255,255,0.5)',
                       }}
                     >
                       {t.checkIn.rooms[group.titleKey]}

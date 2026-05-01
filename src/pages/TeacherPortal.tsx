@@ -1461,9 +1461,31 @@ export const TeacherPortal = () => {
                               {new Date(child.dob).toLocaleDateString()}
                             </span>
                           </div>
-                          <div>
-                            <span className="font-bold text-gray-600">Sala:</span>{' '}
-                            <span className="text-gray-800">{child.room}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-gray-600">Sala:</span>
+                            <select
+                              defaultValue={child.room || ''}
+                              onChange={async (e) => {
+                                const newRoom = e.target.value;
+                                if (!newRoom || newRoom === child.room) return;
+                                const { error } = await supabase
+                                  .from('children')
+                                  .update({ room: newRoom })
+                                  .eq('id', child.id);
+                                if (error) {
+                                  alert(`Error al cambiar sala: ${error.message}`);
+                                } else {
+                                  fetchDashboardData();
+                                }
+                              }}
+                              className="px-2 py-1 rounded-bubbly border-2 border-kids-mint focus:border-kids-purple focus:outline-none text-sm font-semibold bg-white"
+                            >
+                              <option value="">Sin asignar</option>
+                              <option value="babies">Bebés (0-2 años)</option>
+                              <option value="explorers">Exploradores (3-4 años)</option>
+                              <option value="adventurers">Principiantes/Primarios (5-8 años)</option>
+                              <option value="youth">Jóvenes (9-12 años)</option>
+                            </select>
                           </div>
                           {child.parents && child.parents[0] && (
                             <>
@@ -1486,9 +1508,29 @@ export const TeacherPortal = () => {
                       <div className="flex flex-col items-center gap-2">
                         <button
                           onClick={() => setSelectedChild(child)}
-                          className="px-4 py-2 bg-kids-mint text-white rounded-bubbly font-bold hover:scale-105 transition-transform"
+                          className="px-4 py-2 bg-kids-mint text-white rounded-bubbly font-bold hover:scale-105 transition-transform w-full"
                         >
                           Ver QR Code
+                        </button>
+                        <button
+                          onClick={async () => {
+                            const confirmed = window.confirm(
+                              `¿Está seguro que desea eliminar a ${child.full_name}? Esta acción no se puede deshacer.`
+                            );
+                            if (!confirmed) return;
+                            const { error } = await supabase
+                              .from('children')
+                              .delete()
+                              .eq('id', child.id);
+                            if (error) {
+                              alert(`Error al eliminar: ${error.message}`);
+                            } else {
+                              fetchDashboardData();
+                            }
+                          }}
+                          className="px-4 py-2 bg-red-100 text-red-600 border-2 border-red-200 rounded-bubbly font-bold hover:bg-red-500 hover:text-white hover:border-red-500 transition-all w-full"
+                        >
+                          Eliminar Niño
                         </button>
                       </div>
                     </div>

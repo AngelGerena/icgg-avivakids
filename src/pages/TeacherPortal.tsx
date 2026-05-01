@@ -806,19 +806,9 @@ export const TeacherPortal = () => {
                   </motion.button>
 
                   <div className="text-center">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsSignUp(!isSignUp);
-                        setPassword('');
-                        setConfirmPassword('');
-                      }}
-                      className="text-kids-purple font-bold hover:underline"
-                    >
-                      {isSignUp
-                        ? 'Ya tienes cuenta? Inicia sesion'
-                        : 'No tienes cuenta? Registrate'}
-                    </button>
+                    <p className="text-gray-400 font-semibold text-sm">
+                      Para obtener acceso, contacte al administrador del ministerio.
+                    </p>
                   </div>
                 </form>
               </motion.div>
@@ -1074,22 +1064,37 @@ export const TeacherPortal = () => {
               </div>
 
               <div>
-                <label className="block text-lg font-bold text-gray-700 mb-2">
+                <label className="block text-lg font-bold text-gray-700 mb-3">
                   {t.teacherPortal.alertReason}
                 </label>
-                <select
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  {[
+                    { label: 'Recogida Urgente', color: 'bg-kids-coral text-white border-kids-coral' },
+                    { label: 'Emergencia Médica', color: 'bg-red-500 text-white border-red-500' },
+                    { label: 'Comportamiento', color: 'bg-kids-yellow text-gray-800 border-kids-yellow' },
+                    { label: 'Mensaje General', color: 'bg-kids-blue text-white border-kids-blue' },
+                  ].map((option) => (
+                    <button
+                      key={option.label}
+                      type="button"
+                      onClick={() => setAlertReason(option.label)}
+                      className={`px-4 py-3 rounded-bubbly font-bold border-2 transition-all ${
+                        alertReason === option.label
+                          ? option.color + ' scale-105 shadow-lg'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="text"
+                  placeholder="O escriba un mensaje personalizado..."
                   value={alertReason}
                   onChange={(e) => setAlertReason(e.target.value)}
-                  className="w-full px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-coral focus:outline-none font-semibold"
-                >
-                  <option value="">Seleccione...</option>
-                  <option value={t.teacherPortal.needsAttention}>
-                    {t.teacherPortal.needsAttention}
-                  </option>
-                  <option value={t.teacherPortal.pickUpChild}>
-                    {t.teacherPortal.pickUpChild}
-                  </option>
-                </select>
+                  className="w-full px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-coral focus:outline-none font-semibold text-sm"
+                />
               </div>
 
               <button

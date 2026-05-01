@@ -9,7 +9,7 @@ import {
 } from 'recharts';
 import { Download, TrendingUp, Users, FileText, Baby, Star, Smile, Zap } from 'lucide-react';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 const ROOM_COLORS = ['#FFD700', '#4FC3F7', '#FF6B6B', '#69F0AE'];
 const ROOM_LABELS: Record<string, string> = {
@@ -178,7 +178,7 @@ export const Analytics = () => {
       room.value,
       `${Math.round((room.value / totalChildren) * 100)}%`,
     ]);
-    (doc as any).autoTable({
+    autoTable(doc, {
       startY: yPos,
       head: [['Sala', 'Ninos', 'Porcentaje']],
       body: roomTableData,
@@ -204,7 +204,7 @@ export const Analytics = () => {
       week['Jóvenes 10-12'],
       week['Bebés 0-2'] + week['Exploradores 3-5'] + week['Aventureros 6-9'] + week['Jóvenes 10-12'],
     ]);
-    (doc as any).autoTable({
+    autoTable(doc, {
       startY: yPos,
       head: [['Semana', 'Bebes', 'Exploradores', 'Aventureros', 'Jovenes', 'Total']],
       body: weeklyTableData,
@@ -225,7 +225,7 @@ export const Analytics = () => {
     yPos += 14;
 
     const monthlyTableData = monthlyGrowth.map(m => [m.name, m.nuevos, m.registrados]);
-    (doc as any).autoTable({
+    autoTable(doc, {
       startY: yPos,
       head: [['Mes', 'Nuevos', 'Total Acumulado']],
       body: monthlyTableData,
@@ -250,7 +250,7 @@ export const Analytics = () => {
       doc.text('Estos ninos asistieron via registro rapido pero aun no han completado el Formulario de Admision oficial.', 15, yPos);
       doc.text('Se recomienda hacer seguimiento con estas familias antes del proximo servicio.', 15, yPos + 5);
       yPos += 12;
-      (doc as any).autoTable({
+      autoTable(doc, {
         startY: yPos,
         head: [['#', 'Nombre del Nino', 'Accion Requerida']],
         body: intakeFormStats.missingNames.map((n, i) => [i + 1, n, 'Enviar formulario de admision']),

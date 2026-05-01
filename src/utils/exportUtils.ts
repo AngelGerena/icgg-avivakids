@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import QRCode from 'qrcode';
 
@@ -303,7 +303,7 @@ export const exportToExcel = (children: ExportChild[]) => {
 };
 
 export const exportSummaryTable = (children: ExportChild[]) => {
-  const pdf = new jsPDF('l', 'mm', 'a4');
+  const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
   pdf.setFontSize(16);
   pdf.setFont('helvetica', 'bold');
@@ -317,7 +317,7 @@ export const exportSummaryTable = (children: ExportChild[]) => {
   pdf.setFontSize(7);
   pdf.setTextColor(150, 100, 0);
   pdf.setFont('helvetica', 'bold');
-  pdf.text('CONFIDENCIAL: Esta información es confidencial y será utilizada únicamente para el cuidado del menor.', 15, 33);
+  pdf.text('CONFIDENCIAL: Esta informacion es confidencial y sera utilizada unicamente para el cuidado del menor.', 15, 33);
   pdf.setTextColor(0, 0, 0);
   pdf.setFont('helvetica', 'normal');
 
@@ -332,38 +332,28 @@ export const exportSummaryTable = (children: ExportChild[]) => {
       child.room,
       parent?.primary_name || '',
       parent?.primary_phone || '',
-      parent?.primary_email || '',
-      intake?.allergies?.join(', ') || 'None',
-      child.checked_in_today ? '✓' : '',
+      intake?.allergies?.join(', ') || 'Ninguna',
+      child.checked_in_today ? 'Si' : 'No',
     ];
   });
 
-  (pdf as any).autoTable({
+  autoTable(pdf, {
     startY: 38,
-    head: [['Name', 'Number', 'DOB', 'Room', 'Parent', 'Phone', 'Email', 'Allergies', 'Today']],
+    head: [['Nombre', 'Numero', 'Fecha Nac.', 'Sala', 'Padre/Madre', 'Telefono', 'Alergias', 'Presente']],
     body: tableData,
     theme: 'grid',
-    headStyles: {
-      fillColor: [126, 87, 194],
-      fontSize: 9,
-      fontStyle: 'bold',
-    },
-    bodyStyles: {
-      fontSize: 8,
-    },
-    alternateRowStyles: {
-      fillColor: [245, 245, 245],
-    },
+    headStyles: { fillColor: [126, 87, 194], fontSize: 9, fontStyle: 'bold', textColor: 255 },
+    bodyStyles: { fontSize: 8 },
+    alternateRowStyles: { fillColor: [245, 245, 245] },
     columnStyles: {
-      0: { cellWidth: 35 },
-      1: { cellWidth: 20 },
-      2: { cellWidth: 25 },
-      3: { cellWidth: 20 },
-      4: { cellWidth: 35 },
+      0: { cellWidth: 38 },
+      1: { cellWidth: 18 },
+      2: { cellWidth: 24 },
+      3: { cellWidth: 28 },
+      4: { cellWidth: 38 },
       5: { cellWidth: 30 },
-      6: { cellWidth: 40 },
-      7: { cellWidth: 40 },
-      8: { cellWidth: 12, halign: 'center' },
+      6: { cellWidth: 50 },
+      7: { cellWidth: 18, halign: 'center' },
     },
   });
 

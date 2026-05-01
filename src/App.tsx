@@ -39,7 +39,7 @@ function AppContent() {
               <Route path="/intake-form" element={<IntakeForm />} />
               <Route path="/calendar" element={<Calendar />} />
               <Route path="/birthdays" element={<Birthdays />} />
-              <Route path="/admin" element={<ProtectedRoute><TeacherPortal /></ProtectedRoute>} />
+              <Route path="/admin" element={<TeacherPortal />} />
               <Route path="/notifications" element={<ParentWatch />} />
             </Routes>
           </motion.div>

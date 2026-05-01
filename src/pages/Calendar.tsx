@@ -71,7 +71,8 @@ export const Calendar = () => {
 
   const getUpcomingEvents = () => {
     const today = new Date();
-    return events.filter((event) => new Date(event.date) >= today);
+    today.setHours(0, 0, 0, 0);
+    return events.filter((event) => new Date(event.date + 'T12:00:00') >= today);
   };
 
   const monthNames = {
@@ -269,7 +270,7 @@ export const Calendar = () => {
                       <div className="flex flex-wrap gap-4 text-sm">
                         <div className="flex items-center space-x-2 text-kids-blue font-bold">
                           <CalendarIcon className="w-4 h-4" />
-                          <span>{new Date(event.date).toLocaleDateString()}</span>
+                          <span>{new Date(event.date + 'T12:00:00').toLocaleDateString()}</span>
                         </div>
                         {event.time && (
                           <div className="flex items-center space-x-2 text-kids-purple font-bold">

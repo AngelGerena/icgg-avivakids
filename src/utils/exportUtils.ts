@@ -111,7 +111,7 @@ export const exportToPDF = async (children: ExportChild[], includeQR: boolean = 
     yPosition += 5;
 
     pdf.setFont('helvetica', 'normal');
-    pdf.text(`Date of Birth: ${new Date(child.dob).toLocaleDateString()}`, margin + 5, yPosition);
+    pdf.text(`Date of Birth: ${new Date(child.dob + 'T12:00:00').toLocaleDateString()}`, margin + 5, yPosition);
     yPosition += 5;
     pdf.text(`Room/Class: ${child.room}`, margin + 5, yPosition);
     yPosition += 5;
@@ -237,7 +237,7 @@ export const exportToExcel = (children: ExportChild[]) => {
     return {
       'Child Name': child.full_name,
       'Child Number': child.unique_number,
-      'Date of Birth': new Date(child.dob).toLocaleDateString(),
+      'Date of Birth': new Date(child.dob + 'T12:00:00').toLocaleDateString(),
       'Room/Class': child.room,
       'Checked In Today': child.checked_in_today ? 'Yes' : 'No',
       'Check-in Time': child.check_in_time ? new Date(child.check_in_time).toLocaleTimeString() : 'N/A',
@@ -328,7 +328,7 @@ export const exportSummaryTable = (children: ExportChild[]) => {
     return [
       child.full_name,
       child.unique_number,
-      new Date(child.dob).toLocaleDateString(),
+      new Date(child.dob + 'T12:00:00').toLocaleDateString(),
       child.room,
       parent?.primary_name || '',
       parent?.primary_phone || '',

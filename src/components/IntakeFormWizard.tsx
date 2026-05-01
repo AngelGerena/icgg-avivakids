@@ -261,7 +261,7 @@ export const IntakeFormWizard = () => {
         .insert({
           full_name: sectionA.fullName,
           nickname: sectionA.nickname || null,
-          dob: new Date(sectionA.dob).toISOString().split('T')[0],
+          dob: new Date(sectionA.dob + 'T12:00:00').toISOString().split('T')[0],
           gender: sectionA.gender || null,
           photo_url: sectionA.photoUrl || null,
           room: sectionA.room || 'general',

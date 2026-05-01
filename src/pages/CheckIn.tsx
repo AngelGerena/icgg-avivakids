@@ -92,7 +92,7 @@ export const CheckIn = () => {
 
     try {
       // Duplicate check: same name + same DOB
-      const formattedDob = new Date(formData.childDob).toISOString().split('T')[0];
+      const formattedDob = new Date(formData.childDob + 'T12:00:00').toISOString().split('T')[0];
       const { data: existing } = await supabase
         .from('children')
         .select('id, full_name, unique_number')

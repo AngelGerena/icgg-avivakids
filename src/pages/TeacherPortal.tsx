@@ -223,7 +223,7 @@ export const TeacherPortal = () => {
 
       const currentMonth = new Date().getMonth() + 1;
       const birthdaysThisMonth = allChildrenData.filter((child) => {
-        const birthMonth = new Date(child.dob).getMonth() + 1;
+        const birthMonth = new Date(child.dob + 'T12:00:00').getMonth() + 1;
         return birthMonth === currentMonth;
       });
       setBirthdayChildren(birthdaysThisMonth);
@@ -918,7 +918,7 @@ export const TeacherPortal = () => {
                 <div className="flex items-center justify-between mb-4">
                   <Calendar className="w-12 h-12 text-kids-blue" />
                   <div className="text-5xl font-black text-kids-blue">
-                    {events.filter(e => new Date(e.date) >= new Date()).length}
+                    {events.filter(e => new Date(e.date + 'T12:00:00') >= new Date()).length}
                   </div>
                 </div>
                 <div className="text-lg font-bold text-gray-700">
@@ -1261,7 +1261,7 @@ export const TeacherPortal = () => {
                         {event.title}
                       </div>
                       <div className="text-sm font-semibold text-gray-600">
-                        {new Date(event.date).toLocaleDateString()} |{' '}
+                        {new Date(event.date + 'T12:00:00').toLocaleDateString()} |{' '}
                         {event.category}
                       </div>
                     </div>
@@ -1304,7 +1304,7 @@ export const TeacherPortal = () => {
                       <div>
                         <div className="text-xl font-black text-gray-800">{child.full_name}</div>
                         <div className="text-sm font-semibold text-gray-500">
-                          {new Date(child.dob).toLocaleDateString('es-ES', { month: 'long', day: 'numeric' })}
+                          {new Date(child.dob + 'T12:00:00').toLocaleDateString('es-ES', { month: 'long', day: 'numeric' })}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -1479,7 +1479,7 @@ export const TeacherPortal = () => {
                           <div>
                             <span className="font-bold text-gray-600">Fecha de Nacimiento:</span>{' '}
                             <span className="text-gray-800">
-                              {new Date(child.dob).toLocaleDateString()}
+                              {new Date(child.dob + 'T12:00:00').toLocaleDateString()}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -1670,7 +1670,7 @@ export const TeacherPortal = () => {
                         Fecha de Nacimiento
                       </div>
                       <div className="text-lg font-black text-gray-800">
-                        {new Date(selectedChild.dob).toLocaleDateString()}
+                        {new Date(selectedChild.dob + 'T12:00:00').toLocaleDateString()}
                       </div>
                     </div>
 

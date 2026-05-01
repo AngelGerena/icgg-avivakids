@@ -44,18 +44,18 @@ export const Birthdays = () => {
       const todayDate = today.getDate();
 
       const todaysBday = data.filter((child) => {
-        const d = new Date(child.dob);
+        const d = new Date(child.dob + 'T12:00:00');
         return d.getMonth() + 1 === currentMonth && d.getDate() === todayDate;
       });
       setTodaysBirthdays(todaysBday);
 
       const thisMonth = data.filter((child) => {
-        return new Date(child.dob).getMonth() + 1 === currentMonth;
+        return new Date(child.dob + 'T12:00:00').getMonth() + 1 === currentMonth;
       });
       setThisMonthBirthdays(thisMonth);
 
       const upcoming = data.filter((child) => {
-        const birthDate = new Date(child.dob);
+        const birthDate = new Date(child.dob + 'T12:00:00');
         const thisYear = today.getFullYear();
         const nextBirthday = new Date(thisYear, birthDate.getMonth(), birthDate.getDate());
         if (nextBirthday < today) nextBirthday.setFullYear(thisYear + 1);
@@ -65,8 +65,8 @@ export const Birthdays = () => {
 
       upcoming.sort((a, b) => {
         const thisYear = today.getFullYear();
-        const dA = new Date(a.dob);
-        const dB = new Date(b.dob);
+        const dA = new Date(a.dob + 'T12:00:00');
+        const dB = new Date(b.dob + 'T12:00:00');
         const nA = new Date(thisYear, dA.getMonth(), dA.getDate());
         const nB = new Date(thisYear, dB.getMonth(), dB.getDate());
         if (nA < today) nA.setFullYear(thisYear + 1);
@@ -79,7 +79,7 @@ export const Birthdays = () => {
   };
 
   const calculateAge = (dob: string) => {
-    const birth = new Date(dob);
+    const birth = new Date(dob + 'T12:00:00');
     const today = new Date();
     let age = today.getFullYear() - birth.getFullYear();
     const m = today.getMonth() - birth.getMonth();
@@ -88,7 +88,7 @@ export const Birthdays = () => {
   };
 
   const formatDate = (dob: string) => {
-    return new Date(dob).toLocaleDateString('es-ES', { month: 'long', day: 'numeric' });
+    return new Date(dob + 'T12:00:00').toLocaleDateString('es-ES', { month: 'long', day: 'numeric' });
   };
 
   const BirthdayCard = ({ child, celebrated }: { child: Child; celebrated?: boolean }) => (

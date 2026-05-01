@@ -79,6 +79,17 @@ export const TeacherPortal = () => {
   const [ackNotification, setAckNotification] = useState<{ parentName: string; childNumber: string } | null>(null);
   const [editingParentId, setEditingParentId] = useState<string | null>(null);
   const [editParentForm, setEditParentForm] = useState({ primary_name: '', primary_phone: '', primary_email: '', secondary_name: '', secondary_phone: '' });
+
+  // Check-in tab state
+  const STAFF_PIN = import.meta.env.VITE_CHECKIN_PIN || '1234';
+  const [ciPinUnlocked, setCiPinUnlocked] = useState(false);
+  const [ciPinEntry, setCiPinEntry] = useState('');
+  const [ciPinError, setCiPinError] = useState(false);
+  const [ciSuccess, setCiSuccess] = useState(false);
+  const [ciChildNumber, setCiChildNumber] = useState('');
+  const [ciChildId, setCiChildId] = useState('');
+  const [ciLoading, setCiLoading] = useState(false);
+  const [ciForm, setCiForm] = useState({ childName: '', parentName: '', parentPhone: '', parentEmail: '', childAge: '', childDob: '', room: '' });
   const [selectedChild, setSelectedChild] = useState<any>(null);
   const [showTutorial, setShowTutorial] = useState(false);
 
@@ -510,6 +521,61 @@ export const TeacherPortal = () => {
     fetchDashboardData();
   };
 
+  const ciHandlePinDigit = (digit: string) => {
+    if (ciPinEntry.length >= 4) return;
+    const next = ciPinEntry + digit;
+    setCiPinEntry(next);
+    setCiPinError(false);
+    if (next.length === 4) {
+      setTimeout(() => {
+        if (next === STAFF_PIN) { setCiPinUnlocked(true); setCiPinEntry(''); }
+        else { setCiPinError(true); setCiPinEntry(''); }
+      }, 200);
+    }
+  };
+
+  const ciReset = () => {
+    setCiPinUnlocked(false); setCiPinEntry(''); setCiPinError(false);
+    setCiSuccess(false); setCiChildNumber(''); setCiChildId('');
+    setCiForm({ childName: '', parentName: '', parentPhone: '', parentEmail: '', childAge: '', childDob: '', room: '' });
+  };
+
+  const ciGenerateNumber = async (): Promise<string> => {
+    let unique = false; let number = '';
+    while (!unique) {
+      number = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+      const { data } = await supabase.from('children').select('unique_number').eq('unique_number', number).maybeSingle();
+      if (!data) unique = true;
+    }
+    return number;
+  };
+
+  const ciHandleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCiLoading(true);
+    try {
+      const formattedDob = new Date(ciForm.childDob + 'T12:00:00').toISOString().split('T')[0];
+      const { data: existing } = await supabase.from('children').select('id, full_name, unique_number').ilike('full_name', ciForm.childName.trim()).eq('dob', formattedDob).maybeSingle();
+      if (existing) {
+        const ok = window.confirm(`Ya existe un registro para ${existing.full_name} (Número: ${existing.unique_number}). ¿Desea registrar de todas formas?`);
+        if (!ok) { setCiLoading(false); return; }
+      }
+      const uniqueNumber = await ciGenerateNumber();
+      const { data: childData, error: childError } = await supabase.from('children').insert({ full_name: ciForm.childName.trim(), dob: formattedDob, room: ciForm.room, unique_number: uniqueNumber, checked_in_today: true, check_in_time: new Date().toISOString() }).select().single();
+      if (childError) throw childError;
+      const { error: parentError } = await supabase.from('parents').insert({ child_id: childData.id, primary_name: ciForm.parentName.trim(), primary_relationship: 'Parent', primary_phone: ciForm.parentPhone.trim(), primary_email: ciForm.parentEmail.trim() });
+      if (parentError) throw parentError;
+      setCiChildNumber(uniqueNumber); setCiChildId(childData.id); setCiSuccess(true);
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#FFD700', '#4FC3F7', '#FF6B6B', '#69F0AE', '#CE93D8'] });
+      fetchDashboardData();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : JSON.stringify(err);
+      alert(`Error al registrar: ${msg}`);
+    } finally {
+      setCiLoading(false);
+    }
+  };
+
   const saveParentEdit = async (childId: string) => {
     const { error } = await supabase
       .from('parents')
@@ -543,7 +609,12 @@ export const TeacherPortal = () => {
       ? new Date(newEvent.date + 'T12:00:00').toISOString().split('T')[0]
       : newEvent.date;
 
-    await supabase.from('events').insert({ ...newEvent, date: fixedDate });
+    const { error } = await supabase.from('events').insert({ ...newEvent, date: fixedDate });
+
+    if (error) {
+      alert(`Error al guardar evento: ${error.message}`);
+      return;
+    }
 
     setNewEvent({
       title: '',
@@ -1563,24 +1634,163 @@ export const TeacherPortal = () => {
         {activeTab === 'analytics' && <Analytics />}
 
         {activeTab === 'checkin' && (
-          <div className="bg-white rounded-bubbly shadow-xl border border-gray-100 overflow-hidden">
-            <div className="bg-gradient-to-r from-kids-blue to-kids-purple p-6">
-              <h2 className="text-3xl font-black text-white flex items-center gap-3">
-                <ClipboardCheck className="w-8 h-8" />
-                Registro de Niños
-              </h2>
-              <p className="text-white/80 font-semibold text-sm mt-1">
-                Use el PIN de personal para registrar la entrada de un nuevo niño
-              </p>
-            </div>
-            <div className="p-4">
-              <iframe
-                src="/check-in"
-                className="w-full rounded-bubbly border-0"
-                style={{ height: '85vh' }}
-                title="Check-In"
-              />
-            </div>
+          <div className="space-y-6">
+            <AnimatePresence mode="wait">
+              {/* PIN GATE */}
+              {!ciPinUnlocked && (
+                <motion.div key="ci-pin" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+                  className="bg-white rounded-bubbly p-10 shadow-xl border border-gray-100 max-w-sm mx-auto text-center"
+                >
+                  <div className="flex justify-center mb-4">
+                    <div className="bg-kids-purple/10 rounded-full p-4">
+                      <Lock className="w-10 h-10 text-kids-purple" />
+                    </div>
+                  </div>
+                  <h2 className="text-2xl font-black text-kids-purple mb-1">PIN de Personal</h2>
+                  <p className="text-gray-500 font-semibold mb-6 text-sm">Ingrese el PIN para habilitar el registro</p>
+                  <div className="flex justify-center gap-4 mb-6">
+                    {[0,1,2,3].map(i => (
+                      <motion.div key={i} animate={{ scale: ciPinEntry.length > i ? 1.2 : 1 }}
+                        className={`w-4 h-4 rounded-full border-2 transition-colors ${ciPinEntry.length > i ? 'bg-kids-purple border-kids-purple' : 'bg-white border-gray-300'}`}
+                      />
+                    ))}
+                  </div>
+                  {ciPinError && (
+                    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-red-500 font-bold text-sm mb-4">
+                      PIN incorrecto. Intente de nuevo.
+                    </motion.p>
+                  )}
+                  <div className="grid grid-cols-3 gap-3">
+                    {['1','2','3','4','5','6','7','8','9','','0','del'].map((d, i) => {
+                      if (d === '') return <div key={i} />;
+                      if (d === 'del') return (
+                        <motion.button key={i} whileTap={{ scale: 0.92 }} onClick={() => { setCiPinEntry(p => p.slice(0,-1)); setCiPinError(false); }}
+                          className="flex items-center justify-center h-14 rounded-bubbly bg-gray-100 text-gray-600 font-bold text-lg hover:bg-gray-200 transition-colors"
+                        ><Delete className="w-5 h-5" /></motion.button>
+                      );
+                      return (
+                        <motion.button key={i} whileTap={{ scale: 0.92 }} onClick={() => ciHandlePinDigit(d)}
+                          className="flex items-center justify-center h-14 rounded-bubbly bg-kids-purple/10 text-kids-purple font-black text-xl hover:bg-kids-purple/20 transition-colors"
+                        >{d}</motion.button>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* SUCCESS SCREEN */}
+              {ciPinUnlocked && ciSuccess && (
+                <motion.div key="ci-success" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                  className="bg-white rounded-bubbly p-8 shadow-xl border border-gray-100 max-w-2xl mx-auto text-center"
+                >
+                  <div className="bg-gradient-to-br from-kids-mint to-kids-blue rounded-bubbly p-8 mb-6">
+                    <motion.div animate={{ scale: [1, 1.2, 1], rotate: [0, 360] }} transition={{ duration: 0.8 }} className="flex justify-center mb-4">
+                      <CheckCircle className="w-20 h-20 text-white" />
+                    </motion.div>
+                    <h2 className="text-3xl font-black text-white mb-2">¡Registro Exitoso!</h2>
+                    <p className="text-white/80 font-semibold">Niño registrado y check-in completado</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-bubbly p-6 mb-6 border border-gray-100">
+                    <p className="text-gray-600 font-semibold mb-2">Número asignado al niño:</p>
+                    <div className="text-7xl font-black text-kids-purple mb-4">{ciChildNumber}</div>
+                    <p className="text-sm text-gray-500 font-semibold mb-6">Entregue este número al padre/madre</p>
+                    <QRCodeBadge childName={ciForm.childName || 'Niño'} childNumber={ciChildNumber} childId={ciChildId} />
+                  </div>
+                  <div className="flex gap-4 justify-center">
+                    <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                      onClick={() => { setCiSuccess(false); setCiForm({ childName: '', parentName: '', parentPhone: '', parentEmail: '', childAge: '', childDob: '', room: '' }); }}
+                      className="px-8 py-3 bg-gradient-to-r from-kids-blue to-kids-purple text-white font-black rounded-bubbly shadow-lg"
+                    >Registrar Otro Niño</motion.button>
+                    <button onClick={ciReset} className="px-8 py-3 bg-gray-100 text-gray-600 font-bold rounded-bubbly hover:bg-gray-200 transition-colors">
+                      Cerrar Sesión de Personal
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* CHECK-IN FORM */}
+              {ciPinUnlocked && !ciSuccess && (
+                <motion.div key="ci-form" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-3xl font-black text-kids-blue flex items-center gap-3">
+                      <ClipboardCheck className="w-8 h-8" />
+                      Registro de Niños
+                    </h2>
+                    <button onClick={ciReset} className="text-sm text-gray-400 font-semibold hover:text-red-400 transition-colors flex items-center gap-1">
+                      <Lock className="w-4 h-4" /> Bloquear
+                    </button>
+                  </div>
+
+                  <form onSubmit={ciHandleSubmit}>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Child info */}
+                      <div className="bg-white rounded-bubbly p-6 shadow-xl border border-gray-100 space-y-4">
+                        <h3 className="text-lg font-black text-kids-purple flex items-center gap-2">
+                          <Users className="w-5 h-5" /> Información del Niño
+                        </h3>
+                        <div>
+                          <label className="block text-sm font-bold text-gray-600 mb-1">Nombre completo</label>
+                          <input type="text" value={ciForm.childName} onChange={e => setCiForm({...ciForm, childName: e.target.value})} required
+                            className="w-full px-4 py-3 rounded-bubbly border-2 border-kids-blue focus:border-kids-purple focus:outline-none font-semibold" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-sm font-bold text-gray-600 mb-1">Edad</label>
+                            <input type="number" value={ciForm.childAge} onChange={e => setCiForm({...ciForm, childAge: e.target.value})} required
+                              className="w-full px-4 py-3 rounded-bubbly border-2 border-kids-yellow focus:border-kids-purple focus:outline-none font-semibold" />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-bold text-gray-600 mb-1">Fecha de nacimiento</label>
+                            <input type="date" value={ciForm.childDob} onChange={e => setCiForm({...ciForm, childDob: e.target.value})} required
+                              className="w-full px-4 py-3 rounded-bubbly border-2 border-kids-yellow focus:border-kids-purple focus:outline-none font-semibold" />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-bold text-gray-600 mb-1">Sala / Clase</label>
+                          <select value={ciForm.room} onChange={e => setCiForm({...ciForm, room: e.target.value})} required
+                            className="w-full px-4 py-3 rounded-bubbly border-2 border-kids-mint focus:border-kids-purple focus:outline-none font-semibold bg-white"
+                          >
+                            <option value="">Seleccione...</option>
+                            <option value="babies">Bebés (0-2 años)</option>
+                            <option value="explorers">Exploradores (3-4 años)</option>
+                            <option value="adventurers">Principiantes/Primarios (5-8 años)</option>
+                            <option value="youth">Jóvenes (9-12 años)</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Parent info */}
+                      <div className="bg-white rounded-bubbly p-6 shadow-xl border border-gray-100 space-y-4">
+                        <h3 className="text-lg font-black text-kids-coral flex items-center gap-2">
+                          <Users className="w-5 h-5" /> Información del Padre/Madre
+                        </h3>
+                        <div>
+                          <label className="block text-sm font-bold text-gray-600 mb-1">Nombre completo</label>
+                          <input type="text" value={ciForm.parentName} onChange={e => setCiForm({...ciForm, parentName: e.target.value})} required
+                            className="w-full px-4 py-3 rounded-bubbly border-2 border-kids-coral focus:border-kids-purple focus:outline-none font-semibold" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-bold text-gray-600 mb-1">Teléfono</label>
+                          <input type="tel" value={ciForm.parentPhone} onChange={e => setCiForm({...ciForm, parentPhone: e.target.value})} required
+                            className="w-full px-4 py-3 rounded-bubbly border-2 border-kids-purple focus:border-kids-blue focus:outline-none font-semibold" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-bold text-gray-600 mb-1">Correo electrónico</label>
+                          <input type="email" value={ciForm.parentEmail} onChange={e => setCiForm({...ciForm, parentEmail: e.target.value})} required
+                            className="w-full px-4 py-3 rounded-bubbly border-2 border-kids-purple focus:border-kids-blue focus:outline-none font-semibold" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <motion.button type="submit" disabled={ciLoading} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                      className="w-full mt-6 py-4 bg-gradient-to-r from-kids-blue to-kids-purple text-white text-xl font-black rounded-bubbly shadow-lg hover:shadow-xl transition-all disabled:opacity-50"
+                    >
+                      {ciLoading ? 'Registrando...' : 'Registrar Niño y Completar Check-In'}
+                    </motion.button>
+                  </form>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         )}
 

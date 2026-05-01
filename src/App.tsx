@@ -6,7 +6,6 @@ import { FloatingShapes } from './components/FloatingShapes';
 import { AlertBanner } from './components/AlertBanner';
 import { MouseTrail } from './components/MouseTrail';
 import { Home } from './pages/Home';
-import { CheckIn } from './pages/CheckIn';
 import { IntakeForm } from './pages/IntakeForm';
 import { Calendar } from './pages/Calendar';
 import { Birthdays } from './pages/Birthdays';
@@ -34,7 +33,6 @@ function AppContent() {
           >
             <Routes location={location}>
               <Route path="/" element={<Home />} />
-              <Route path="/check-in" element={<CheckIn />} />
               <Route path="/intake-form" element={<IntakeForm />} />
               <Route path="/calendar" element={<Calendar />} />
               <Route path="/birthdays" element={<Birthdays />} />

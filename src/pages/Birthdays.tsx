@@ -35,8 +35,10 @@ export const Birthdays = () => {
   }, [todaysBirthdays]);
 
   const fetchBirthdays = async () => {
+    try {
     // Only fetch fields needed — no last names, no parent info, no contact data
-    const { data } = await supabase.from('children').select('id, full_name, dob, birthday_celebrated');
+    const { data, error } = await supabase.from('children').select('id, full_name, dob, birthday_celebrated');
+    if (error) { console.error('Birthdays fetch error:', error.message); return; }
 
     if (data) {
       const currentMonth = new Date().getMonth() + 1;
@@ -75,6 +77,9 @@ export const Birthdays = () => {
       });
 
       setUpcomingBirthdays(upcoming);
+    }
+    } catch (err) {
+      console.error('Birthdays unexpected error:', err);
     }
   };
 

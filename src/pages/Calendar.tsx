@@ -15,13 +15,15 @@ export const Calendar = () => {
   }, []);
 
   const fetchEvents = async () => {
-    const { data } = await supabase
-      .from('events')
-      .select('*')
-      .order('date', { ascending: true });
-
-    if (data) {
-      setEvents(data);
+    try {
+      const { data, error } = await supabase
+        .from('events')
+        .select('*')
+        .order('date', { ascending: true });
+      if (error) { console.error('Calendar fetch error:', error.message); return; }
+      if (data) setEvents(data);
+    } catch (err) {
+      console.error('Calendar unexpected error:', err);
     }
   };
 
@@ -158,7 +160,7 @@ export const Calendar = () => {
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white/95 backdrop-blur-md rounded-bubbly p-8 shadow-2xl"
+            className="bg-white rounded-bubbly p-8 shadow-2xl border border-gray-100"
           >
             <div className="flex items-center justify-between mb-6">
               <button
@@ -173,7 +175,7 @@ export const Calendar = () => {
               </button>
               <h2 className="text-3xl font-black text-kids-purple">
                 {
-                  monthNames[t === undefined ? 'es' : 'es'][
+                  monthNames[language as 'es' | 'en'] ?? monthNames['es'][
                     currentMonth.getMonth()
                   ]
                 }{' '}
@@ -192,7 +194,7 @@ export const Calendar = () => {
             </div>
 
             <div className="grid grid-cols-7 gap-2">
-              {dayNames[t === undefined ? 'es' : 'es'].map((day) => (
+              {dayNames[language as 'es' | 'en'] ?? dayNames['es'].map((day) => (
                 <div
                   key={day}
                   className="text-center font-black text-kids-blue py-2"
@@ -208,7 +210,7 @@ export const Calendar = () => {
                     key={index}
                     className={`min-h-24 p-2 rounded-lg border-2 ${
                       day
-                        ? 'bg-white/90 backdrop-blur-sm border-gray-200 hover:border-kids-blue hover:shadow-md transition-all cursor-pointer'
+                        ? 'bg-white border-gray-200 hover:border-kids-blue hover:shadow-md transition-all cursor-pointer'
                         : 'bg-gray-50/50 border-transparent'
                     }`}
                   >
@@ -252,7 +254,7 @@ export const Calendar = () => {
                   viewport={{ once: true, amount: 0.2 }}
                   transition={{ delay: index * 0.1, duration: 0.4 }}
                   whileHover={{ scale: 1.02 }}
-                  className="bg-white/95 backdrop-blur-md rounded-bubbly p-6 shadow-xl border-l-8"
+                  className="bg-white rounded-bubbly p-6 shadow-xl border border-gray-100 border-l-8"
                   style={{
                     borderLeftColor: event.color || '#CE93D8',
                   }}
@@ -299,7 +301,7 @@ export const Calendar = () => {
                 </motion.div>
               ))
             ) : (
-              <div className="text-center py-12 bg-white/95 backdrop-blur-md rounded-bubbly shadow-xl">
+              <div className="text-center py-12 bg-white rounded-bubbly shadow-xl border border-gray-100">
                 <p className="text-xl font-bold text-gray-500">
                   No hay eventos próximos
                 </p>

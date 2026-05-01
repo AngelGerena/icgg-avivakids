@@ -8,14 +8,22 @@ export const AlertBanner = () => {
 
   useEffect(() => {
     const fetchActiveAlerts = async () => {
-      const { data } = await supabase
-        .from('alerts')
-        .select('*')
-        .eq('resolved', false)
-        .order('triggered_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('alerts')
+          .select('*')
+          .eq('resolved', false)
+          .order('triggered_at', { ascending: false });
 
-      if (data) {
-        setActiveAlerts(data);
+        if (error) {
+          console.error('AlertBanner fetch error:', error.message);
+          return;
+        }
+        if (data) {
+          setActiveAlerts(data);
+        }
+      } catch (err) {
+        console.error('AlertBanner unexpected error:', err);
       }
     };
 
@@ -48,7 +56,7 @@ export const AlertBanner = () => {
           initial={{ y: -100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: -100, opacity: 0 }}
-          className="fixed top-20 left-0 right-0 z-40"
+          className="fixed top-16 lg:top-24 left-0 right-0 z-40"
         >
           {activeAlerts.map((alert) => (
             <motion.div

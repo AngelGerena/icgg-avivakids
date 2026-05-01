@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Heart, Shield, Users, BookOpen, Calendar, Baby, Church } from 'lucide-react';
+import { Heart, Shield, Users, BookOpen, Calendar, Baby } from 'lucide-react';
 
 export const Home = () => {
   const { t } = useLanguage();
@@ -254,6 +254,9 @@ export const Home = () => {
                       src={group.image}
                       alt={t.checkIn.rooms[group.titleKey]}
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
                     />
                   </div>
 

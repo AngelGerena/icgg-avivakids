@@ -28,6 +28,34 @@ import { QRCodeBadge } from '../components/QRCodeBadge';
 import { TutorialSlideshow } from '../components/TutorialSlideshow';
 import { exportToPDF, exportToExcel, exportSummaryTable } from '../utils/exportUtils';
 
+// Uplifting acknowledgment chime — ascending major chord
+let ackAudioCtx: AudioContext | null = null;
+const playAckChime = () => {
+  try {
+    if (!ackAudioCtx) {
+      ackAudioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    if (ackAudioCtx.state === 'suspended') ackAudioCtx.resume();
+    const notes = [392.00, 523.25, 659.25, 783.99, 1046.50]; // G4 C5 E5 G5 C6
+    notes.forEach((freq, i) => {
+      const osc = ackAudioCtx!.createOscillator();
+      const gain = ackAudioCtx!.createGain();
+      osc.connect(gain);
+      gain.connect(ackAudioCtx!.destination);
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const start = ackAudioCtx!.currentTime + i * 0.12;
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(0.35, start + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.5);
+      osc.start(start);
+      osc.stop(start + 0.5);
+    });
+  } catch (e) {
+    console.warn('Ack chime failed:', e);
+  }
+};
+
 export const TeacherPortal = () => {
   const { t } = useLanguage();
   const [authenticated, setAuthenticated] = useState(false);
@@ -47,6 +75,7 @@ export const TeacherPortal = () => {
   >('dashboard');
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [alertHistory, setAlertHistory] = useState<Alert[]>([]);
+  const [ackNotification, setAckNotification] = useState<{ parentName: string; childNumber: string } | null>(null);
   const [selectedChild, setSelectedChild] = useState<any>(null);
   const [showTutorial, setShowTutorial] = useState(false);
 
@@ -78,6 +107,37 @@ export const TeacherPortal = () => {
   useEffect(() => {
     if (authenticated) {
       fetchDashboardData();
+
+      // Subscribe to parent acknowledgments in real time
+      const ackChannel = supabase
+        .channel('alert-acknowledgments')
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'alerts',
+            filter: 'parent_acknowledged=eq.true',
+          },
+          (payload) => {
+            const updated = payload.new as any;
+            if (updated.parent_acknowledged && updated.acknowledged_by) {
+              setAckNotification({
+                parentName: updated.acknowledged_by,
+                childNumber: updated.child_number,
+              });
+              playAckChime();
+              fetchDashboardData();
+              // Auto dismiss after 8 seconds
+              setTimeout(() => setAckNotification(null), 8000);
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(ackChannel);
+      };
     }
   }, [authenticated]);
 
@@ -825,6 +885,43 @@ export const TeacherPortal = () => {
 
   return (
     <div className="min-h-screen py-8 px-4">
+
+      {/* Parent acknowledgment notification banner */}
+      <AnimatePresence>
+        {ackNotification && (
+          <motion.div
+            initial={{ opacity: 0, y: -80 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -80 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-4"
+          >
+            <div className="bg-gradient-to-r from-kids-mint to-kids-blue rounded-bubbly p-5 shadow-2xl border-4 border-white flex items-center gap-4">
+              <motion.div
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 0.6, repeat: 3 }}
+                className="text-4xl"
+              >
+                🏃
+              </motion.div>
+              <div className="flex-1">
+                <div className="text-white font-black text-lg leading-tight">
+                  {ackNotification.parentName} — En Camino
+                </div>
+                <div className="text-white/80 font-semibold text-sm">
+                  Niño #{ackNotification.childNumber} · El padre/madre confirmó la alerta
+                </div>
+              </div>
+              <button
+                onClick={() => setAckNotification(null)}
+                className="text-white/70 hover:text-white font-black text-xl"
+              >
+                ×
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <div className="container mx-auto max-w-7xl">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-4xl md:text-5xl font-black text-kids-purple">
@@ -1134,6 +1231,11 @@ export const TeacherPortal = () => {
                         {alert.resolved && (
                           <span className="px-3 py-1 bg-gray-400 text-white rounded-full text-xs font-bold">
                             Resuelto
+                          </span>
+                        )}
+                        {alert.parent_acknowledged && (
+                          <span className="px-3 py-1 bg-kids-blue text-white rounded-full text-xs font-bold flex items-center gap-1">
+                            🏃 {alert.acknowledged_by} — En Camino
                           </span>
                         )}
                       </div>

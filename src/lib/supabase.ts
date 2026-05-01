@@ -81,4 +81,7 @@ export interface Alert {
   sms_sent?: boolean;
   resolved_at?: string;
   resolved_by?: string;
+  parent_acknowledged?: boolean;
+  acknowledged_at?: string;
+  acknowledged_by?: string;
 }

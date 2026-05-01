@@ -65,6 +65,7 @@ export const ParentWatch = () => {
   const [parentEmail, setParentEmail] = useState('');
   const [childName, setChildName] = useState('');
   const [childId, setChildId] = useState('');
+  const [parentName, setParentName] = useState('');
   const [activeAlert, setActiveAlert] = useState<Alert | null>(null);
   const [loginError, setLoginError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
@@ -109,7 +110,7 @@ export const ParentWatch = () => {
       // Verify parent email matches
       const { data: parent, error: parentError } = await supabase
         .from('parents')
-        .select('primary_email')
+        .select('primary_email, primary_name')
         .eq('child_id', child.id)
         .maybeSingle();
 
@@ -127,6 +128,7 @@ export const ParentWatch = () => {
 
       setChildName(child.full_name.trim().split(' ')[0]);
       setChildId(child.id);
+      setParentName(parent.primary_name || parentEmail.split('@')[0]);
 
       // Play a soft confirmation tone so parent knows audio is active
       setTimeout(() => playChime(), 300);
@@ -165,7 +167,18 @@ export const ParentWatch = () => {
     }
   };
 
-  const dismissAlert = () => {
+  const dismissAlert = async () => {
+    if (activeAlert) {
+      // Write acknowledgment back to Supabase so teacher sees it
+      await supabase
+        .from('alerts')
+        .update({
+          parent_acknowledged: true,
+          acknowledged_at: new Date().toISOString(),
+          acknowledged_by: parentName,
+        })
+        .eq('id', activeAlert.id);
+    }
     setActiveAlert(null);
     setScreen('watching');
   };

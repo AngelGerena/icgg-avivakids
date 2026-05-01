@@ -254,17 +254,49 @@ export const TeacherPortal = () => {
       childNumber = data.childNumber || data.child_number || '';
     }
 
-    const { data: childData } = await supabase
+    childNumber = childNumber.toString().trim();
+
+    if (!childNumber) {
+      alert('Por favor ingrese un número válido.');
+      return;
+    }
+
+    // Search by unique number first
+    const { data: childData, error: childError } = await supabase
       .from('children')
       .select('*, parents(*), intake_forms(*)')
       .eq('unique_number', childNumber)
       .maybeSingle();
 
+    if (childError) {
+      console.error('QR search error:', childError);
+      alert(`Error al buscar: ${childError.message}`);
+      return;
+    }
+
     if (childData) {
       setSelectedChild(childData);
       setShowQRScanner(false);
+      return;
+    }
+
+    // Fallback: search by name if number not found
+    const { data: nameResults, error: nameError } = await supabase
+      .from('children')
+      .select('*, parents(*), intake_forms(*)')
+      .ilike('full_name', `%${childNumber}%`)
+      .limit(1)
+      .maybeSingle();
+
+    if (nameError) {
+      console.error('Name search error:', nameError);
+    }
+
+    if (nameResults) {
+      setSelectedChild(nameResults);
+      setShowQRScanner(false);
     } else {
-      alert('Niño no encontrado');
+      alert(`No se encontró ningún niño con el número o nombre: "${childNumber}"`);
     }
   };
 
@@ -465,7 +497,7 @@ export const TeacherPortal = () => {
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white/95 backdrop-blur-xl rounded-bubbly p-8 sm:p-12 shadow-2xl max-w-md w-full border-2 border-white/20"
+          className="bg-white rounded-bubbly p-8 sm:p-12 shadow-2xl max-w-md w-full border-2 border-gray-100"
         >
           <div className="text-center mb-8">
             <KeyRound className="w-16 h-16 text-kids-blue mx-auto mb-4" />
@@ -552,7 +584,7 @@ export const TeacherPortal = () => {
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white/95 backdrop-blur-xl rounded-bubbly p-8 sm:p-12 shadow-2xl max-w-md w-full border-2 border-white/20"
+          className="bg-white rounded-bubbly p-8 sm:p-12 shadow-2xl max-w-md w-full border-2 border-gray-100"
         >
           <AnimatePresence mode="wait">
             {isForgotPassword ? (
@@ -866,7 +898,7 @@ export const TeacherPortal = () => {
               </motion.div>
             </div>
 
-            <div className="bg-white/95 backdrop-blur-xl rounded-bubbly p-8 shadow-xl border border-white/20">
+            <div className="bg-white rounded-bubbly p-8 shadow-xl border border-gray-100">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-3xl font-black text-kids-blue flex items-center">
                   <Users className="w-8 h-8 mr-3" />
@@ -926,7 +958,7 @@ export const TeacherPortal = () => {
               )}
             </div>
 
-            <div className="bg-white/95 backdrop-blur-xl rounded-bubbly p-8 shadow-xl border border-white/20">
+            <div className="bg-white rounded-bubbly p-8 shadow-xl border border-gray-100">
               <h2 className="text-3xl font-black text-kids-purple mb-6 flex items-center">
                 <Search className="w-8 h-8 mr-3" />
                 {t.teacherPortal.searchIntake}
@@ -938,7 +970,7 @@ export const TeacherPortal = () => {
                   placeholder={t.teacherPortal.searchPlaceholder}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                   className="flex-1 px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-purple focus:outline-none font-semibold"
                 />
                 <button
@@ -986,7 +1018,7 @@ export const TeacherPortal = () => {
         )}
 
         {activeTab === 'alerts' && (
-          <div className="bg-white/95 backdrop-blur-xl rounded-bubbly p-8 shadow-xl border border-white/20">
+          <div className="bg-white rounded-bubbly p-8 shadow-xl border border-gray-100">
             <h2 className="text-3xl font-black text-kids-coral mb-6 flex items-center">
               <Bell className="w-8 h-8 mr-3" />
               {t.teacherPortal.alertPanel}
@@ -1033,7 +1065,7 @@ export const TeacherPortal = () => {
               </button>
             </div>
 
-            <div className="bg-white/95 backdrop-blur-xl rounded-bubbly p-8 shadow-xl border border-white/20 mt-8">
+            <div className="bg-white rounded-bubbly p-8 shadow-xl border border-gray-100 mt-8">
               <h2 className="text-3xl font-black text-kids-purple mb-6">
                 Historial de Alertas
               </h2>
@@ -1088,7 +1120,7 @@ export const TeacherPortal = () => {
 
         {activeTab === 'events' && (
           <div className="space-y-8">
-            <div className="bg-white/95 backdrop-blur-xl rounded-bubbly p-8 shadow-xl border border-white/20">
+            <div className="bg-white rounded-bubbly p-8 shadow-xl border border-gray-100">
               <h2 className="text-3xl font-black text-kids-blue mb-6 flex items-center">
                 <Plus className="w-8 h-8 mr-3" />
                 {t.calendar.addEvent}
@@ -1169,7 +1201,7 @@ export const TeacherPortal = () => {
               </form>
             </div>
 
-            <div className="bg-white/95 backdrop-blur-xl rounded-bubbly p-8 shadow-xl border border-white/20">
+            <div className="bg-white rounded-bubbly p-8 shadow-xl border border-gray-100">
               <h2 className="text-3xl font-black text-kids-purple mb-6">
                 Eventos Existentes
               </h2>
@@ -1203,42 +1235,89 @@ export const TeacherPortal = () => {
         )}
 
         {activeTab === 'birthdays' && (
-          <div className="bg-white/95 backdrop-blur-xl rounded-bubbly p-8 shadow-xl border border-white/20">
-            <h2 className="text-3xl font-black text-kids-yellow mb-6 flex items-center">
-              <Cake className="w-8 h-8 mr-3" />
-              {t.teacherPortal.birthdayManager}
-            </h2>
+          <div className="space-y-8">
+            {/* This Month */}
+            <div className="bg-white rounded-bubbly p-8 shadow-xl border border-gray-100">
+              <h2 className="text-3xl font-black text-kids-yellow mb-2 flex items-center">
+                <Cake className="w-8 h-8 mr-3" />
+                {t.teacherPortal.birthdayManager}
+              </h2>
+              <p className="text-gray-500 font-semibold mb-6 text-sm">
+                Cumpleaños este mes — marque como celebrado para que aparezca en la página pública.
+              </p>
 
-            <div className="space-y-4">
-              {birthdayChildren.map((child) => (
-                <div
-                  key={child.id}
-                  className="flex items-center justify-between p-4 bg-gray-50 rounded-bubbly"
-                >
-                  <div>
-                    <div className="text-xl font-black text-gray-800">
+              {birthdayChildren.length === 0 ? (
+                <div className="text-center py-8 text-gray-400 font-bold">
+                  No hay cumpleaños registrados este mes.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {birthdayChildren.map((child) => (
+                    <div
+                      key={child.id}
+                      className="flex items-center justify-between p-4 bg-gray-50 rounded-bubbly border border-gray-200"
+                    >
+                      <div>
+                        <div className="text-xl font-black text-gray-800">{child.full_name}</div>
+                        <div className="text-sm font-semibold text-gray-500">
+                          {new Date(child.dob).toLocaleDateString('es-ES', { month: 'long', day: 'numeric' })}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => toggleBirthdayCelebrated(child.id, child.birthday_celebrated)}
+                        className={`px-4 py-2 rounded-bubbly font-bold transition-all ${
+                          child.birthday_celebrated
+                            ? 'bg-kids-mint text-white'
+                            : 'bg-gray-200 text-gray-700 hover:bg-kids-yellow hover:text-white'
+                        }`}
+                      >
+                        {child.birthday_celebrated ? t.birthdays.celebrated : t.teacherPortal.markCelebrated}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Edit DOB — all children */}
+            <div className="bg-white rounded-bubbly p-8 shadow-xl border border-gray-100">
+              <h3 className="text-2xl font-black text-kids-blue mb-2 flex items-center">
+                <Cake className="w-6 h-6 mr-2" />
+                Editar Fecha de Nacimiento
+              </h3>
+              <p className="text-gray-500 font-semibold mb-6 text-sm">
+                Actualice la fecha de nacimiento de cualquier niño/a para que aparezca correctamente en la página pública de cumpleaños.
+              </p>
+              <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+                {allChildren.map((child) => (
+                  <div
+                    key={child.id}
+                    className="flex items-center justify-between gap-4 p-4 bg-gray-50 rounded-bubbly border border-gray-200"
+                  >
+                    <div className="font-black text-gray-800 min-w-0 flex-1 truncate">
                       {child.full_name}
                     </div>
-                    <div className="text-sm font-semibold text-gray-600">
-                      {new Date(child.dob).toLocaleDateString()}
-                    </div>
+                    <input
+                      type="date"
+                      defaultValue={child.dob ? child.dob.split('T')[0] : ''}
+                      onBlur={async (e) => {
+                        const newDob = e.target.value;
+                        if (!newDob || newDob === child.dob?.split('T')[0]) return;
+                        const { error } = await supabase
+                          .from('children')
+                          .update({ dob: newDob })
+                          .eq('id', child.id);
+                        if (error) {
+                          alert(`Error al actualizar: ${error.message}`);
+                        } else {
+                          fetchDashboardData();
+                        }
+                      }}
+                      className="px-3 py-2 rounded-bubbly border-2 border-kids-blue focus:border-kids-purple focus:outline-none text-sm font-semibold"
+                    />
                   </div>
-                  <button
-                    onClick={() =>
-                      toggleBirthdayCelebrated(child.id, child.birthday_celebrated)
-                    }
-                    className={`px-4 py-2 rounded-bubbly font-bold ${
-                      child.birthday_celebrated
-                        ? 'bg-kids-mint text-white'
-                        : 'bg-gray-300 text-gray-700'
-                    }`}
-                  >
-                    {child.birthday_celebrated
-                      ? t.birthdays.celebrated
-                      : t.teacherPortal.markCelebrated}
-                  </button>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -1246,7 +1325,7 @@ export const TeacherPortal = () => {
         {activeTab === 'analytics' && <Analytics />}
 
         {activeTab === 'children' && (
-          <div className="bg-white/95 backdrop-blur-xl rounded-bubbly p-8 shadow-xl border border-white/20">
+          <div className="bg-white rounded-bubbly p-8 shadow-xl border border-gray-100">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-3xl font-black text-kids-blue flex items-center">
                 <Users className="w-8 h-8 mr-3" />

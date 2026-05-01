@@ -49,7 +49,7 @@ export const Home = () => {
       icon: Shield,
       titleKey: 'youth',
       color: 'kids-mint',
-      image: '/TEENS.png',
+      image: '/TEENS.webp',
     },
   ];
 
@@ -78,7 +78,7 @@ export const Home = () => {
             className="-mb-12"
           >
             <motion.img
-              src="/Vibrant_kids_logo_design.png"
+              src="/Vibrant_kids_logo_design.webp"
               alt="Aviva Kids Logo"
               animate={{
                 y: [0, -15, 0],

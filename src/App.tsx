@@ -5,12 +5,14 @@ import { Navbar } from './components/Navbar';
 import { FloatingShapes } from './components/FloatingShapes';
 import { AlertBanner } from './components/AlertBanner';
 import { MouseTrail } from './components/MouseTrail';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import { Home } from './pages/Home';
 import { CheckIn } from './pages/CheckIn';
 import { IntakeForm } from './pages/IntakeForm';
 import { Calendar } from './pages/Calendar';
 import { Birthdays } from './pages/Birthdays';
 import { TeacherPortal } from './pages/TeacherPortal';
+import { ParentWatch } from './pages/ParentWatch';
 
 function AppContent() {
   const location = useLocation();
@@ -37,7 +39,8 @@ function AppContent() {
               <Route path="/intake-form" element={<IntakeForm />} />
               <Route path="/calendar" element={<Calendar />} />
               <Route path="/birthdays" element={<Birthdays />} />
-              <Route path="/admin" element={<TeacherPortal />} />
+              <Route path="/admin" element={<ProtectedRoute><TeacherPortal /></ProtectedRoute>} />
+              <Route path="/notifications" element={<ParentWatch />} />
             </Routes>
           </motion.div>
         </AnimatePresence>

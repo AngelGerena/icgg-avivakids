@@ -292,7 +292,7 @@ export const ParentNotifications = () => {
                 type="email"
                 value={parentEmail}
                 onChange={(e) => setParentEmail(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && authenticateParent()}
+                onKeyPress={(e) => e.key === 'Enter' && authenticateParent()}
                 placeholder="Your email address"
                 className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none mb-4"
               />

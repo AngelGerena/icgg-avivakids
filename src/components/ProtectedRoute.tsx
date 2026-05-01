@@ -39,7 +39,7 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }
 
   if (!authenticated) {
-    return <Navigate to="/teacher-portal" replace />;
+    return <Navigate to="/admin" replace />;
   }
 
   return <>{children}</>;

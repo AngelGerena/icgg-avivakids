@@ -206,32 +206,62 @@ export const Home = () => {
             {t.home.ourAgeGroups}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {ageGroups.map((group, index) => (
-              <motion.div
-                key={group.titleKey}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true, amount: 0.3 }}
-                transition={{ delay: index * 0.1, duration: 0.4 }}
-                whileHover={{ scale: 1.08 }}
-                className={`relative overflow-hidden rounded-bubbly shadow-lg border-4 border-${group.color} text-center h-64`}
-              >
-                <div className="absolute inset-0">
-                  <img
-                    src={group.image}
-                    alt={t.checkIn.rooms[group.titleKey]}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className={`absolute inset-0 bg-gradient-to-t from-${group.color} via-${group.color}/80 to-${group.color}/40`}></div>
-                </div>
-                <div className="relative z-10 flex flex-col items-center justify-end h-full pb-6 px-4">
-                  <group.icon className="w-12 h-12 text-white drop-shadow-lg mb-3" />
-                  <h3 className="text-xl font-black text-white drop-shadow-lg text-center">
-                    {t.checkIn.rooms[group.titleKey]}
-                  </h3>
-                </div>
-              </motion.div>
-            ))}
+            {ageGroups.map((group, index) => {
+              const cardStyles = [
+                { iconColor: '#6C00FF', textColor: '#3D00B8', stroke: '1.5px rgba(255,255,255,0.6)' }, // yellow → deep violet
+                { iconColor: '#00BFA5', textColor: '#00796B', stroke: '1.5px rgba(255,255,255,0.6)' }, // coral → deep teal
+                { iconColor: '#FFB300', textColor: '#FF6F00', stroke: '1.5px rgba(255,255,255,0.6)' }, // blue → warm amber
+                { iconColor: '#E91E63', textColor: '#880E4F', stroke: '1.5px rgba(255,255,255,0.6)' }, // teal → deep magenta
+              ];
+              const style = cardStyles[index % cardStyles.length];
+              return (
+                <motion.div
+                  key={group.titleKey}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true, amount: 0.3 }}
+                  transition={{ delay: index * 0.1, duration: 0.4 }}
+                  whileHover={{ scale: 1.08 }}
+                  className={`relative overflow-hidden rounded-bubbly shadow-xl border-4 border-${group.color} text-center h-64`}
+                >
+                  {/* Photo */}
+                  <div className="absolute inset-0">
+                    <img
+                      src={group.image}
+                      alt={t.checkIn.rooms[group.titleKey]}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+
+                  {/* Subtle color tint at very top */}
+                  <div className={`absolute inset-0 bg-gradient-to-b from-${group.color}/30 via-transparent to-transparent`} />
+
+                  {/* Dark overlay bottom half so text/icon pops */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+
+                  {/* Content */}
+                  <div className="relative z-10 flex flex-col items-center justify-end h-full pb-6 px-4">
+                    <group.icon
+                      className="w-12 h-12 mb-3 drop-shadow-lg"
+                      style={{
+                        color: style.iconColor,
+                        filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.6))',
+                      }}
+                    />
+                    <h3
+                      className="text-xl font-black text-center leading-tight"
+                      style={{
+                        color: style.textColor,
+                        WebkitTextStroke: style.stroke,
+                        textShadow: '1px 2px 6px rgba(0,0,0,0.8)',
+                      }}
+                    >
+                      {t.checkIn.rooms[group.titleKey]}
+                    </h3>
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         </motion.div>
 

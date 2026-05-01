@@ -97,9 +97,27 @@ export const Home = () => {
             initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.5 }}
-            className="text-3xl sm:text-4xl md:text-6xl font-black text-white mb-4 drop-shadow-2xl"
+            className="text-3xl sm:text-4xl md:text-6xl font-black mb-4 drop-shadow-2xl text-center leading-tight"
           >
-            {t.home.welcome}
+            {['¡', 'B', 'i', 'e', 'n', 'v', 'e', 'n', 'i', 'd', 'o', 's', ' ', 'a', ' ', 'I', 'C', 'G', 'G', ' ', 'A', 'v', 'i', 'v', 'a', ' ', 'K', 'i', 'd', 's', '!'].map((letter, i) => {
+              const colors = ['#FFD700', '#FF6B6B', '#4FC3F7', '#69F0AE', '#CE93D8', '#FFD700', '#FF6B6B', '#4FC3F7', '#69F0AE', '#CE93D8'];
+              return (
+                <motion.span
+                  key={i}
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.5 + i * 0.04 }}
+                  style={{
+                    color: letter === ' ' ? 'transparent' : colors[i % colors.length],
+                    WebkitTextStroke: letter === ' ' ? 'none' : '1.5px rgba(0,0,0,0.25)',
+                    display: 'inline-block',
+                    textShadow: '2px 3px 0px rgba(0,0,0,0.2)',
+                  }}
+                >
+                  {letter}
+                </motion.span>
+              );
+            })}
           </motion.h1>
 
           <motion.p

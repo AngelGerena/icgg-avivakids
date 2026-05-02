@@ -158,14 +158,31 @@ export const TeacherPortal = () => {
   }, [authenticated]);
 
   const checkAuth = async () => {
+    // Check URL hash for recovery token FIRST before evaluating session
+    const hash = window.location.hash;
+    const params = new URLSearchParams(hash.replace('#', '?'));
+    const type = params.get('type');
+
+    if (type === 'recovery') {
+      // Recovery link clicked — show reset form, never grant portal access
+      setIsResettingPassword(true);
+      setAuthenticated(false);
+      setLoading(false);
+      window.history.replaceState(null, '', window.location.pathname);
+      return;
+    }
+
     const { data } = await supabase.auth.getSession();
     setAuthenticated(!!data.session);
     setLoading(false);
 
-    supabase.auth.onAuthStateChange((event) => {
+    supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
         setIsResettingPassword(true);
         setAuthenticated(false);
+      } else if (event === 'SIGNED_OUT') {
+        setAuthenticated(false);
+        setIsResettingPassword(false);
       }
     });
   };
@@ -257,6 +274,13 @@ export const TeacherPortal = () => {
       setResetSuccess(true);
       setNewPassword('');
       setNewPasswordConfirm('');
+      // Sign out the recovery session and return to login
+      await supabase.auth.signOut();
+      setTimeout(() => {
+        setIsResettingPassword(false);
+        setResetSuccess(false);
+        setAuthenticated(false);
+      }, 2500);
     } catch (error: any) {
       alert(error.message || 'Error al actualizar la contraseña');
     } finally {

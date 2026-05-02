@@ -216,34 +216,33 @@ const slides: SlideSection[] = [
     content: (
       <div className="space-y-5">
         <p className="text-gray-700 leading-relaxed">
-          Cada domingo, los padres hacen check-in en la estación de registro usando su código QR o el número de su hijo.
+          Cada domingo, un miembro del personal registra la entrada del niño desde el portal administrativo usando el código QR o el número único del niño.
         </p>
-        {/* Step by step */}
         <div className="space-y-3">
           {[
             {
               step: '1',
               color: 'bg-kids-blue',
-              title: 'Llegar a la estación',
-              desc: 'El personal tiene una tableta con la pantalla de Check-In abierta.',
+              title: 'Personal abre el portal /admin',
+              desc: 'El maestro va a la pestaña "Registro de Niños" en el portal administrativo.',
             },
             {
               step: '2',
               color: 'bg-kids-purple',
-              title: 'Escanear el código QR',
-              desc: 'El padre muestra su credencial QR o el staff escanea con la cámara.',
+              title: 'Ingresa el PIN de personal',
+              desc: 'Un código de 4 dígitos desbloquea la pantalla de registro para ese niño.',
             },
             {
               step: '3',
               color: 'bg-kids-mint',
-              title: 'O ingresar número de niño',
-              desc: 'Alternativamente, escribir el número asignado (ej. #0042).',
+              title: 'Escanea el QR o ingresa el número',
+              desc: 'El maestro apunta la cámara al código QR del padre, o escribe el número de 4 dígitos manualmente.',
             },
             {
               step: '4',
               color: 'bg-kids-coral',
               title: 'Confirmación inmediata',
-              desc: 'El niño aparece como "Presente" en el dashboard del maestro al instante.',
+              desc: 'El niño aparece como "Presente" en el dashboard al instante y la asistencia queda registrada.',
             },
           ].map((s, i) => (
             <div key={i} className="flex items-start gap-4">
@@ -257,29 +256,10 @@ const slides: SlideSection[] = [
             </div>
           ))}
         </div>
-        {/* Mock check-in screen */}
-        <div className="bg-white border-2 border-gray-200 rounded-2xl p-4 shadow-sm">
-          <p className="text-xs font-black text-kids-blue uppercase tracking-widest mb-3">Pantalla de Check-In</p>
-          <div className="w-full h-10 bg-gray-100 rounded-xl border border-gray-200 flex items-center gap-2 px-3 mb-2">
-            <Search className="w-4 h-4 text-gray-400" />
-            <span className="text-xs text-gray-400">Buscar por nombre o número de niño...</span>
-          </div>
-          <div className="space-y-2">
-            {[
-              { name: 'Sofía Martínez', num: '#0042', in: true },
-              { name: 'Lucas Herrera', num: '#0017', in: false },
-            ].map((child, i) => (
-              <div key={i} className={`flex items-center justify-between rounded-xl p-2 px-3 ${child.in ? 'bg-green-50 border border-green-200' : 'bg-gray-50 border border-gray-200'}`}>
-                <div>
-                  <p className="text-sm font-bold text-gray-800">{child.name}</p>
-                  <p className="text-xs text-gray-500">{child.num}</p>
-                </div>
-                <span className={`text-xs font-bold px-3 py-1 rounded-full ${child.in ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'}`}>
-                  {child.in ? 'Presente' : 'Ausente'}
-                </span>
-              </div>
-            ))}
-          </div>
+        <div className="bg-kids-purple/10 border border-kids-purple/30 rounded-2xl p-4">
+          <p className="text-kids-purple font-bold text-sm">
+            El check-in es operado por el personal — los padres solo necesitan mostrar su código QR o número al llegar.
+          </p>
         </div>
       </div>
     ),
@@ -319,7 +299,7 @@ const slides: SlideSection[] = [
           <div className="w-full h-10 bg-gradient-to-r from-kids-purple to-kids-blue rounded-xl flex items-center justify-center">
             <span className="text-white font-black text-sm">Entrar</span>
           </div>
-          <p className="text-center text-xs text-kids-purple font-bold">¿No tienes cuenta? Regístrate</p>
+          <p className="text-center text-xs text-gray-400 font-semibold">Las cuentas son creadas por el administrador del sistema</p>
         </div>
         <div className="space-y-2">
           {[
@@ -364,9 +344,9 @@ const slides: SlideSection[] = [
             ))}
           </div>
           {/* Tabs */}
-          <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
-            {['Dashboard', 'Alertas', 'Eventos', 'Cumpleaños', 'Analíticas', 'Niños'].map((tab, i) => (
-              <div key={i} className={`flex-1 text-center py-1 rounded-lg text-xs font-bold ${i === 0 ? 'bg-white shadow-sm text-kids-purple' : 'text-gray-400'}`}>
+          <div className="flex gap-1 bg-gray-100 rounded-xl p-1 overflow-x-auto">
+            {['Dashboard', 'Registro', 'Niños', 'Alertas', 'Eventos', 'Cumpleaños', 'Analíticas'].map((tab, i) => (
+              <div key={i} className={`flex-shrink-0 text-center py-1 px-2 rounded-lg text-xs font-bold ${i === 0 ? 'bg-white shadow-sm text-kids-purple' : 'text-gray-400'}`}>
                 {tab}
               </div>
             ))}
@@ -454,9 +434,10 @@ const slides: SlideSection[] = [
         <div className="space-y-2">
           {[
             'Ingresa el número del niño para identificar a quién pertenece la alerta.',
-            'Selecciona el tipo de alerta según la situación.',
-            'El sistema envía un email automático al padre o madre registrado.',
-            'Todas las alertas quedan guardadas en el historial.',
+            'Selecciona el tipo de alerta o escribe un mensaje personalizado.',
+            'El padre recibe una notificación en tiempo real en su página de Alertas (icgg-avivakids.org/alertas).',
+            'Cuando el padre confirma, aparece "En Camino" en el historial con su nombre.',
+            'Todas las alertas quedan guardadas. Usa "Limpiar Historial" para borrar las resueltas.',
           ].map((text, i) => (
             <div key={i} className="flex items-start gap-2 text-sm text-gray-600">
               <div className="w-5 h-5 bg-kids-coral rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -465,6 +446,12 @@ const slides: SlideSection[] = [
               <span>{text}</span>
             </div>
           ))}
+        </div>
+        <div className="bg-kids-mint/10 border border-kids-mint/30 rounded-2xl p-3 flex items-start gap-2">
+          <CheckCircle className="w-4 h-4 text-kids-mint mt-0.5 flex-shrink-0" />
+          <p className="text-gray-700 text-sm font-semibold">
+            Cuando el padre toca "Entendido — Voy en camino", el maestro recibe una notificación visual y sonora con el nombre del padre confirmando que está en camino.
+          </p>
         </div>
       </div>
     ),
@@ -678,12 +665,20 @@ const slides: SlideSection[] = [
               { name: 'Sofía Martínez', num: '#0042', room: 'Preescolar', dob: '03/May/2019' },
               { name: 'Lucas Herrera', num: '#0017', room: 'Primaria', dob: '22/Sep/2016' },
             ].map((child, i) => (
-              <div key={i} className="flex items-center justify-between bg-gray-50 rounded-xl p-2 border border-gray-100">
-                <div>
-                  <p className="text-sm font-bold text-gray-800">{child.name}</p>
-                  <p className="text-xs text-gray-500">{child.num} · {child.room} · {child.dob}</p>
+              <div key={i} className="bg-gray-50 rounded-xl p-3 border border-gray-100 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-bold text-gray-800">{child.name}</p>
+                    <p className="text-xs text-gray-500">{child.num} · {child.dob}</p>
+                  </div>
+                  <QrCode className="w-5 h-5 text-kids-purple" />
                 </div>
-                <QrCode className="w-5 h-5 text-kids-purple" />
+                <div className="flex gap-1 flex-wrap">
+                  <span className="text-xs bg-kids-mint/20 text-kids-mint font-bold px-2 py-0.5 rounded-full border border-kids-mint/30">Ver QR</span>
+                  <span className="text-xs bg-kids-purple/10 text-kids-purple font-bold px-2 py-0.5 rounded-full border border-kids-purple/30">Editar Contacto</span>
+                  <span className="text-xs bg-gray-100 text-gray-500 font-bold px-2 py-0.5 rounded-full border border-gray-200">Cambiar Sala ▾</span>
+                  <span className="text-xs bg-red-50 text-red-400 font-bold px-2 py-0.5 rounded-full border border-red-100">Eliminar</span>
+                </div>
               </div>
             ))}
           </div>

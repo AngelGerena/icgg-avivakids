@@ -1,119 +1,235 @@
-import { Link, useLocation } from 'react-router-dom';
-import { useLanguage } from '../contexts/LanguageContext';
-import { Languages, Home, FileText, CalendarDays, Cake, Church, Bell } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
+import { Search, X, Camera, Keyboard } from 'lucide-react';
 
-export const Navbar = () => {
-  const { t, language, setLanguage } = useLanguage();
-  const location = useLocation();
+interface QRScannerProps {
+  onScanSuccess: (data: any) => void;
+  onClose: () => void;
+}
 
-  const isActive = (path: string) => {
-    return location.pathname === path;
+export const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
+  const [mode, setMode] = useState<'camera' | 'manual'>('camera');
+  const [manualCode, setManualCode] = useState('');
+  const [cameraError, setCameraError] = useState('');
+  const [scanning, setScanning] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const animFrameRef = useRef<number>(0);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    if (mode === 'camera') {
+      startCamera();
+    } else {
+      stopCamera();
+    }
+    return () => stopCamera();
+  }, [mode]);
+
+  const startCamera = async () => {
+    setCameraError('');
+    setScanning(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play();
+        videoRef.current.onloadedmetadata = () => {
+          scanFrame();
+        };
+      }
+    } catch (err: any) {
+      setCameraError(
+        err.name === 'NotAllowedError'
+          ? 'Permiso de cámara denegado. Por favor permita el acceso a la cámara en su navegador.'
+          : 'No se pudo acceder a la cámara. Use el modo manual.'
+      );
+      setScanning(false);
+      setMode('manual');
+    }
   };
 
-  const toggleLanguage = () => {
-    setLanguage(language === 'es' ? 'en' : 'es');
+  const stopCamera = () => {
+    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+    }
+    setScanning(false);
   };
 
-  const navLinks = [
-    { path: '/', label: t.nav.home, icon: Home },
-    { path: '/intake-form', label: t.nav.intakeForm, icon: FileText },
-    { path: '/calendar', label: t.nav.calendar, icon: CalendarDays },
-    { path: '/birthdays', label: t.nav.birthdays, icon: Cake },
-    { path: '/notifications', label: language === 'es' ? 'Alertas' : 'Alerts', icon: Bell },
-  ];
+  const scanFrame = () => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas || video.readyState !== video.HAVE_ENOUGH_DATA) {
+      animFrameRef.current = requestAnimationFrame(scanFrame);
+      return;
+    }
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    // Use BarcodeDetector if available (Chrome/Android)
+    if ('BarcodeDetector' in window) {
+      const detector = new (window as any).BarcodeDetector({ formats: ['qr_code'] });
+      detector.detect(canvas).then((codes: any[]) => {
+        if (codes.length > 0) {
+          const raw = codes[0].rawValue;
+          stopCamera();
+          processQRValue(raw);
+          return;
+        }
+        animFrameRef.current = requestAnimationFrame(scanFrame);
+      }).catch(() => {
+        animFrameRef.current = requestAnimationFrame(scanFrame);
+      });
+    } else {
+      // BarcodeDetector not available — fall back to manual
+      stopCamera();
+      setCameraError('Su navegador no soporta escaneo automático. Use el modo manual.');
+      setMode('manual');
+    }
+  };
+
+  const processQRValue = (raw: string) => {
+    try {
+      const parsed = JSON.parse(raw);
+      onScanSuccess(parsed);
+    } catch {
+      onScanSuccess({ childNumber: raw.trim(), type: 'child-profile' });
+    }
+  };
+
+  const handleManualSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!manualCode.trim()) return;
+    processQRValue(manualCode.trim());
+  };
 
   return (
-    <>
-      <nav className="sticky top-0 z-50 bg-gradient-to-r from-kids-yellow via-kids-blue to-kids-coral shadow-lg">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16 lg:h-24">
-            <Link to="/" className="flex items-center space-x-2 lg:space-x-3 group lg:ml-4">
-              <span className="text-kids-purple font-black text-lg lg:text-2xl transition-all duration-300 group-hover:scale-105 group-hover:tracking-wide drop-shadow-lg">
-                ICGG AVIVA KIDS
-              </span>
-            </Link>
-
-            <div className="hidden lg:flex items-center space-x-2 bg-white/10 backdrop-blur-md rounded-full px-3 py-2 border border-white/20 shadow-lg">
-              {navLinks.map((link) => {
-                const Icon = link.icon;
-                return (
-                  <Link
-                    key={link.path}
-                    to={link.path}
-                    className={`relative flex items-center gap-2 px-5 py-2.5 rounded-full font-bold transition-all duration-300 overflow-hidden ${
-                      isActive(link.path)
-                        ? 'bg-white text-kids-purple shadow-lg transform scale-105'
-                        : 'text-white hover:bg-white/20 hover:scale-105'
-                    }`}
-                  >
-                    <Icon className={`w-5 h-5 transition-all duration-300 ${isActive(link.path) ? 'scale-110' : 'group-hover:rotate-12'}`} />
-                    <span className="relative z-10 text-sm whitespace-nowrap">{link.label}</span>
-                    {isActive(link.path) && (
-                      <div className="absolute inset-0 bg-gradient-to-r from-kids-yellow/20 via-kids-blue/20 to-kids-coral/20 animate-pulse"></div>
-                    )}
-                  </Link>
-                );
-              })}
-              <a
-                href="https://www.icgg.us"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="relative flex items-center gap-2 px-5 py-2.5 rounded-full font-bold transition-all duration-300 overflow-hidden text-white hover:bg-white/20 hover:scale-105"
-              >
-                <Church className="w-5 h-5 transition-all duration-300 group-hover:rotate-12" />
-                <span className="relative z-10 text-sm whitespace-nowrap">Visite ICGG</span>
-              </a>
-            </div>
-
-            <div className="flex items-center gap-2 lg:gap-3 lg:mr-4">
-              <button
-                onClick={toggleLanguage}
-                className="flex items-center space-x-1 lg:space-x-2 bg-white/90 backdrop-blur-sm px-2 py-1.5 lg:px-5 lg:py-2.5 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 hover:-translate-y-1 active:scale-95 border border-white/50"
-              >
-                <Languages className="w-4 h-4 lg:w-5 lg:h-5 text-kids-purple transition-transform duration-300 hover:rotate-180" />
-                <span className="font-bold text-kids-purple text-sm lg:text-base">
-                  {language === 'es' ? 'EN' : 'ES'}
-                </span>
-              </button>
-            </div>
-          </div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white rounded-bubbly shadow-2xl max-w-md w-full overflow-hidden"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 pb-4">
+          <h2 className="text-2xl font-black text-kids-purple">Escanear QR del Niño</h2>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+            <X className="w-6 h-6 text-gray-600" />
+          </button>
         </div>
-      </nav>
 
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] bg-gradient-to-r from-kids-yellow via-kids-blue to-kids-coral shadow-lg border-t-4 border-white/30 pb-safe backdrop-blur-sm">
-        <div className="grid grid-cols-6 gap-1 px-2 py-2">
-          {navLinks.map((link) => {
-            const Icon = link.icon;
-            return (
-              <Link
-                key={link.path}
-                to={link.path}
-                className={`flex flex-col items-center justify-center py-2 px-1 rounded-bubbly transition-all duration-300 active:scale-95 ${
-                  isActive(link.path)
-                    ? 'bg-white text-kids-purple shadow-lg transform scale-105'
-                    : 'text-white hover:bg-white/20'
-                }`}
-              >
-                <Icon className={`w-5 h-5 mb-1 transition-transform duration-300 ${isActive(link.path) ? 'scale-110' : ''}`} />
-                <span className="text-[10px] font-semibold text-center leading-tight">
-                  {link.label}
-                </span>
-              </Link>
-            );
-          })}
-          <a
-            href="https://www.icgg.us"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex flex-col items-center justify-center py-2 px-1 rounded-bubbly transition-all duration-300 active:scale-95 text-white hover:bg-white/20"
+        {/* Mode toggle */}
+        <div className="flex mx-6 mb-4 bg-gray-100 rounded-bubbly p-1">
+          <button
+            onClick={() => setMode('camera')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-bubbly font-bold text-sm transition-all ${
+              mode === 'camera' ? 'bg-kids-purple text-white shadow' : 'text-gray-500 hover:text-gray-700'
+            }`}
           >
-            <Church className="w-5 h-5 mb-1 transition-transform duration-300" />
-            <span className="text-[10px] font-semibold text-center leading-tight">
-              Visite ICGG
-            </span>
-          </a>
+            <Camera className="w-4 h-4" />
+            Cámara
+          </button>
+          <button
+            onClick={() => setMode('manual')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-bubbly font-bold text-sm transition-all ${
+              mode === 'manual' ? 'bg-kids-purple text-white shadow' : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Keyboard className="w-4 h-4" />
+            Manual
+          </button>
         </div>
-      </div>
-    </>
+
+        {/* Camera view */}
+        {mode === 'camera' && (
+          <div className="mx-6 mb-6">
+            {cameraError ? (
+              <div className="bg-red-50 border border-red-200 rounded-bubbly p-4 text-red-600 font-semibold text-sm text-center">
+                {cameraError}
+              </div>
+            ) : (
+              <div className="relative rounded-bubbly overflow-hidden bg-black aspect-square">
+                <video
+                  ref={videoRef}
+                  className="w-full h-full object-cover"
+                  playsInline
+                  muted
+                />
+                <canvas ref={canvasRef} className="hidden" />
+                {/* Scanning overlay */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="w-48 h-48 relative">
+                    <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white rounded-tl-lg" />
+                    <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-white rounded-tr-lg" />
+                    <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-white rounded-bl-lg" />
+                    <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-white rounded-br-lg" />
+                    {scanning && (
+                      <motion.div
+                        className="absolute left-0 right-0 h-0.5 bg-kids-purple"
+                        animate={{ top: ['0%', '100%', '0%'] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                      />
+                    )}
+                  </div>
+                </div>
+                <div className="absolute bottom-3 left-0 right-0 text-center">
+                  <span className="bg-black/60 text-white text-xs font-bold px-3 py-1 rounded-full">
+                    Apunte al código QR del padre/madre
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Manual mode */}
+        {mode === 'manual' && (
+          <div className="mx-6 mb-6">
+            <div className="bg-gradient-to-br from-kids-blue to-kids-purple rounded-bubbly p-5 text-center text-white mb-4">
+              <p className="text-sm font-bold">
+                Ingrese el número de 4 dígitos del niño o pegue los datos del código QR
+              </p>
+            </div>
+            <form onSubmit={handleManualSubmit} className="space-y-3">
+              <input
+                type="text"
+                value={manualCode}
+                onChange={(e) => setManualCode(e.target.value)}
+                placeholder="Ej: 0042"
+                autoFocus
+                className="w-full px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-purple focus:outline-none font-black text-2xl text-center tracking-widest"
+              />
+              <motion.button
+                type="submit"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                className="w-full py-4 bg-gradient-to-r from-kids-blue to-kids-purple text-white text-lg font-black rounded-bubbly shadow-lg flex items-center justify-center gap-2"
+              >
+                <Search className="w-5 h-5" />
+                Buscar y Registrar Entrada
+              </motion.button>
+            </form>
+          </div>
+        )}
+      </motion.div>
+    </motion.div>
   );
 };

@@ -1,59 +1,82 @@
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
-import { LanguageProvider } from './contexts/LanguageContext';
-import { Navbar } from './components/Navbar';
-import { FloatingShapes } from './components/FloatingShapes';
-import { AlertBanner } from './components/AlertBanner';
-import { MouseTrail } from './components/MouseTrail';
-import { Home } from './pages/Home';
-import { IntakeForm } from './pages/IntakeForm';
-import { Calendar } from './pages/Calendar';
-import { Birthdays } from './pages/Birthdays';
-import { TeacherPortal } from './pages/TeacherPortal';
-import { ParentWatch } from './pages/ParentWatch';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-function AppContent() {
-  const location = useLocation();
-  const hideFloatingShapes = location.pathname === '/intake-form';
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+  }
 
-  return (
-    <>
-      {!hideFloatingShapes && <FloatingShapes />}
-      <MouseTrail />
-      <AlertBanner />
-      <Navbar />
-      <div className="pb-24 lg:pb-0">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={location.pathname}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
-          >
-            <Routes location={location}>
-              <Route path="/" element={<Home />} />
-              <Route path="/intake-form" element={<IntakeForm />} />
-              <Route path="/calendar" element={<Calendar />} />
-              <Route path="/birthdays" element={<Birthdays />} />
-              <Route path="/admin" element={<TeacherPortal />} />
-              <Route path="/notifications" element={<ParentWatch />} />
-            </Routes>
-          </motion.div>
-        </AnimatePresence>
-      </div>
-    </>
-  );
+  body {
+    font-family: 'Baloo 2', cursive;
+    @apply bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 min-h-screen;
+    overflow-x: hidden;
+    position: relative;
+  }
 }
 
-function App() {
-  return (
-    <LanguageProvider>
-      <Router>
-        <AppContent />
-      </Router>
-    </LanguageProvider>
-  );
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-20px) translateX(10px) rotate(5deg);
+  }
+  50% {
+    transform: translateY(-10px) translateX(-10px) rotate(-5deg);
+  }
+  75% {
+    transform: translateY(-30px) translateX(5px) rotate(3deg);
+  }
 }
 
-export default App;
+@keyframes floatSlow {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  50% {
+    transform: translateY(-40px) translateX(20px);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(255, 215, 0, 0.8);
+  }
+}
+
+.floating-shape {
+  position: fixed;
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.floating-shape-1 {
+  animation: float 15s ease-in-out infinite;
+  animation-delay: 0s;
+}
+
+.floating-shape-2 {
+  animation: float 18s ease-in-out infinite;
+  animation-delay: 2s;
+}
+
+.floating-shape-3 {
+  animation: float 20s ease-in-out infinite;
+  animation-delay: 4s;
+}
+
+.floating-shape-4 {
+  animation: floatSlow 25s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+.floating-shape-5 {
+  animation: floatSlow 22s ease-in-out infinite;
+  animation-delay: 3s;
+}

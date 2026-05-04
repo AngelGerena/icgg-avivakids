@@ -494,7 +494,6 @@ export const IntakeFormWizard = () => {
                       />
                     </div>
                   </div>
-                  </div>
                   <select
                     value={sectionA.room}
                     onChange={(e) =>

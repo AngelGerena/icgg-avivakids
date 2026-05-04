@@ -454,25 +454,46 @@ export const IntakeFormWizard = () => {
                     className="w-full px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-yellow focus:outline-none font-semibold"
                   />
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input
-                      type="date"
-                      placeholder={t.intakeForm.dob}
-                      value={sectionA.dob}
-                      onChange={(e) =>
-                        setSectionA({ ...sectionA, dob: e.target.value })
-                      }
-                      required
-                      className="w-full px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-yellow focus:outline-none font-semibold"
-                    />
-                    <input
-                      type="text"
-                      placeholder={t.intakeForm.gender}
-                      value={sectionA.gender}
-                      onChange={(e) =>
-                        setSectionA({ ...sectionA, gender: e.target.value })
-                      }
-                      className="w-full px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-yellow focus:outline-none font-semibold"
-                    />
+                    <div>
+                      <label className="block text-base font-black text-kids-purple mb-2">
+                        {language === 'es' ? 'Fecha de Nacimiento' : 'Date of Birth'} <span className="text-kids-coral">*</span>
+                      </label>
+                      <div className="bg-kids-yellow/10 border-2 border-kids-yellow rounded-bubbly overflow-hidden">
+                        <div className="px-4 pt-2 pb-1">
+                          <p className="text-xs font-black text-kids-yellow uppercase tracking-wide">
+                            {language === 'es' ? 'Fecha de Nacimiento' : 'Date of Birth'}
+                          </p>
+                        </div>
+                        <input
+                          type="date"
+                          value={sectionA.dob}
+                          onChange={(e) =>
+                            setSectionA({ ...sectionA, dob: e.target.value })
+                          }
+                          required
+                          className="w-full px-4 pb-3 pt-1 bg-transparent border-0 outline-none font-semibold text-gray-800 focus:ring-0"
+                          style={{ WebkitAppearance: 'none' }}
+                        />
+                      </div>
+                      <p className="text-xs text-gray-400 font-semibold mt-1">
+                        {language === 'es' ? 'Toca para seleccionar la fecha' : 'Tap to select the date'}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-black text-kids-purple mb-1">
+                        {t.intakeForm.gender}
+                      </label>
+                      <input
+                        type="text"
+                        placeholder={t.intakeForm.gender}
+                        value={sectionA.gender}
+                        onChange={(e) =>
+                          setSectionA({ ...sectionA, gender: e.target.value })
+                        }
+                        className="w-full px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-yellow focus:outline-none font-semibold"
+                      />
+                    </div>
+                  </div>
                   </div>
                   <select
                     value={sectionA.room}

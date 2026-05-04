@@ -72,6 +72,7 @@ export const TeacherPortal = () => {
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
+  const [authError, setAuthError] = useState('');
   const [resetSuccess, setResetSuccess] = useState(false);
   const [activeTab, setActiveTab] = useState<
     'dashboard' | 'alerts' | 'events' | 'birthdays' | 'analytics' | 'children'
@@ -158,13 +159,25 @@ export const TeacherPortal = () => {
   }, [authenticated]);
 
   const checkAuth = async () => {
-    // Check URL hash for recovery token FIRST before evaluating session
+    // Check URL hash for recovery token or error FIRST before evaluating session
     const hash = window.location.hash;
     const params = new URLSearchParams(hash.replace('#', '?'));
     const type = params.get('type');
+    const errorCode = params.get('error_code');
+    const errorDesc = params.get('error_description');
+
+    // Handle expired or invalid recovery links
+    if (errorCode === 'otp_expired' || (params.get('error') === 'access_denied' && errorDesc?.includes('expired'))) {
+      window.history.replaceState(null, '', window.location.pathname);
+      setLoading(false);
+      setAuthenticated(false);
+      // Show a friendly message via the auth error state
+      setAuthError('El enlace de recuperación ha expirado. Por favor solicita uno nuevo.');
+      return;
+    }
 
     if (type === 'recovery') {
-      // Recovery link clicked — show reset form, never grant portal access
+      // Valid recovery link — show reset form, never grant portal access
       setIsResettingPassword(true);
       setAuthenticated(false);
       setLoading(false);
@@ -929,6 +942,25 @@ export const TeacherPortal = () => {
                 </div>
 
                 <form onSubmit={isSignUp ? handleSignUp : handleLogin} className="space-y-6">
+                  {authError && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-red-50 border-2 border-red-300 rounded-bubbly p-4"
+                    >
+                      <p className="text-red-700 font-bold text-sm text-center">{authError}</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAuthError('');
+                          setIsForgotPassword(true);
+                        }}
+                        className="w-full mt-3 text-kids-blue font-black text-sm underline"
+                      >
+                        Solicitar nuevo enlace de recuperación
+                      </button>
+                    </motion.div>
+                  )}
                   <div>
                     <label className="block text-lg font-bold text-gray-700 mb-2">
                       Email

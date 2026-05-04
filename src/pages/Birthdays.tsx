@@ -99,7 +99,8 @@ export const Birthdays = () => {
   const BirthdayCard = ({ child, celebrated }: { child: Child; celebrated?: boolean }) => (
     <motion.div
       whileHover={{ scale: 1.05, rotate: 2 }}
-      className="bg-white rounded-bubbly p-6 shadow-xl border-4 border-kids-yellow relative overflow-hidden"
+      className="bg-white opacity-100 rounded-bubbly p-6 shadow-2xl border-4 border-kids-yellow relative overflow-hidden"
+      style={{ backgroundColor: '#ffffff', isolation: 'isolate' }}
     >
       {celebrated && (
         <div className="absolute top-4 right-4 bg-kids-mint text-white px-3 py-1 rounded-full text-sm font-bold">

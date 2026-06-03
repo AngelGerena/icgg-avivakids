@@ -51,14 +51,19 @@ export const VBSRegister = () => {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('vbs_settings')
           .select('*')
-          .eq('is_active', true)
           .order('year', { ascending: false })
           .limit(1)
           .maybeSingle();
-        setSettings(data);
+
+        if (error) {
+          console.error('VBS settings error:', error.message);
+        }
+        if (data) {
+          setSettings(data);
+        }
       } catch (err) {
         console.error('VBS settings fetch error:', err);
       } finally {

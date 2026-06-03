@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Languages, Home, FileText, CalendarDays, Cake, Church, Bell } from 'lucide-react';
+import { Languages, Home, ClipboardCheck, FileText, CalendarDays, Cake, Church } from 'lucide-react';
+import { ParentNotifications } from './ParentNotifications';
 
 export const Navbar = () => {
   const { t, language, setLanguage } = useLanguage();
@@ -16,10 +17,10 @@ export const Navbar = () => {
 
   const navLinks = [
     { path: '/', label: t.nav.home, icon: Home },
+    { path: '/check-in', label: t.nav.checkIn, icon: ClipboardCheck },
     { path: '/intake-form', label: t.nav.intakeForm, icon: FileText },
     { path: '/calendar', label: t.nav.calendar, icon: CalendarDays },
     { path: '/birthdays', label: t.nav.birthdays, icon: Cake },
-    { path: '/notifications', label: language === 'es' ? 'Alertas' : 'Alerts', icon: Bell },
   ];
 
   return (
@@ -75,6 +76,9 @@ export const Navbar = () => {
                   {language === 'es' ? 'EN' : 'ES'}
                 </span>
               </button>
+              <div className="hidden lg:block">
+                <ParentNotifications />
+              </div>
             </div>
           </div>
         </div>

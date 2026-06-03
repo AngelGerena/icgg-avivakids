@@ -3,20 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 import confetti from 'canvas-confetti';
-import { CheckCircle, Lock, Delete } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 import { QRCodeBadge } from '../components/QRCodeBadge';
-
-const STAFF_PIN = import.meta.env.VITE_CHECKIN_PIN || '1234';
 
 export const CheckIn = () => {
   const { t } = useLanguage();
-
-  // PIN gate state
-  const [pinUnlocked, setPinUnlocked] = useState(false);
-  const [pinEntry, setPinEntry] = useState('');
-  const [pinError, setPinError] = useState(false);
-
-  // Form state
   const [formData, setFormData] = useState({
     childName: '',
     parentName: '',
@@ -31,58 +22,26 @@ export const CheckIn = () => {
   const [childNumber, setChildNumber] = useState('');
   const [childId, setChildId] = useState('');
 
-  // PIN pad handlers
-  const handlePinDigit = (digit: string) => {
-    if (pinEntry.length >= 4) return;
-    const next = pinEntry + digit;
-    setPinEntry(next);
-    setPinError(false);
-    if (next.length === 4) {
-      setTimeout(() => {
-        if (next === STAFF_PIN) {
-          setPinUnlocked(true);
-          setPinEntry('');
-        } else {
-          setPinError(true);
-          setPinEntry('');
-        }
-      }, 200);
-    }
-  };
-
-  const handlePinDelete = () => {
-    setPinEntry((prev) => prev.slice(0, -1));
-    setPinError(false);
-  };
-
-  const lockForm = () => {
-    setPinUnlocked(false);
-    setPinEntry('');
-    setPinError(false);
-    setSuccess(false);
-    setFormData({
-      childName: '',
-      parentName: '',
-      parentPhone: '',
-      parentEmail: '',
-      childAge: '',
-      childDob: '',
-      room: '',
-    });
-  };
-
   const generateUniqueNumber = async (): Promise<string> => {
     let unique = false;
     let number = '';
+
     while (!unique) {
-      number = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+      number = Math.floor(Math.random() * 10000)
+        .toString()
+        .padStart(4, '0');
+
       const { data } = await supabase
         .from('children')
         .select('unique_number')
         .eq('unique_number', number)
         .maybeSingle();
-      if (!data) unique = true;
+
+      if (!data) {
+        unique = true;
+      }
     }
+
     return number;
   };
 
@@ -91,51 +50,50 @@ export const CheckIn = () => {
     setLoading(true);
 
     try {
-      // Duplicate check: same name + same DOB
-      const formattedDob = new Date(formData.childDob + 'T12:00:00').toISOString().split('T')[0];
-      const { data: existing } = await supabase
-        .from('children')
-        .select('id, full_name, unique_number')
-        .ilike('full_name', formData.childName.trim())
-        .eq('dob', formattedDob)
-        .maybeSingle();
-
-      if (existing) {
-        const confirm = window.confirm(
-          `Ya existe un registro para ${existing.full_name} con ese nombre y fecha de nacimiento (Número: ${existing.unique_number}). ¿Desea registrar de todas formas?`
-        );
-        if (!confirm) {
-          setLoading(false);
-          return;
-        }
-      }
-
       const uniqueNumber = await generateUniqueNumber();
+
+      const qrData = JSON.stringify({
+        childId: '',
+        childNumber: uniqueNumber,
+        childName: formData.childName,
+        type: 'child-profile',
+      });
 
       const { data: childData, error: childError } = await supabase
         .from('children')
         .insert({
-          full_name: formData.childName.trim(),
-          dob: formattedDob,
+          full_name: formData.childName,
+          dob: formData.childDob,
           room: formData.room,
           unique_number: uniqueNumber,
           checked_in_today: true,
           check_in_time: new Date().toISOString(),
+          qr_code_data: qrData,
         })
         .select()
         .single();
 
       if (childError) throw childError;
 
-      const { error: parentError } = await supabase.from('parents').insert({
-        child_id: childData.id,
-        primary_name: formData.parentName.trim(),
-        primary_relationship: 'Parent',
-        primary_phone: formData.parentPhone.trim(),
-        primary_email: formData.parentEmail.trim(),
-      });
+      await supabase
+        .from('children')
+        .update({
+          qr_code_data: JSON.stringify({
+            childId: childData.id,
+            childNumber: uniqueNumber,
+            childName: formData.childName,
+            type: 'child-profile',
+          }),
+        })
+        .eq('id', childData.id);
 
-      if (parentError) throw parentError;
+      await supabase.from('parents').insert({
+        child_id: childData.id,
+        primary_name: formData.parentName,
+        primary_relationship: 'Parent',
+        primary_phone: formData.parentPhone,
+        primary_email: formData.parentEmail,
+      });
 
       setChildNumber(uniqueNumber);
       setChildId(childData.id);
@@ -157,98 +115,23 @@ export const CheckIn = () => {
         childDob: '',
         room: '',
       });
-    } catch (error: unknown) {
+    } catch (error) {
       console.error('Error checking in child:', error);
-      const msg = error instanceof Error ? error.message : JSON.stringify(error);
-      alert(`Error al registrar: ${msg}`);
+      alert('Error al registrar. Por favor intente de nuevo.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   };
 
-  // PIN PAD SCREEN
-  if (!pinUnlocked) {
-    const pinDigits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'];
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4 py-12">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-white rounded-bubbly p-10 shadow-2xl max-w-sm w-full text-center"
-        >
-          <div className="flex justify-center mb-4">
-            <div className="bg-kids-purple/10 rounded-full p-4">
-              <Lock className="w-10 h-10 text-kids-purple" />
-            </div>
-          </div>
-          <h2 className="text-2xl font-black text-kids-purple mb-1">Acceso de Personal</h2>
-          <p className="text-gray-500 font-semibold mb-6 text-sm">
-            Ingrese el PIN de personal para continuar
-          </p>
-
-          {/* PIN display dots */}
-          <div className="flex justify-center gap-4 mb-6">
-            {[0, 1, 2, 3].map((i) => (
-              <motion.div
-                key={i}
-                animate={{ scale: pinEntry.length > i ? 1.2 : 1 }}
-                className={`w-4 h-4 rounded-full border-2 transition-colors ${
-                  pinEntry.length > i
-                    ? 'bg-kids-purple border-kids-purple'
-                    : 'bg-white border-gray-300'
-                }`}
-              />
-            ))}
-          </div>
-
-          {pinError && (
-            <motion.p
-              initial={{ opacity: 0, y: -5 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-red-500 font-bold text-sm mb-4"
-            >
-              PIN incorrecto. Intente de nuevo.
-            </motion.p>
-          )}
-
-          {/* PIN pad */}
-          <div className="grid grid-cols-3 gap-3">
-            {pinDigits.map((digit, i) => {
-              if (digit === '') return <div key={i} />;
-              if (digit === 'del') {
-                return (
-                  <motion.button
-                    key={i}
-                    whileTap={{ scale: 0.92 }}
-                    onClick={handlePinDelete}
-                    className="flex items-center justify-center h-14 rounded-bubbly bg-gray-100 text-gray-600 font-bold text-lg shadow hover:bg-gray-200 transition-colors"
-                  >
-                    <Delete className="w-5 h-5" />
-                  </motion.button>
-                );
-              }
-              return (
-                <motion.button
-                  key={i}
-                  whileTap={{ scale: 0.92 }}
-                  onClick={() => handlePinDigit(digit)}
-                  className="flex items-center justify-center h-14 rounded-bubbly bg-kids-purple/10 text-kids-purple font-black text-xl shadow hover:bg-kids-purple/20 transition-colors"
-                >
-                  {digit}
-                </motion.button>
-              );
-            })}
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
-
-  // MAIN CHECK-IN FORM
   return (
     <div className="min-h-screen py-8 px-4 relative overflow-hidden">
       <div className="container mx-auto max-w-3xl relative z-10">
@@ -260,12 +143,6 @@ export const CheckIn = () => {
           <h1 className="text-5xl md:text-6xl font-black text-kids-purple mb-4">
             {t.checkIn.title}
           </h1>
-          <button
-            onClick={lockForm}
-            className="text-sm text-gray-400 font-semibold hover:text-red-400 transition-colors underline"
-          >
-            Cerrar sesión de personal
-          </button>
         </motion.div>
 
         <AnimatePresence mode="wait">
@@ -308,6 +185,7 @@ export const CheckIn = () => {
                       className="w-full px-4 py-3 rounded-bubbly border-4 border-kids-yellow focus:border-kids-purple focus:outline-none text-lg font-semibold"
                     />
                   </div>
+
                   <div>
                     <label className="block text-lg font-bold text-gray-700 mb-2">
                       {t.checkIn.childDob}
@@ -370,6 +248,7 @@ export const CheckIn = () => {
                       className="w-full px-4 py-3 rounded-bubbly border-4 border-kids-purple focus:border-kids-blue focus:outline-none text-lg font-semibold"
                     />
                   </div>
+
                   <div>
                     <label className="block text-lg font-bold text-gray-700 mb-2">
                       {t.checkIn.parentEmail}
@@ -404,24 +283,35 @@ export const CheckIn = () => {
               className="bg-gradient-to-br from-kids-mint to-kids-blue rounded-bubbly p-12 shadow-2xl text-center"
             >
               <motion.div
-                animate={{ scale: [1, 1.2, 1], rotate: [0, 360] }}
+                animate={{
+                  scale: [1, 1.2, 1],
+                  rotate: [0, 360],
+                }}
                 transition={{ duration: 0.8 }}
                 className="flex justify-center mb-6"
               >
                 <CheckCircle className="w-24 h-24 text-white" />
               </motion.div>
 
-              <h2 className="text-4xl font-black text-white mb-4">{t.checkIn.successTitle}</h2>
+              <h2 className="text-4xl font-black text-white mb-4">
+                {t.checkIn.successTitle}
+              </h2>
 
               <div className="bg-white rounded-bubbly p-8 mb-6">
                 <p className="text-xl font-bold text-gray-700 mb-4">
                   {t.checkIn.successMessage.replace('{name}', formData.childName || 'el niño')}
                 </p>
-                <div className="text-8xl font-black text-kids-purple mb-4">{childNumber}</div>
-                <p className="text-lg font-semibold text-gray-600 mb-6">{t.checkIn.keepNumber}</p>
+                <div className="text-8xl font-black text-kids-purple mb-4">
+                  {childNumber}
+                </div>
+                <p className="text-lg font-semibold text-gray-600 mb-6">
+                  {t.checkIn.keepNumber}
+                </p>
 
                 <div className="border-t-4 border-kids-yellow pt-6 mt-6">
-                  <h3 className="text-2xl font-black text-kids-coral mb-4">Tarjeta QR del Niño</h3>
+                  <h3 className="text-2xl font-black text-kids-coral mb-4">
+                    Tarjeta QR del Niño
+                  </h3>
                   <QRCodeBadge
                     childName={formData.childName || 'Niño'}
                     childNumber={childNumber}
@@ -433,7 +323,18 @@ export const CheckIn = () => {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={lockForm}
+                onClick={() => {
+                  setSuccess(false);
+                  setFormData({
+                    childName: '',
+                    parentName: '',
+                    parentPhone: '',
+                    parentEmail: '',
+                    childAge: '',
+                    childDob: '',
+                    room: '',
+                  });
+                }}
                 className="px-8 py-4 bg-white text-kids-purple text-xl font-black rounded-bubbly shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 {t.common.close}

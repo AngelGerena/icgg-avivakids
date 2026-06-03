@@ -12,9 +12,8 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data, error } = await supabase.auth.getSession();
-      if (error) console.error('Auth session error:', error.message);
-      setAuthenticated(!!data?.session);
+      const { data } = await supabase.auth.getSession();
+      setAuthenticated(!!data.session);
       setLoading(false);
     };
 
@@ -40,7 +39,7 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }
 
   if (!authenticated) {
-    return <Navigate to="/admin" replace />;
+    return <Navigate to="/teacher-portal" replace />;
   }
 
   return <>{children}</>;

@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Heart, Shield, Users, BookOpen, Calendar, Baby } from 'lucide-react';
+import { Heart, Shield, Users, BookOpen, Calendar, Baby, Church } from 'lucide-react';
 
 export const Home = () => {
   const { t } = useLanguage();
@@ -49,7 +49,7 @@ export const Home = () => {
       icon: Shield,
       titleKey: 'youth',
       color: 'kids-mint',
-      image: '/TEENS.webp',
+      image: '/TEENS.png',
     },
   ];
 
@@ -78,7 +78,7 @@ export const Home = () => {
             className="-mb-12"
           >
             <motion.img
-              src="/Vibrant_kids_logo_design.webp"
+              src="/Vibrant_kids_logo_design.png"
               alt="Aviva Kids Logo"
               animate={{
                 y: [0, -15, 0],
@@ -97,54 +97,16 @@ export const Home = () => {
             initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.5 }}
-            className="text-4xl sm:text-5xl md:text-7xl font-black mb-4 drop-shadow-2xl text-center leading-tight"
+            className="text-3xl sm:text-4xl md:text-6xl font-black text-white mb-4 drop-shadow-2xl"
           >
-            {[
-              { text: '¡Bienvenidos', color: 0 },
-              { text: ' ', color: -1 },
-              { text: 'a', color: 5 },
-              { text: ' ', color: -1 },
-              { text: 'ICGG', color: 2 },
-              { text: ' ', color: -1 },
-              { text: 'Aviva', color: 7 },
-              { text: ' ', color: -1 },
-              { text: 'Kids!', color: 1 },
-            ].map((word, wi) => {
-              const colors = ['#FFD700', '#FF6B6B', '#4FC3F7', '#69F0AE', '#CE93D8', '#FF9800', '#00E5FF', '#E91E63'];
-              if (word.text === ' ') return <span key={wi}>&nbsp;</span>;
-              return (
-                <span key={wi} style={{ display: 'inline-block', marginRight: '0.15em' }}>
-                  {word.text.split('').map((letter, li) => (
-                    <motion.span
-                      key={li}
-                      initial={{ opacity: 0, y: -20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.5 + (wi * 5 + li) * 0.03 }}
-                      style={{
-                        color: colors[(word.color + li) % colors.length],
-                        WebkitTextStroke: '1.5px rgba(0,0,0,0.3)',
-                        display: 'inline-block',
-                        textShadow: '2px 3px 0px rgba(0,0,0,0.25)',
-                      }}
-                    >
-                      {letter}
-                    </motion.span>
-                  ))}
-                </span>
-              );
-            })}
+            {t.home.welcome}
           </motion.h1>
 
           <motion.p
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.7 }}
-            style={{
-              color: '#AAFF00',
-              WebkitTextStroke: '1px rgba(0,0,0,0.5)',
-              textShadow: '2px 3px 6px rgba(0,0,0,0.4)',
-            }}
-            className="text-xl sm:text-2xl md:text-3xl font-black mb-6"
+            className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-6 drop-shadow-lg"
           >
             {t.home.subtitle}
           </motion.p>
@@ -206,90 +168,32 @@ export const Home = () => {
             {t.home.ourAgeGroups}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {ageGroups.map((group, index) => {
-              const cardStyles = [
-                {
-                  // Yellow card — violet complements yellow
-                  topColor: 'rgba(255,213,0,0.55)',
-                  bottomColor: 'rgba(180,140,0,0.92)',
-                  iconColor: '#4A00BF',
-                  textColor: '#3A0099',
-                },
-                {
-                  // Coral/red card — deep teal complements coral
-                  topColor: 'rgba(255,100,90,0.55)',
-                  bottomColor: 'rgba(180,40,30,0.92)',
-                  iconColor: '#00695C',
-                  textColor: '#004D40',
-                },
-                {
-                  // Blue card — amber complements blue
-                  topColor: 'rgba(79,195,247,0.55)',
-                  bottomColor: 'rgba(20,100,180,0.92)',
-                  iconColor: '#FF8F00',
-                  textColor: '#E65100',
-                },
-                {
-                  // Teal/mint card — magenta complements teal
-                  topColor: 'rgba(77,208,174,0.55)',
-                  bottomColor: 'rgba(0,105,92,0.92)',
-                  iconColor: '#AD1457',
-                  textColor: '#880E4F',
-                },
-              ];
-              const style = cardStyles[index % cardStyles.length];
-              return (
-                <motion.div
-                  key={group.titleKey}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true, amount: 0.3 }}
-                  transition={{ delay: index * 0.1, duration: 0.4 }}
-                  whileHover={{ scale: 1.08 }}
-                  className={`relative overflow-hidden rounded-bubbly shadow-xl border-4 border-${group.color} text-center h-64`}
-                >
-                  {/* Photo */}
-                  <div className="absolute inset-0">
-                    <img
-                      src={group.image}
-                      alt={t.checkIn.rooms[group.titleKey]}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                      }}
-                    />
-                  </div>
-
-                  {/* Full card color tint — light at top */}
-                  <div
-                    className="absolute inset-0"
-                    style={{
-                      background: `linear-gradient(to bottom, ${style.topColor} 0%, ${style.bottomColor} 100%)`,
-                    }}
+            {ageGroups.map((group, index) => (
+              <motion.div
+                key={group.titleKey}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ delay: index * 0.1, duration: 0.4 }}
+                whileHover={{ scale: 1.08 }}
+                className={`relative overflow-hidden rounded-bubbly shadow-lg border-4 border-${group.color} text-center h-64`}
+              >
+                <div className="absolute inset-0">
+                  <img
+                    src={group.image}
+                    alt={t.checkIn.rooms[group.titleKey]}
+                    className="w-full h-full object-cover"
                   />
-
-                  {/* Content */}
-                  <div className="relative z-10 flex flex-col items-center justify-end h-full pb-6 px-4">
-                    <group.icon
-                      className="w-12 h-12 mb-3"
-                      style={{
-                        color: style.iconColor,
-                        filter: 'drop-shadow(0px 1px 4px rgba(255,255,255,0.6))',
-                      }}
-                    />
-                    <h3
-                      className="text-xl font-black text-center leading-tight"
-                      style={{
-                        color: style.textColor,
-                        textShadow: '0px 1px 6px rgba(255,255,255,0.5)',
-                      }}
-                    >
-                      {t.checkIn.rooms[group.titleKey]}
-                    </h3>
-                  </div>
-                </motion.div>
-              );
-            })}
+                  <div className={`absolute inset-0 bg-gradient-to-t from-${group.color} via-${group.color}/80 to-${group.color}/40`}></div>
+                </div>
+                <div className="relative z-10 flex flex-col items-center justify-end h-full pb-6 px-4">
+                  <group.icon className="w-12 h-12 text-white drop-shadow-lg mb-3" />
+                  <h3 className="text-xl font-black text-white drop-shadow-lg text-center">
+                    {t.checkIn.rooms[group.titleKey]}
+                  </h3>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </motion.div>
 

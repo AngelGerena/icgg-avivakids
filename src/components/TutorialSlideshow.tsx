@@ -38,7 +38,7 @@ const PART_COLORS = {
 };
 
 interface SlideSection {
-  part: 'parents' | 'admin';
+  part: 'parents' | 'admin' | 'vbs';
   label: string;
   title: string;
   subtitle: string;
@@ -709,6 +709,165 @@ const slides: SlideSection[] = [
     ),
   },
   {
+    part: 'vbs',
+    label: 'PARTE 3 — VBS',
+    title: 'Bienvenido al Módulo VBS',
+    subtitle: 'Vacation Bible School System',
+    icon: <span className="text-3xl">🌊</span>,
+    content: (
+      <div className="space-y-5">
+        <p className="text-gray-700 leading-relaxed">
+          El módulo VBS funciona completamente separado del sistema de Escuela Dominical. Ambos corren al mismo tiempo sin interferirse — VBS corre de lunes a viernes, Escuela Dominical los domingos.
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            { emoji: '⚙️', title: 'Configurar', desc: 'Elige el tema, fechas y días activos. Solo una vez.' },
+            { emoji: '👦', title: 'Registro', desc: 'Online en /vbs o presencial desde el portal.' },
+            { emoji: '✅', title: 'Check-In Diario', desc: 'Asistencia por nombre — simple y rápido.' },
+            { emoji: '📊', title: 'Reportes', desc: 'PDF y Excel para el pastor con todo el detalle.' },
+          ].map((item, i) => (
+            <div key={i} className="bg-gradient-to-br from-blue-50 to-teal-50 border border-teal-200 rounded-2xl p-4">
+              <div className="text-2xl mb-2">{item.emoji}</div>
+              <p className="font-black text-gray-800 text-sm">{item.title}</p>
+              <p className="text-gray-500 text-xs mt-1">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+        <div className="bg-teal-50 border-2 border-teal-300 rounded-2xl p-4">
+          <p className="font-bold text-teal-700 text-sm">
+            El módulo VBS aparece como la última pestaña en el portal de maestros. Los mismos maestros que tienen acceso al portal tienen acceso a VBS.
+          </p>
+        </div>
+      </div>
+    ),
+  },
+  {
+    part: 'vbs',
+    label: 'PARTE 3 — VBS',
+    title: 'Configurar el VBS',
+    subtitle: 'Set It and Forget It',
+    icon: <span className="text-3xl">⚙️</span>,
+    content: (
+      <div className="space-y-5">
+        <p className="text-gray-700 leading-relaxed">
+          Desde la pestaña VBS → Configurar, el maestro define todo una sola vez antes de que comience el VBS.
+        </p>
+        <div className="space-y-3">
+          {[
+            { step: '1', color: 'bg-teal-500', title: 'Selecciona el tema del año', desc: '8 temas disponibles: Under the Sea, Jungle Safari, Outer Space, Super Heroes, Dino Adventure, Wild West, Kingdom & Castle, Tropical Fiesta. Cada uno cambia los colores e íconos del módulo.' },
+            { step: '2', color: 'bg-blue-500', title: 'Ingresa el título y las fechas', desc: 'Escribe el nombre del VBS, la fecha de inicio y la fecha de cierre.' },
+            { step: '3', color: 'bg-cyan-500', title: 'Selecciona los días activos', desc: 'Activa los días de la semana en que corre el VBS. Por defecto lunes a viernes. El sistema calcula automáticamente todos los días del período.' },
+            { step: '4', color: 'bg-teal-600', title: 'Activa el VBS', desc: 'El switch de activar abre el registro público en icgg-avivakids.org/vbs para que los padres puedan registrar a sus hijos en línea.' },
+          ].map((s, i) => (
+            <div key={i} className="flex items-start gap-3">
+              <div className={`w-8 h-8 ${s.color} rounded-full flex items-center justify-center flex-shrink-0 shadow`}>
+                <span className="text-white font-black text-sm">{s.step}</span>
+              </div>
+              <div className="bg-gray-50 rounded-2xl p-3 flex-1 border border-gray-100">
+                <p className="font-bold text-gray-800 text-sm">{s.title}</p>
+                <p className="text-gray-500 text-xs mt-0.5">{s.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    ),
+  },
+  {
+    part: 'vbs',
+    label: 'PARTE 3 — VBS',
+    title: 'Registro y Check-In VBS',
+    subtitle: 'Registration & Daily Attendance',
+    icon: <span className="text-3xl">✅</span>,
+    content: (
+      <div className="space-y-5">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-4">
+            <p className="font-black text-blue-700 mb-2">🌐 Registro Online</p>
+            <p className="text-gray-600 text-xs leading-relaxed">
+              Los padres van a <span className="font-black">icgg-avivakids.org/vbs</span>, llenan el formulario y reciben un código único como <span className="font-black text-blue-600">VBS4821</span>. Ese código se usa para el check-in diario.
+            </p>
+          </div>
+          <div className="bg-teal-50 border-2 border-teal-200 rounded-2xl p-4">
+            <p className="font-black text-teal-700 mb-2">👤 Registro Presencial</p>
+            <p className="text-gray-600 text-xs leading-relaxed">
+              Desde la pestaña VBS → Niños, el maestro registra al niño directamente. El sistema genera el código VBS automáticamente.
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-white border-2 border-gray-200 rounded-2xl p-4">
+          <p className="text-xs font-black text-teal-600 uppercase tracking-widest mb-3">Check-In Diario</p>
+          <div className="space-y-2">
+            {[
+              { name: 'Valentina Cruz', code: 'VBS1234', present: true },
+              { name: 'Samuel Ortiz', code: 'VBS5678', present: true },
+              { name: 'Lucia Mendez', code: 'VBS9012', present: false },
+            ].map((child, i) => (
+              <div key={i} className={`flex items-center justify-between p-2 rounded-xl border ${child.present ? 'bg-teal-50 border-teal-200' : 'bg-white border-gray-200'}`}>
+                <div>
+                  <span className="font-bold text-gray-800 text-sm">{child.name}</span>
+                  <span className="ml-2 text-xs font-black text-teal-600">{child.code}</span>
+                </div>
+                <span className={`text-xs font-bold px-3 py-1 rounded-full ${child.present ? 'bg-teal-500 text-white' : 'bg-gray-100 text-gray-400'}`}>
+                  {child.present ? '✓ Presente' : 'Marcar'}
+                </span>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-gray-400 font-semibold mt-2">Un toque marca al niño presente. Otro toque lo desmarca. Sin QR codes — rápido y simple.</p>
+        </div>
+      </div>
+    ),
+  },
+  {
+    part: 'vbs',
+    label: 'PARTE 3 — VBS',
+    title: 'Reportes VBS para el Pastor',
+    subtitle: 'PDF & Excel Reports',
+    icon: <span className="text-3xl">📊</span>,
+    content: (
+      <div className="space-y-5">
+        <p className="text-gray-700 leading-relaxed">
+          Desde VBS → Reportes puedes ver las estadísticas en tiempo real y exportar el reporte completo para el pastor.
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            { label: 'Total Registrados', value: '24', color: 'bg-kids-blue', emoji: '👦' },
+            { label: 'Primera Vez', value: '8', color: 'bg-kids-coral', emoji: '⭐' },
+            { label: 'Registro Online', value: '15', color: 'bg-kids-purple', emoji: '🌐' },
+            { label: 'Registro Presencial', value: '9', color: 'bg-kids-mint', emoji: '👤' },
+          ].map((stat, i) => (
+            <div key={i} className={`${stat.color} rounded-2xl p-3 text-white text-center`}>
+              <div className="text-xl">{stat.emoji}</div>
+              <div className="text-2xl font-black">{stat.value}</div>
+              <div className="text-xs opacity-80">{stat.label}</div>
+            </div>
+          ))}
+        </div>
+        <div className="space-y-2">
+          {[
+            { label: 'PDF Reporte Completo', desc: 'Roster + asistencia diaria por fecha', color: 'from-kids-purple to-kids-blue' },
+            { label: 'Excel Hoja de Cálculo', desc: 'Todos los datos editables con columna por día', color: 'from-kids-yellow to-kids-mint' },
+          ].map((btn, i) => (
+            <div key={i} className={`bg-gradient-to-r ${btn.color} rounded-2xl p-4 flex items-center gap-3`}>
+              <Download className="w-5 h-5 text-white flex-shrink-0" />
+              <div>
+                <p className="font-black text-white text-sm">{btn.label}</p>
+                <p className="text-white/70 text-xs">{btn.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="bg-teal-50 border-2 border-teal-200 rounded-2xl p-3">
+          <p className="text-teal-700 font-bold text-xs">
+            El reporte incluye total registrados, primera vez, desglose por grupo, y asistencia diaria de cada niño durante todo el VBS.
+          </p>
+        </div>
+      </div>
+    ),
+  },
+  {
     part: 'admin',
     label: 'PARTE 2 — Portal de Maestros',
     title: '¿Necesitas Ayuda?',
@@ -754,6 +913,7 @@ const slides: SlideSection[] = [
 const PART_META = {
   parents: { label: 'PARTE 1 — Para Padres', gradient: 'from-kids-blue to-kids-mint', dot: 'bg-kids-blue' },
   admin: { label: 'PARTE 2 — Portal de Maestros', gradient: 'from-kids-purple to-kids-blue', dot: 'bg-kids-purple' },
+  vbs: { label: 'PARTE 3 — VBS', gradient: 'from-blue-400 to-teal-500', dot: 'bg-teal-500' },
 };
 
 export const TutorialSlideshow = ({ isOpen, onClose }: TutorialSlideshowProps) => {

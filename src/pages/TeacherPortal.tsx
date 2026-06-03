@@ -21,6 +21,10 @@ import {
   BookOpen,
   CheckCircle,
   KeyRound,
+  ClipboardCheck,
+  Lock,
+  Delete,
+  Star,
 } from 'lucide-react';
 import { QRScanner } from '../components/QRScanner';
 import { Analytics } from '../components/Analytics';

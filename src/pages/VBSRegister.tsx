@@ -254,14 +254,6 @@ export const VBSRegister = () => {
                       className="w-full px-4 pb-3 pt-1 bg-transparent border-0 outline-none font-semibold" />
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-600 mb-1">{es ? 'Grupo VBS' : 'VBS Group'}</label>
-                  <select value={form.group} onChange={e => setForm({...form, group: e.target.value})}
-                    className="w-full px-4 py-3 rounded-bubbly border-2 border-gray-200 focus:outline-none font-semibold bg-white">
-                    <option value="">{es ? 'Seleccione...' : 'Select...'}</option>
-                    {GROUPS.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
-                  </select>
-                </div>
                 <label className="flex items-center gap-3 cursor-pointer p-3 rounded-bubbly bg-gray-50">
                   <input type="checkbox" checked={form.isFirstTime} onChange={e => setForm({...form, isFirstTime: e.target.checked})}
                     className="w-5 h-5 rounded" />

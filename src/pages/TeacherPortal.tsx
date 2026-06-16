@@ -776,6 +776,15 @@ export const TeacherPortal = () => {
             {t.teacherPortal.dashboard}
           </h1>
           <div className="flex items-center gap-3">
+            <a
+              href="/Fe-en-Casa-Guia-Maestros.pdf"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-kids-purple to-kids-coral text-white rounded-bubbly font-bold hover:scale-105 transition-transform shadow-lg"
+            >
+              <Download className="w-5 h-5" />
+              <span>Guía del Maestro</span>
+            </a>
             <button
               onClick={() => setShowTutorial(true)}
               className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-kids-yellow to-kids-blue text-white rounded-bubbly font-bold hover:scale-105 transition-transform shadow-lg"

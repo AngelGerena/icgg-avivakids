@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Languages, Home, ClipboardCheck, FileText, CalendarDays, Cake, Church } from 'lucide-react';
+import { Languages, Home, ClipboardCheck, FileText, CalendarDays, Cake, Church, Heart } from 'lucide-react';
 import { ParentNotifications } from './ParentNotifications';
 
 export const Navbar = () => {
@@ -21,6 +21,7 @@ export const Navbar = () => {
     { path: '/intake-form', label: t.nav.intakeForm, icon: FileText },
     { path: '/calendar', label: t.nav.calendar, icon: CalendarDays },
     { path: '/birthdays', label: t.nav.birthdays, icon: Cake },
+    { path: '/faith-at-home', label: language === 'es' ? 'Fe en Casa' : 'Faith at Home', icon: Heart },
   ];
 
   return (

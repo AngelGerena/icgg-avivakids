@@ -32,6 +32,7 @@ import { QRCodeBadge } from '../components/QRCodeBadge';
 import { TutorialSlideshow } from '../components/TutorialSlideshow';
 import { exportToPDF, exportToExcel, exportSummaryTable } from '../utils/exportUtils';
 import { VBSAdminTab } from '../components/VBSAdminTab';
+import { TeacherLessons } from '../components/TeacherLessons';
 
 export const TeacherPortal = () => {
   const { t } = useLanguage();
@@ -48,7 +49,7 @@ export const TeacherPortal = () => {
   const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
   const [resetSuccess, setResetSuccess] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    'dashboard' | 'alerts' | 'events' | 'birthdays' | 'analytics' | 'children'
+    'dashboard' | 'alerts' | 'events' | 'birthdays' | 'analytics' | 'children' | 'lessons'
   >('dashboard');
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [alertHistory, setAlertHistory] = useState<Alert[]>([]);
@@ -798,6 +799,7 @@ export const TeacherPortal = () => {
             { id: 'children', label: 'Todos los Niños', icon: Users },
             { id: 'alerts', label: t.teacherPortal.alertPanel, icon: Bell },
             { id: 'events', label: t.teacherPortal.eventManager, icon: Calendar },
+            { id: 'lessons', label: '\ud83d\udcd6 Lecciones', icon: BookOpen },
             { id: 'birthdays', label: t.teacherPortal.birthdayManager, icon: Cake },
             { id: 'analytics', label: 'Analíticas', icon: TrendingUp },
             { id: 'vbs', label: '🌊 VBS', icon: Star },
@@ -1252,6 +1254,8 @@ export const TeacherPortal = () => {
         {activeTab === 'analytics' && <Analytics />}
 
         {activeTab === 'vbs' && <VBSAdminTab />}
+
+        {activeTab === 'lessons' && <TeacherLessons />}
 
         {activeTab === 'children' && (
           <div className="bg-white/95 backdrop-blur-xl rounded-bubbly p-8 shadow-xl border border-white/20">

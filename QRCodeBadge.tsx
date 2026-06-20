@@ -1,235 +1,405 @@
-import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { Search, X, Camera, Keyboard } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Bell, X, AlertCircle, Info } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
-interface QRScannerProps {
-  onScanSuccess: (data: any) => void;
-  onClose: () => void;
+interface Notification {
+  id: string;
+  child_id: string;
+  alert_type: 'pickup_request' | 'emergency' | 'general';
+  message: string;
+  is_read: boolean;
+  created_at: string;
 }
 
-export const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
-  const [mode, setMode] = useState<'camera' | 'manual'>('camera');
-  const [manualCode, setManualCode] = useState('');
-  const [cameraError, setCameraError] = useState('');
-  const [scanning, setScanning] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const animFrameRef = useRef<number>(0);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+interface Child {
+  id: string;
+  full_name: string;
+  unique_number: string;
+}
+
+export const ParentNotifications = () => {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [children, setChildren] = useState<Child[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [childNumber, setChildNumber] = useState('');
+  const [parentEmail, setParentEmail] = useState('');
+  const [showLogin, setShowLogin] = useState(false);
 
   useEffect(() => {
-    if (mode === 'camera') {
-      startCamera();
-    } else {
-      stopCamera();
-    }
-    return () => stopCamera();
-  }, [mode]);
+    const savedAuth = localStorage.getItem('parentAuth');
+    if (savedAuth) {
+      try {
+        const authData = JSON.parse(savedAuth);
+        const hoursSinceAuth = (new Date().getTime() - authData.timestamp) / (1000 * 60 * 60);
 
-  const startCamera = async () => {
-    setCameraError('');
-    setScanning(true);
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
-        videoRef.current.onloadedmetadata = () => {
-          scanFrame();
-        };
+        if (hoursSinceAuth < 24) {
+          setIsAuthenticated(true);
+          loadChildrenAndNotifications(authData.childIds);
+        } else {
+          localStorage.removeItem('parentAuth');
+        }
+      } catch (e) {
+        localStorage.removeItem('parentAuth');
       }
-    } catch (err: any) {
-      setCameraError(
-        err.name === 'NotAllowedError'
-          ? 'Permiso de cámara denegado. Por favor permita el acceso a la cámara en su navegador.'
-          : 'No se pudo acceder a la cámara. Use el modo manual.'
-      );
-      setScanning(false);
-      setMode('manual');
     }
-  };
+  }, []);
 
-  const stopCamera = () => {
-    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(t => t.stop());
-      streamRef.current = null;
-    }
-    setScanning(false);
-  };
+  useEffect(() => {
+    if (!isAuthenticated || children.length === 0) return;
 
-  const scanFrame = () => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (!video || !canvas || video.readyState !== video.HAVE_ENOUGH_DATA) {
-      animFrameRef.current = requestAnimationFrame(scanFrame);
+    const childIds = children.map((c) => c.id);
+
+    const channel = supabase
+      .channel('parent-notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'parent_notifications',
+        },
+        (payload) => {
+          const newNotification = payload.new as Notification;
+          if (childIds.includes(newNotification.child_id)) {
+            setNotifications((prev) => [newNotification, ...prev]);
+            setUnreadCount((prev) => prev + 1);
+            playNotificationSound();
+            showBrowserNotification(newNotification);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [isAuthenticated, children]);
+
+  const authenticateParent = async () => {
+    if (!childNumber.trim() || !parentEmail.trim()) {
+      alert('Please enter both your child\'s unique number and your email address');
       return;
     }
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    const { data: child, error: childError } = await supabase
+      .from('children')
+      .select('id, full_name, unique_number')
+      .eq('unique_number', childNumber.trim())
+      .maybeSingle();
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    if (childError || !child) {
+      alert('Child not found. Please check the number and try again.');
+      return;
+    }
 
-    // Use BarcodeDetector if available (Chrome/Android)
-    if ('BarcodeDetector' in window) {
-      const detector = new (window as any).BarcodeDetector({ formats: ['qr_code'] });
-      detector.detect(canvas).then((codes: any[]) => {
-        if (codes.length > 0) {
-          const raw = codes[0].rawValue;
-          stopCamera();
-          processQRValue(raw);
-          return;
-        }
-        animFrameRef.current = requestAnimationFrame(scanFrame);
-      }).catch(() => {
-        animFrameRef.current = requestAnimationFrame(scanFrame);
+    const { data: parent, error: parentError } = await supabase
+      .from('parents')
+      .select('id, primary_email, child_id')
+      .eq('child_id', child.id)
+      .maybeSingle();
+
+    if (parentError || !parent) {
+      alert('Parent information not found for this child.');
+      return;
+    }
+
+    if (parent.primary_email.toLowerCase() !== parentEmail.trim().toLowerCase()) {
+      alert('Email does not match our records. Please use the email address you provided during registration.');
+      return;
+    }
+
+    const childIds = [child.id];
+    const authData = {
+      childIds,
+      email: parent.primary_email,
+      timestamp: new Date().getTime(),
+    };
+
+    localStorage.setItem('parentAuth', JSON.stringify(authData));
+    setIsAuthenticated(true);
+    setShowLogin(false);
+    setChildNumber('');
+    setParentEmail('');
+    loadChildrenAndNotifications(childIds);
+  };
+
+  const loadChildrenAndNotifications = async (childIds: string[]) => {
+    const { data: childrenData } = await supabase
+      .from('children')
+      .select('id, full_name, unique_number')
+      .in('id', childIds);
+
+    if (childrenData) {
+      setChildren(childrenData);
+
+      const { data: notificationsData } = await supabase
+        .from('parent_notifications')
+        .select('*')
+        .in('child_id', childIds)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (notificationsData) {
+        setNotifications(notificationsData);
+        setUnreadCount(notificationsData.filter((n) => !n.is_read).length);
+      }
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem('parentAuth');
+    setIsAuthenticated(false);
+    setChildren([]);
+    setNotifications([]);
+    setUnreadCount(0);
+  };
+
+  const playNotificationSound = () => {
+    const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIF2m98OScTgwNU6rm8LRiFwU7k9nywHkpBSd+zPLaizsKGGS57OihUBELTKXh8bllHAU2jdXuxHYnBSl+zPLajDkJF2u98OScUQwPVKzm8LNhHAU8lNryvnkoBSh9zPLajDkJGGS57OifUhELTKXh8bllHAU1jdXuxHYnBSh+zPLajDkJF2q98OScTwwOVKzm8LNhHAU8lNryvnkoBSZ8y/LajDkJGGS57OifTxELTKXh8bdmHAU1jdXuxHYnBSh+zPLajDkJF2q98OScTwwOVKzm8LNhHAU8lNryvnkoBSZ8y/LajDkJGGS57OifTxELTKXh8bdmHAU1jdXuxHYnBSh+zPLajDkJF2q98OScTwwOVKzm8LNhHAU8lNryvnkoBSZ8y/LajDkJGGS57OifTxELTKXh8bdmHAU1jdXuxHYnBSh+zPLajDkJF2q98OScTwwOVKzm8LNhHAU8lNryvnkoBSZ8y/LajDkJGGS57OifTxELTKXh8bdmHAU1jdXuxHYnBSh+zPLajDkJF2q98OScTwwOVKzm8LNhHAU8lNryvnkoBSZ8y/LajDkJGGS57OifTxELTKXh8bdmHAU1jdXuxHYnBSh+zPLajDkJF2q98OScTwwOVKzm8LNhHAU8lNryvnkoBSZ8y/LajDkJGGS57OifTxELTKXh8bdmHAU1jdXuxHYnBSh+zPLajDkJF2q98OScTwwOVKzm8LNhHAU8lNryvnkoBSZ8y/LajDkJGGS57OifTxELTKXh8bdmHAU1jdXuxHYnBSh+zPLajDkJF2q98OScTwwOVKzm8LNhHAU8lNryvnkoBSZ8y/LajDkJGGS57OifTxELTKXh8bdmHAU1jdXuxHYnBSh+zPLajDkJF2q98OScTwwOVKzm8LNhHAU8lNryvnkoBSZ8y/LajDkJGGS57OifTxELTKXh8bdmHAU1jdXuxHYnBSh+zPLajDkJF2q98OScTwwOVKzm8LNhHAU8lNryvnkoBSZ8y/LajDkJGGS57OifTxELTKXh8bdmHAU1jdXuxHYnBSh+zPLajDkJF2q98OScTwwOVKzm8LNhHAU8lNryvnkoBSZ8y/LajDkJGGS57OifTxELTKXh8bdmHAU1jdXuxHYnBSh+zPLajDkJF2q98OScTwwOVKzm8LNhHAU8lNryvnkoBSZ8y/LajDkJGGS57OifTxELTKXh8bdmHAU1jdXuxHYnBSh+zPLajDkJF2q98OScTwwOVKzm8LNhHAU8lNryvnkoBQ==');
+    audio.play().catch(() => {});
+  };
+
+  const showBrowserNotification = async (notification: Notification) => {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      const child = children.find((c) => c.id === notification.child_id);
+      new Notification('Children\'s Ministry Alert', {
+        body: `${child?.full_name || 'Your child'}: ${notification.message}`,
+        icon: '/icon.png',
       });
-    } else {
-      // BarcodeDetector not available — fall back to manual
-      stopCamera();
-      setCameraError('Su navegador no soporta escaneo automático. Use el modo manual.');
-      setMode('manual');
     }
   };
 
-  const processQRValue = (raw: string) => {
-    try {
-      const parsed = JSON.parse(raw);
-      onScanSuccess(parsed);
-    } catch {
-      onScanSuccess({ childNumber: raw.trim(), type: 'child-profile' });
+  const requestNotificationPermission = async () => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      await Notification.requestPermission();
     }
   };
 
-  const handleManualSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!manualCode.trim()) return;
-    processQRValue(manualCode.trim());
+  const markAsRead = async (notificationId: string) => {
+    await supabase
+      .from('parent_notifications')
+      .update({ is_read: true })
+      .eq('id', notificationId);
+
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === notificationId ? { ...n, is_read: true } : n))
+    );
+    setUnreadCount((prev) => Math.max(0, prev - 1));
   };
+
+  const markAllAsRead = async () => {
+    const unreadIds = notifications.filter((n) => !n.is_read).map((n) => n.id);
+
+    if (unreadIds.length > 0) {
+      await supabase
+        .from('parent_notifications')
+        .update({ is_read: true })
+        .in('id', unreadIds);
+
+      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+      setUnreadCount(0);
+    }
+  };
+
+  const getChildName = (childId: string) => {
+    return children.find((c) => c.id === childId)?.full_name || 'Child';
+  };
+
+  const getAlertIcon = (type: string) => {
+    switch (type) {
+      case 'emergency':
+        return <AlertCircle className="w-5 h-5 text-red-500" />;
+      case 'pickup_request':
+        return <Bell className="w-5 h-5 text-yellow-500" />;
+      case 'checkout':
+        return <span className="text-lg">✅</span>;
+      default:
+        return <Info className="w-5 h-5 text-blue-500" />;
+    }
+  };
+
+  const getAlertColor = (type: string) => {
+    switch (type) {
+      case 'emergency':
+        return 'border-red-500 bg-red-50';
+      case 'pickup_request':
+        return 'border-yellow-500 bg-yellow-50';
+      case 'checkout':
+        return 'border-green-500 bg-green-50';
+      default:
+        return 'border-blue-500 bg-blue-50';
+    }
+  };
+
+  useEffect(() => {
+    requestNotificationPermission();
+  }, []);
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-bubbly shadow-2xl max-w-md w-full overflow-hidden"
+    <div className="relative">
+      <motion.button
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        onClick={() => {
+          if (isAuthenticated) {
+            setShowNotifications(!showNotifications);
+          } else {
+            setShowLogin(true);
+          }
+        }}
+        className="relative p-3 bg-white rounded-full shadow-lg"
       >
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 pb-4">
-          <h2 className="text-2xl font-black text-kids-purple">Escanear QR del Niño</h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-            <X className="w-6 h-6 text-gray-600" />
-          </button>
-        </div>
-
-        {/* Mode toggle */}
-        <div className="flex mx-6 mb-4 bg-gray-100 rounded-bubbly p-1">
-          <button
-            onClick={() => setMode('camera')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-bubbly font-bold text-sm transition-all ${
-              mode === 'camera' ? 'bg-kids-purple text-white shadow' : 'text-gray-500 hover:text-gray-700'
-            }`}
+        <Bell className="w-6 h-6 text-gray-700" />
+        {unreadCount > 0 && (
+          <motion.span
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center"
           >
-            <Camera className="w-4 h-4" />
-            Cámara
-          </button>
-          <button
-            onClick={() => setMode('manual')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-bubbly font-bold text-sm transition-all ${
-              mode === 'manual' ? 'bg-kids-purple text-white shadow' : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <Keyboard className="w-4 h-4" />
-            Manual
-          </button>
-        </div>
-
-        {/* Camera view */}
-        {mode === 'camera' && (
-          <div className="mx-6 mb-6">
-            {cameraError ? (
-              <div className="bg-red-50 border border-red-200 rounded-bubbly p-4 text-red-600 font-semibold text-sm text-center">
-                {cameraError}
-              </div>
-            ) : (
-              <div className="relative rounded-bubbly overflow-hidden bg-black aspect-square">
-                <video
-                  ref={videoRef}
-                  className="w-full h-full object-cover"
-                  playsInline
-                  muted
-                />
-                <canvas ref={canvasRef} className="hidden" />
-                {/* Scanning overlay */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="w-48 h-48 relative">
-                    <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white rounded-tl-lg" />
-                    <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-white rounded-tr-lg" />
-                    <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-white rounded-bl-lg" />
-                    <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-white rounded-br-lg" />
-                    {scanning && (
-                      <motion.div
-                        className="absolute left-0 right-0 h-0.5 bg-kids-purple"
-                        animate={{ top: ['0%', '100%', '0%'] }}
-                        transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                      />
-                    )}
-                  </div>
-                </div>
-                <div className="absolute bottom-3 left-0 right-0 text-center">
-                  <span className="bg-black/60 text-white text-xs font-bold px-3 py-1 rounded-full">
-                    Apunte al código QR del padre/madre
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
+            {unreadCount}
+          </motion.span>
         )}
+      </motion.button>
 
-        {/* Manual mode */}
-        {mode === 'manual' && (
-          <div className="mx-6 mb-6">
-            <div className="bg-gradient-to-br from-kids-blue to-kids-purple rounded-bubbly p-5 text-center text-white mb-4">
-              <p className="text-sm font-bold">
-                Ingrese el número de 4 dígitos del niño o pegue los datos del código QR
-              </p>
+      <AnimatePresence>
+        {showLogin && !isAuthenticated && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="absolute top-16 right-0 w-96 bg-white rounded-2xl shadow-2xl overflow-hidden z-50"
+          >
+            <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-4 flex items-center justify-between">
+              <h3 className="text-white font-bold text-lg">Parent Login</h3>
+              <button
+                onClick={() => setShowLogin(false)}
+                className="text-white hover:bg-white/20 rounded-full p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            <form onSubmit={handleManualSubmit} className="space-y-3">
+            <div className="p-6">
+              <p className="text-gray-600 mb-4 text-sm">
+                Enter your child's unique number and your registered email to view notifications
+              </p>
               <input
                 type="text"
-                value={manualCode}
-                onChange={(e) => setManualCode(e.target.value)}
-                placeholder="Ej: 0042"
-                autoFocus
-                className="w-full px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-purple focus:outline-none font-black text-2xl text-center tracking-widest"
+                value={childNumber}
+                onChange={(e) => setChildNumber(e.target.value)}
+                placeholder="Child's unique number"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none mb-3"
               />
-              <motion.button
-                type="submit"
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                className="w-full py-4 bg-gradient-to-r from-kids-blue to-kids-purple text-white text-lg font-black rounded-bubbly shadow-lg flex items-center justify-center gap-2"
+              <input
+                type="email"
+                value={parentEmail}
+                onChange={(e) => setParentEmail(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && authenticateParent()}
+                placeholder="Your email address"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none mb-4"
+              />
+              <button
+                onClick={authenticateParent}
+                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold py-3 rounded-lg hover:shadow-lg transition-shadow"
               >
-                <Search className="w-5 h-5" />
-                Buscar y Registrar Entrada
-              </motion.button>
-            </form>
-          </div>
+                Access Notifications
+              </button>
+              <p className="text-xs text-gray-500 mt-3 text-center">
+                Use the email address you provided during registration
+              </p>
+            </div>
+          </motion.div>
         )}
-      </motion.div>
-    </motion.div>
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showNotifications && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="absolute top-16 right-0 w-96 max-h-[600px] bg-white rounded-2xl shadow-2xl overflow-hidden z-50"
+          >
+            <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-white font-bold text-lg">Notifications</h3>
+                <div className="flex items-center gap-2">
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={markAllAsRead}
+                      className="text-white text-sm hover:underline"
+                    >
+                      Mark all read
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setShowNotifications(false)}
+                    className="text-white hover:bg-white/20 rounded-full p-1"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+              {children.length > 0 && (
+                <div className="flex items-center justify-between text-white text-xs">
+                  <span>Viewing: {children[0].full_name}</span>
+                  <button
+                    onClick={logout}
+                    className="hover:underline"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="overflow-y-auto max-h-[520px]">
+              {notifications.length === 0 ? (
+                <div className="p-8 text-center text-gray-500">
+                  <Bell className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                  <p>No notifications yet</p>
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {notifications.map((notification) => (
+                    <motion.div
+                      key={notification.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
+                        !notification.is_read ? 'bg-blue-50' : ''
+                      }`}
+                      onClick={() => !notification.is_read && markAsRead(notification.id)}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="mt-1">{getAlertIcon(notification.alert_type)}</div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="font-bold text-gray-900">
+                              {getChildName(notification.child_id)}
+                            </p>
+                            {!notification.is_read && (
+                              <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                            )}
+                          </div>
+                          <p className="text-gray-700 text-sm mb-1">
+                            {notification.message}
+                          </p>
+                          <p className="text-gray-400 text-xs">
+                            {new Date(notification.created_at).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 };

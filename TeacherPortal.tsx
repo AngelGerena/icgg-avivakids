@@ -1,334 +1,533 @@
-import { motion } from 'framer-motion';
-import { useLanguage } from '../contexts/LanguageContext';
-import { Heart, Shield, Users, BookOpen, Calendar, Baby } from 'lucide-react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
-export const Home = () => {
-  const { t } = useLanguage();
+type Language = 'es' | 'en';
 
-  const features = [
-    {
-      icon: Heart,
-      titleKey: 'safeEnvironment',
-      descKey: 'safeEnvironmentDesc',
-      color: 'kids-coral',
+interface Translations {
+  nav: {
+    home: string;
+    checkIn: string;
+    intakeForm: string;
+    calendar: string;
+    birthdays: string;
+    teacherPortal: string;
+  };
+  home: {
+    welcome: string;
+    subtitle: string;
+    missionStatement: string;
+    whatWeOffer: string;
+    safeEnvironment: string;
+    safeEnvironmentDesc: string;
+    bibleTeaching: string;
+    bibleTeachingDesc: string;
+    ageGroups: string;
+    ageGroupsDesc: string;
+    ourAgeGroups: string;
+    ages: string;
+    firstTimeTitle: string;
+    firstTimeDesc: string;
+    checkInProcess: string;
+    step1: string;
+    step2: string;
+    step3: string;
+    step4: string;
+  };
+  checkIn: {
+    title: string;
+    childName: string;
+    parentName: string;
+    parentPhone: string;
+    parentEmail: string;
+    childAge: string;
+    childDob: string;
+    room: string;
+    submitButton: string;
+    successTitle: string;
+    successMessage: string;
+    keepNumber: string;
+    alertInstruction: string;
+    rooms: {
+      babies: string;
+      explorers: string;
+      adventurers: string;
+      youth: string;
+    };
+  };
+  intakeForm: {
+    title: string;
+    sectionA: string;
+    sectionB: string;
+    sectionC: string;
+    sectionD: string;
+    sectionE: string;
+    fullName: string;
+    nickname: string;
+    dob: string;
+    gender: string;
+    uploadPhoto: string;
+    primaryGuardian: string;
+    relationship: string;
+    phone: string;
+    email: string;
+    secondaryContact: string;
+    allergies: string;
+    restrictedFoods: string;
+    medications: string;
+    medicationName: string;
+    dosage: string;
+    frequency: string;
+    administeredBy: string;
+    addMedication: string;
+    medicalConditions: string;
+    specialNeeds: string;
+    authorizedMedication: string;
+    doctorName: string;
+    doctorPhone: string;
+    behavioralNotes: string;
+    triggers: string;
+    communicationNotes: string;
+    photoConsent: string;
+    photoConsentText: string;
+    medicalConsent: string;
+    medicalConsentText: string;
+    digitalSignature: string;
+    signaturePlaceholder: string;
+    submitButton: string;
+    successMessage: string;
+    allergyOptions: {
+      nuts: string;
+      dairy: string;
+      gluten: string;
+      shellfish: string;
+      other: string;
+    };
+  };
+  calendar: {
+    title: string;
+    addEvent: string;
+    listView: string;
+    calendarView: string;
+    upcomingEvents: string;
+    eventTitle: string;
+    date: string;
+    time: string;
+    description: string;
+    location: string;
+    category: string;
+    color: string;
+    save: string;
+    cancel: string;
+    categories: {
+      activity: string;
+      celebration: string;
+      retreat: string;
+      special: string;
+    };
+  };
+  birthdays: {
+    title: string;
+    thisMonth: string;
+    upcoming: string;
+    turnsAge: string;
+    celebrated: string;
+    noBirthdays: string;
+  };
+  teacherPortal: {
+    title: string;
+    login: string;
+    password: string;
+    loginButton: string;
+    logout: string;
+    dashboard: string;
+    checkInList: string;
+    searchIntake: string;
+    alertPanel: string;
+    eventManager: string;
+    birthdayManager: string;
+    exportCSV: string;
+    childNumber: string;
+    enterNumber: string;
+    alertReason: string;
+    triggerAlert: string;
+    needsAttention: string;
+    pickUpChild: string;
+    searchPlaceholder: string;
+    markCelebrated: string;
+    noChildrenCheckedIn: string;
+    checkedInAt: string;
+  };
+  common: {
+    loading: string;
+    error: string;
+    success: string;
+    submit: string;
+    edit: string;
+    delete: string;
+    yes: string;
+    no: string;
+    close: string;
+  };
+}
+
+const translations: Record<Language, Translations> = {
+  es: {
+    nav: {
+      home: 'Inicio',
+      checkIn: 'Registro de Niños',
+      intakeForm: 'Formulario de Admisión',
+      calendar: 'Calendario de Eventos',
+      birthdays: 'Cumpleaños',
+      teacherPortal: 'Portal del Maestro',
     },
-    {
-      icon: BookOpen,
-      titleKey: 'bibleTeaching',
-      descKey: 'bibleTeachingDesc',
-      color: 'kids-blue',
+    home: {
+      welcome: '¡Bienvenidos a ICGG Aviva Kids!',
+      subtitle: 'Iglesia Cristiana Gracia y Gloria',
+      missionStatement: 'Un lugar seguro donde los niños aprenden sobre el amor de Jesús, hacen amigos y crecen en su fe a través de enseñanzas bíblicas apropiadas para su edad, adoración y actividades divertidas.',
+      whatWeOffer: '¿Qué Ofrecemos?',
+      safeEnvironment: 'Ambiente Seguro',
+      safeEnvironmentDesc: 'Ambiente protegido y cuidadosamente supervisado con personal verificado y capacitado que prioriza la seguridad de su hijo.',
+      bibleTeaching: 'Enseñanza Bíblica',
+      bibleTeachingDesc: 'Lecciones apropiadas para la edad que ayudan a los niños a entender la Biblia y aplicar sus principios en la vida diaria.',
+      ageGroups: 'Grupos por Edad',
+      ageGroupsDesc: 'Clases adaptadas al desarrollo diseñadas específicamente para cada grupo de edad, asegurando experiencias de aprendizaje óptimas.',
+      ourAgeGroups: 'Nuestros Grupos por Edad',
+      ages: 'Edades',
+      firstTimeTitle: '¿Primera Vez Visitando?',
+      firstTimeDesc: '¡Estamos emocionados de conocer a su familia! Así es como funciona nuestro proceso de registro para garantizar la seguridad y comodidad de su hijo.',
+      checkInProcess: 'Proceso de Registro:',
+      step1: 'Complete el formulario de admisión en línea antes de su visita (o llegue temprano para completarlo)',
+      step2: 'Al llegar, regístrese en nuestra mesa de registro',
+      step3: 'Recibirá un número único para usted y su hijo',
+      step4: 'Si necesitamos contactarlo durante el servicio, su número aparecerá en las pantallas',
     },
-    {
-      icon: Users,
-      titleKey: 'ageGroups',
-      descKey: 'ageGroupsDesc',
-      color: 'kids-mint',
+    checkIn: {
+      title: 'Registro de Niños',
+      childName: 'Nombre completo del niño',
+      parentName: 'Nombre del padre/tutor',
+      parentPhone: 'Teléfono',
+      parentEmail: 'Correo electrónico',
+      childAge: 'Edad del niño',
+      childDob: 'Fecha de nacimiento',
+      room: 'Sala/Clase',
+      submitButton: 'Registrar Niño',
+      successTitle: '¡Registro Exitoso!',
+      successMessage: 'Número asignado a {name}',
+      keepNumber: 'Guarda este número. Si tu hijo necesita atención, este número aparecerá en pantalla.',
+      alertInstruction: 'Por favor, mantén este número visible.',
+      rooms: {
+        babies: 'Cuna/Guardería 0-3 años',
+        explorers: 'Párvulos/Preescolares 3-5 años',
+        adventurers: 'Principiantes/Primarios 5-6 o 7-8 años',
+        youth: 'Primarios/Junior 7-10 o 11 años',
+      },
     },
-  ];
-
-  const ageGroups = [
-    {
-      icon: Baby,
-      titleKey: 'babies',
-      color: 'kids-yellow',
-      image: 'https://images.pexels.com/photos/3661383/pexels-photo-3661383.jpeg?auto=compress&cs=tinysrgb&w=600',
+    intakeForm: {
+      title: 'Formulario de Admisión',
+      sectionA: 'Sección A - Información del Niño',
+      sectionB: 'Sección B - Información del Padre/Tutor',
+      sectionC: 'Sección C - Información Médica y de Salud',
+      sectionD: 'Sección D - Comportamiento y Notas Especiales',
+      sectionE: 'Sección E - Consentimiento Legal',
+      fullName: 'Nombre legal completo',
+      nickname: 'Apodo',
+      dob: 'Fecha de nacimiento',
+      gender: 'Género',
+      uploadPhoto: 'Subir foto (opcional)',
+      primaryGuardian: 'Tutor principal',
+      relationship: 'Relación',
+      phone: 'Teléfono',
+      email: 'Correo electrónico',
+      secondaryContact: 'Contacto secundario/emergencia',
+      allergies: 'Alergias alimentarias',
+      restrictedFoods: 'Alimentos o bebidas que el niño no puede consumir',
+      medications: 'Medicamentos actuales',
+      medicationName: 'Nombre del medicamento',
+      dosage: 'Dosis',
+      frequency: 'Frecuencia',
+      administeredBy: 'Administrado por',
+      addMedication: 'Agregar medicamento',
+      medicalConditions: 'Condiciones o diagnósticos médicos',
+      specialNeeds: 'Necesidades especiales o adaptaciones requeridas',
+      authorizedMedication: '¿Autorizado para administrar medicamentos?',
+      doctorName: 'Nombre del médico',
+      doctorPhone: 'Teléfono del médico',
+      behavioralNotes: 'Consideraciones de comportamiento que el maestro debe conocer',
+      triggers: 'Desencadenantes o sensibilidades',
+      communicationNotes: 'Estilo o preferencias de comunicación',
+      photoConsent: 'Consentimiento de foto/video',
+      photoConsentText: 'Autorizo que se tomen y usen fotos/videos de mi hijo para fines del ministerio',
+      medicalConsent: 'Consentimiento de emergencia médica',
+      medicalConsentText: 'Autorizo tratamiento médico de emergencia para mi hijo si es necesario',
+      digitalSignature: 'Firma digital',
+      signaturePlaceholder: 'Escriba su nombre completo como firma',
+      submitButton: 'Enviar Formulario',
+      successMessage: '¡Formulario enviado exitosamente!',
+      allergyOptions: {
+        nuts: 'Nueces',
+        dairy: 'Lácteos',
+        gluten: 'Gluten',
+        shellfish: 'Mariscos',
+        other: 'Otro',
+      },
     },
-    {
-      icon: Users,
-      titleKey: 'explorers',
-      color: 'kids-coral',
-      image: 'https://images.pexels.com/photos/8613089/pexels-photo-8613089.jpeg?auto=compress&cs=tinysrgb&w=600',
+    calendar: {
+      title: 'Calendario de Eventos',
+      addEvent: 'Agregar Evento',
+      listView: 'Vista de Lista',
+      calendarView: 'Vista de Calendario',
+      upcomingEvents: 'Próximos Eventos',
+      eventTitle: 'Título del evento',
+      date: 'Fecha',
+      time: 'Hora',
+      description: 'Descripción',
+      location: 'Ubicación',
+      category: 'Categoría',
+      color: 'Color',
+      save: 'Guardar',
+      cancel: 'Cancelar',
+      categories: {
+        activity: 'Actividad',
+        celebration: 'Celebración',
+        retreat: 'Retiro',
+        special: 'Especial',
+      },
     },
-    {
-      icon: Calendar,
-      titleKey: 'adventurers',
-      color: 'kids-blue',
-      image: 'https://images.pexels.com/photos/8612990/pexels-photo-8612990.jpeg?auto=compress&cs=tinysrgb&w=600',
+    birthdays: {
+      title: 'Cumpleaños',
+      thisMonth: 'Cumpleaños Este Mes',
+      upcoming: 'Próximos Cumpleaños (30 días)',
+      turnsAge: 'cumple {age} años',
+      celebrated: 'Celebrado',
+      noBirthdays: 'No hay cumpleaños',
     },
-    {
-      icon: Shield,
-      titleKey: 'youth',
-      color: 'kids-mint',
-      image: '/TEENS.webp',
+    teacherPortal: {
+      title: 'Portal del Maestro',
+      login: 'Iniciar Sesión',
+      password: 'Contraseña',
+      loginButton: 'Entrar',
+      logout: 'Cerrar Sesión',
+      dashboard: 'Panel de Control',
+      checkInList: 'Lista de Registro de Hoy',
+      searchIntake: 'Buscar Formulario de Admisión',
+      alertPanel: 'Panel de Alertas',
+      eventManager: 'Gestor de Eventos',
+      birthdayManager: 'Gestor de Cumpleaños',
+      exportCSV: 'Exportar CSV',
+      childNumber: 'Número del Niño',
+      enterNumber: 'Ingrese el número',
+      alertReason: 'Razón de la alerta',
+      triggerAlert: 'Activar Alerta',
+      needsAttention: 'Su hijo necesita su atención',
+      pickUpChild: 'Por favor recoja a su hijo',
+      searchPlaceholder: 'Buscar por nombre o número...',
+      markCelebrated: 'Marcar como celebrado',
+      noChildrenCheckedIn: 'No hay niños registrados hoy',
+      checkedInAt: 'Registrado a las',
     },
-  ];
+    common: {
+      loading: 'Cargando...',
+      error: 'Error',
+      success: 'Éxito',
+      submit: 'Enviar',
+      edit: 'Editar',
+      delete: 'Eliminar',
+      yes: 'Sí',
+      no: 'No',
+      close: 'Cerrar',
+    },
+  },
+  en: {
+    nav: {
+      home: 'Home',
+      checkIn: 'Child Check-In',
+      intakeForm: 'Intake Form',
+      calendar: 'Event Calendar',
+      birthdays: 'Birthdays',
+      teacherPortal: 'Teacher Portal',
+    },
+    home: {
+      welcome: 'Welcome to ICGG Aviva Kids!',
+      subtitle: 'Iglesia Cristiana Gracia y Gloria',
+      missionStatement: 'A safe place where children learn about Jesus\' love, make friends, and grow in their faith through age-appropriate Bible teaching, worship, and fun activities.',
+      whatWeOffer: 'What We Offer',
+      safeEnvironment: 'Safe Environment',
+      safeEnvironmentDesc: 'A secure and carefully supervised environment with background-checked and trained staff who prioritize your child\'s safety.',
+      bibleTeaching: 'Bible Teaching',
+      bibleTeachingDesc: 'Age-appropriate lessons that help children understand the Bible and apply its principles to everyday life.',
+      ageGroups: 'Age Groups',
+      ageGroupsDesc: 'Developmentally tailored classes designed specifically for each age group, ensuring optimal learning experiences.',
+      ourAgeGroups: 'Our Age Groups',
+      ages: 'Ages',
+      firstTimeTitle: 'First Time Visiting?',
+      firstTimeDesc: 'We\'re excited to meet your family! Here\'s how our check-in process works to ensure your child\'s safety and comfort.',
+      checkInProcess: 'Check-In Process:',
+      step1: 'Complete the intake form online before your visit (or arrive early to fill it out)',
+      step2: 'Upon arrival, check in at our registration desk',
+      step3: 'You\'ll receive a unique number for you and your child',
+      step4: 'If we need to reach you during service, your number will appear on screens',
+    },
+    checkIn: {
+      title: 'Child Check-In',
+      childName: 'Child\'s full name',
+      parentName: 'Parent/guardian full name',
+      parentPhone: 'Phone number',
+      parentEmail: 'Email address',
+      childAge: 'Child\'s age',
+      childDob: 'Date of birth',
+      room: 'Room/Class',
+      submitButton: 'Check In Child',
+      successTitle: 'Check-In Successful!',
+      successMessage: 'Number assigned to {name}',
+      keepNumber: 'Keep this number. If your child needs attention, this number will appear on screen.',
+      alertInstruction: 'Please keep this number visible.',
+      rooms: {
+        babies: 'Nursery 0-3 years',
+        explorers: 'Preschool 3-5 years',
+        adventurers: 'Beginners/Primary 5-6 or 7-8 years',
+        youth: 'Primary/Junior 7-10 or 11 years',
+      },
+    },
+    intakeForm: {
+      title: 'Intake Form',
+      sectionA: 'Section A - Child Information',
+      sectionB: 'Section B - Parent/Guardian Information',
+      sectionC: 'Section C - Medical & Health Information',
+      sectionD: 'Section D - Behavior & Special Notes',
+      sectionE: 'Section E - Legal Consent',
+      fullName: 'Full legal name',
+      nickname: 'Nickname',
+      dob: 'Date of birth',
+      gender: 'Gender',
+      uploadPhoto: 'Upload photo (optional)',
+      primaryGuardian: 'Primary guardian',
+      relationship: 'Relationship',
+      phone: 'Phone',
+      email: 'Email',
+      secondaryContact: 'Secondary/emergency contact',
+      allergies: 'Food allergies',
+      restrictedFoods: 'Foods or drinks child cannot consume',
+      medications: 'Current medications',
+      medicationName: 'Medication name',
+      dosage: 'Dosage',
+      frequency: 'Frequency',
+      administeredBy: 'Administered by',
+      addMedication: 'Add medication',
+      medicalConditions: 'Medical conditions or diagnoses',
+      specialNeeds: 'Special needs or accommodations required',
+      authorizedMedication: 'Authorized to administer medication?',
+      doctorName: 'Doctor\'s name',
+      doctorPhone: 'Doctor\'s phone',
+      behavioralNotes: 'Behavioral considerations the teacher should know',
+      triggers: 'Triggers or sensitivities',
+      communicationNotes: 'Communication style or preferences',
+      photoConsent: 'Photo/video consent',
+      photoConsentText: 'I authorize photos/videos of my child to be taken and used for ministry purposes',
+      medicalConsent: 'Medical emergency consent',
+      medicalConsentText: 'I authorize emergency medical treatment for my child if necessary',
+      digitalSignature: 'Digital signature',
+      signaturePlaceholder: 'Type your full name as signature',
+      submitButton: 'Submit Form',
+      successMessage: 'Form submitted successfully!',
+      allergyOptions: {
+        nuts: 'Nuts',
+        dairy: 'Dairy',
+        gluten: 'Gluten',
+        shellfish: 'Shellfish',
+        other: 'Other',
+      },
+    },
+    calendar: {
+      title: 'Event Calendar',
+      addEvent: 'Add Event',
+      listView: 'List View',
+      calendarView: 'Calendar View',
+      upcomingEvents: 'Upcoming Events',
+      eventTitle: 'Event title',
+      date: 'Date',
+      time: 'Time',
+      description: 'Description',
+      location: 'Location',
+      category: 'Category',
+      color: 'Color',
+      save: 'Save',
+      cancel: 'Cancel',
+      categories: {
+        activity: 'Activity',
+        celebration: 'Celebration',
+        retreat: 'Retreat',
+        special: 'Special',
+      },
+    },
+    birthdays: {
+      title: 'Birthdays',
+      thisMonth: 'Birthdays This Month',
+      upcoming: 'Upcoming Birthdays (30 days)',
+      turnsAge: 'turns {age}',
+      celebrated: 'Celebrated',
+      noBirthdays: 'No birthdays',
+    },
+    teacherPortal: {
+      title: 'Teacher Portal',
+      login: 'Login',
+      password: 'Password',
+      loginButton: 'Sign In',
+      logout: 'Logout',
+      dashboard: 'Dashboard',
+      checkInList: 'Today\'s Check-In List',
+      searchIntake: 'Search Intake Form',
+      alertPanel: 'Alert Panel',
+      eventManager: 'Event Manager',
+      birthdayManager: 'Birthday Manager',
+      exportCSV: 'Export CSV',
+      childNumber: 'Child Number',
+      enterNumber: 'Enter number',
+      alertReason: 'Alert reason',
+      triggerAlert: 'Trigger Alert',
+      needsAttention: 'Your child needs your attention',
+      pickUpChild: 'Please pick up your child',
+      searchPlaceholder: 'Search by name or number...',
+      markCelebrated: 'Mark as celebrated',
+      noChildrenCheckedIn: 'No children checked in today',
+      checkedInAt: 'Checked in at',
+    },
+    common: {
+      loading: 'Loading...',
+      error: 'Error',
+      success: 'Success',
+      submit: 'Submit',
+      edit: 'Edit',
+      delete: 'Delete',
+      yes: 'Yes',
+      no: 'No',
+      close: 'Close',
+    },
+  },
+};
 
-  return (
-    <div className="min-h-screen relative">
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1 }}
-        className="relative h-[600px] mb-16"
-      >
-        <div className="absolute inset-0">
-          <img
-            src="https://images.pexels.com/photos/8613089/pexels-photo-8613089.jpeg?auto=compress&cs=tinysrgb&w=1920"
-            alt="Happy children"
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-kids-purple/80 via-kids-blue/70 to-kids-mint/60"></div>
-        </div>
+interface LanguageContextType {
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  t: Translations;
+}
 
-        <div className="relative z-10 container mx-auto max-w-6xl h-full flex flex-col justify-center items-center text-center px-4">
-          <motion.div
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="-mb-12"
-          >
-            <motion.img
-              src="/Vibrant_kids_logo_design.webp"
-              alt="Aviva Kids Logo"
-              animate={{
-                y: [0, -15, 0],
-                rotate: [0, 5, -5, 0],
-              }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                ease: 'easeInOut',
-              }}
-              className="w-80 h-80 md:w-[450px] md:h-[450px] lg:w-[500px] lg:h-[500px] object-contain drop-shadow-2xl"
-            />
-          </motion.div>
+const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-          <motion.h1
-            initial={{ opacity: 0, y: -30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
-            className="text-4xl sm:text-5xl md:text-7xl font-black mb-4 drop-shadow-2xl text-center leading-tight"
-          >
-            {[
-              { text: '¡Bienvenidos', color: 0 },
-              { text: ' ', color: -1 },
-              { text: 'a', color: 5 },
-              { text: ' ', color: -1 },
-              { text: 'ICGG', color: 2 },
-              { text: ' ', color: -1 },
-              { text: 'Aviva', color: 7 },
-              { text: ' ', color: -1 },
-              { text: 'Kids!', color: 1 },
-            ].map((word, wi) => {
-              const colors = ['#FFD700', '#FF6B6B', '#4FC3F7', '#69F0AE', '#CE93D8', '#FF9800', '#00E5FF', '#E91E63'];
-              if (word.text === ' ') return <span key={wi}>&nbsp;</span>;
-              return (
-                <span key={wi} style={{ display: 'inline-block', marginRight: '0.15em' }}>
-                  {word.text.split('').map((letter, li) => (
-                    <motion.span
-                      key={li}
-                      initial={{ opacity: 0, y: -20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.5 + (wi * 5 + li) * 0.03 }}
-                      style={{
-                        color: colors[(word.color + li) % colors.length],
-                        WebkitTextStroke: '1.5px rgba(0,0,0,0.3)',
-                        display: 'inline-block',
-                        textShadow: '2px 3px 0px rgba(0,0,0,0.25)',
-                      }}
-                    >
-                      {letter}
-                    </motion.span>
-                  ))}
-                </span>
-              );
-            })}
-          </motion.h1>
+export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [language, setLanguage] = useState<Language>('es');
 
-          <motion.p
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.7 }}
-            style={{
-              color: '#AAFF00',
-              WebkitTextStroke: '1px rgba(0,0,0,0.5)',
-              textShadow: '2px 3px 6px rgba(0,0,0,0.4)',
-            }}
-            className="text-xl sm:text-2xl md:text-3xl font-black mb-6"
-          >
-            {t.home.subtitle}
-          </motion.p>
+  const value = {
+    language,
+    setLanguage,
+    t: translations[language],
+  };
 
-          <motion.p
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.9 }}
-            className="text-base sm:text-lg md:text-xl text-white max-w-3xl mx-auto leading-relaxed drop-shadow-lg bg-kids-purple/40 backdrop-blur-sm rounded-bubbly p-6"
-          >
-            {t.home.missionStatement}
-          </motion.p>
-        </div>
-      </motion.div>
+  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
+};
 
-      <div className="container mx-auto max-w-6xl relative z-10 px-4 pb-8">
-
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 0.6 }}
-          className="mb-16"
-        >
-          <h2 className="text-4xl font-black text-kids-purple text-center mb-10">
-            {t.home.whatWeOffer}
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
-              <motion.div
-                key={feature.titleKey}
-                initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.3 }}
-                transition={{ delay: index * 0.15, duration: 0.5 }}
-                whileHover={{ scale: 1.05 }}
-                className={`bg-white rounded-bubbly p-8 shadow-xl border-4 border-${feature.color}`}
-              >
-                <feature.icon className={`w-16 h-16 text-${feature.color} mx-auto mb-4`} />
-                <h3 className="text-2xl font-black text-gray-800 text-center mb-3">
-                  {t.home[feature.titleKey]}
-                </h3>
-                <p className="text-gray-600 text-center leading-relaxed">
-                  {t.home[feature.descKey]}
-                </p>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 0.6 }}
-          className="mb-16"
-        >
-          <h2 className="text-4xl font-black text-kids-purple text-center mb-10">
-            {t.home.ourAgeGroups}
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {ageGroups.map((group, index) => {
-              const cardStyles = [
-                {
-                  // Yellow card — violet complements yellow
-                  topColor: 'rgba(255,213,0,0.55)',
-                  bottomColor: 'rgba(180,140,0,0.92)',
-                  iconColor: '#4A00BF',
-                  textColor: '#3A0099',
-                },
-                {
-                  // Coral/red card — deep teal complements coral
-                  topColor: 'rgba(255,100,90,0.55)',
-                  bottomColor: 'rgba(180,40,30,0.92)',
-                  iconColor: '#00695C',
-                  textColor: '#004D40',
-                },
-                {
-                  // Blue card — amber complements blue
-                  topColor: 'rgba(79,195,247,0.55)',
-                  bottomColor: 'rgba(20,100,180,0.92)',
-                  iconColor: '#FF8F00',
-                  textColor: '#E65100',
-                },
-                {
-                  // Teal/mint card — magenta complements teal
-                  topColor: 'rgba(77,208,174,0.55)',
-                  bottomColor: 'rgba(0,105,92,0.92)',
-                  iconColor: '#AD1457',
-                  textColor: '#880E4F',
-                },
-              ];
-              const style = cardStyles[index % cardStyles.length];
-              return (
-                <motion.div
-                  key={group.titleKey}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true, amount: 0.3 }}
-                  transition={{ delay: index * 0.1, duration: 0.4 }}
-                  whileHover={{ scale: 1.08 }}
-                  className={`relative overflow-hidden rounded-bubbly shadow-xl border-4 border-${group.color} text-center h-64`}
-                >
-                  {/* Photo */}
-                  <div className="absolute inset-0">
-                    <img
-                      src={group.image}
-                      alt={t.checkIn.rooms[group.titleKey]}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                      }}
-                    />
-                  </div>
-
-                  {/* Full card color tint — light at top */}
-                  <div
-                    className="absolute inset-0"
-                    style={{
-                      background: `linear-gradient(to bottom, ${style.topColor} 0%, ${style.bottomColor} 100%)`,
-                    }}
-                  />
-
-                  {/* Content */}
-                  <div className="relative z-10 flex flex-col items-center justify-end h-full pb-6 px-4">
-                    <group.icon
-                      className="w-12 h-12 mb-3"
-                      style={{
-                        color: style.iconColor,
-                        filter: 'drop-shadow(0px 1px 4px rgba(255,255,255,0.6))',
-                      }}
-                    />
-                    <h3
-                      className="text-xl font-black text-center leading-tight"
-                      style={{
-                        color: style.textColor,
-                        textShadow: '0px 1px 6px rgba(255,255,255,0.5)',
-                      }}
-                    >
-                      {t.checkIn.rooms[group.titleKey]}
-                    </h3>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 0.6 }}
-          className="bg-gradient-to-r from-kids-purple to-kids-blue rounded-bubbly p-10 shadow-2xl text-white text-center"
-        >
-          <h2 className="text-3xl md:text-4xl font-black mb-4">
-            {t.home.firstTimeTitle}
-          </h2>
-          <p className="text-lg md:text-xl mb-6 max-w-3xl mx-auto leading-relaxed">
-            {t.home.firstTimeDesc}
-          </p>
-          <div className="bg-white bg-opacity-20 rounded-bubbly p-6 max-w-2xl mx-auto">
-            <h3 className="text-2xl font-black mb-3">{t.home.checkInProcess}</h3>
-            <ol className="text-left space-y-2 text-lg">
-              <li className="flex items-start">
-                <span className="font-black mr-2">1.</span>
-                <span>{t.home.step1}</span>
-              </li>
-              <li className="flex items-start">
-                <span className="font-black mr-2">2.</span>
-                <span>{t.home.step2}</span>
-              </li>
-              <li className="flex items-start">
-                <span className="font-black mr-2">3.</span>
-                <span>{t.home.step3}</span>
-              </li>
-              <li className="flex items-start">
-                <span className="font-black mr-2">4.</span>
-                <span>{t.home.step4}</span>
-              </li>
-            </ol>
-          </div>
-        </motion.div>
-      </div>
-    </div>
-  );
+export const useLanguage = () => {
+  const context = useContext(LanguageContext);
+  if (!context) {
+    throw new Error('useLanguage must be used within a LanguageProvider');
+  }
+  return context;
 };

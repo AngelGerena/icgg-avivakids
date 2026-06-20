@@ -1,10 +1,6 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+# Supabase Configuration
+# Copy this file to .env and fill in your actual values
+# NEVER commit .env to GitHub
 
-// https://vitejs.dev/config/
-export default defineConfig({
-  plugins: [react()],
-  optimizeDeps: {
-    exclude: ['lucide-react'],
-  },
-});
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key-here

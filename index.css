@@ -1,119 +1,92 @@
-import { Link, useLocation } from 'react-router-dom';
-import { useLanguage } from '../contexts/LanguageContext';
-import { Languages, Home, FileText, CalendarDays, Cake, Church, Bell } from 'lucide-react';
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Search, X } from 'lucide-react';
 
-export const Navbar = () => {
-  const { t, language, setLanguage } = useLanguage();
-  const location = useLocation();
+interface QRScannerProps {
+  onScanSuccess: (data: any) => void;
+  onClose: () => void;
+}
 
-  const isActive = (path: string) => {
-    return location.pathname === path;
+export const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
+  const [manualCode, setManualCode] = useState('');
+
+  const handleManualSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (manualCode) {
+      try {
+        const data = JSON.parse(manualCode);
+        onScanSuccess(data);
+      } catch {
+        const data = {
+          childNumber: manualCode,
+          type: 'child-profile',
+        };
+        onScanSuccess(data);
+      }
+    }
   };
-
-  const toggleLanguage = () => {
-    setLanguage(language === 'es' ? 'en' : 'es');
-  };
-
-  const navLinks = [
-    { path: '/', label: t.nav.home, icon: Home },
-    { path: '/intake-form', label: t.nav.intakeForm, icon: FileText },
-    { path: '/calendar', label: t.nav.calendar, icon: CalendarDays },
-    { path: '/birthdays', label: t.nav.birthdays, icon: Cake },
-    { path: '/notifications', label: language === 'es' ? 'Alertas' : 'Alerts', icon: Bell },
-  ];
 
   return (
-    <>
-      <nav className="sticky top-0 z-50 bg-gradient-to-r from-kids-yellow via-kids-blue to-kids-coral shadow-lg">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16 lg:h-24">
-            <Link to="/" className="flex items-center space-x-2 lg:space-x-3 group lg:ml-4">
-              <span className="text-kids-purple font-black text-lg lg:text-2xl transition-all duration-300 group-hover:scale-105 group-hover:tracking-wide drop-shadow-lg">
-                ICGG AVIVA KIDS
-              </span>
-            </Link>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white rounded-bubbly p-8 shadow-2xl max-w-md w-full"
+      >
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-3xl font-black text-kids-purple">Escanear QR</h2>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <X className="w-6 h-6 text-gray-600" />
+          </button>
+        </div>
 
-            <div className="hidden lg:flex items-center space-x-2 bg-white/10 backdrop-blur-md rounded-full px-3 py-2 border border-white/20 shadow-lg">
-              {navLinks.map((link) => {
-                const Icon = link.icon;
-                return (
-                  <Link
-                    key={link.path}
-                    to={link.path}
-                    className={`relative flex items-center gap-2 px-5 py-2.5 rounded-full font-bold transition-all duration-300 overflow-hidden ${
-                      isActive(link.path)
-                        ? 'bg-white text-kids-purple shadow-lg transform scale-105'
-                        : 'text-white hover:bg-white/20 hover:scale-105'
-                    }`}
-                  >
-                    <Icon className={`w-5 h-5 transition-all duration-300 ${isActive(link.path) ? 'scale-110' : 'group-hover:rotate-12'}`} />
-                    <span className="relative z-10 text-sm whitespace-nowrap">{link.label}</span>
-                    {isActive(link.path) && (
-                      <div className="absolute inset-0 bg-gradient-to-r from-kids-yellow/20 via-kids-blue/20 to-kids-coral/20 animate-pulse"></div>
-                    )}
-                  </Link>
-                );
-              })}
-              <a
-                href="https://www.icgg.us"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="relative flex items-center gap-2 px-5 py-2.5 rounded-full font-bold transition-all duration-300 overflow-hidden text-white hover:bg-white/20 hover:scale-105"
-              >
-                <Church className="w-5 h-5 transition-all duration-300 group-hover:rotate-12" />
-                <span className="relative z-10 text-sm whitespace-nowrap">Visite ICGG</span>
-              </a>
-            </div>
-
-            <div className="flex items-center gap-2 lg:gap-3 lg:mr-4">
-              <button
-                onClick={toggleLanguage}
-                className="flex items-center space-x-1 lg:space-x-2 bg-white/90 backdrop-blur-sm px-2 py-1.5 lg:px-5 lg:py-2.5 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 hover:-translate-y-1 active:scale-95 border border-white/50"
-              >
-                <Languages className="w-4 h-4 lg:w-5 lg:h-5 text-kids-purple transition-transform duration-300 hover:rotate-180" />
-                <span className="font-bold text-kids-purple text-sm lg:text-base">
-                  {language === 'es' ? 'EN' : 'ES'}
-                </span>
-              </button>
-            </div>
+        <div className="mb-6">
+          <div className="bg-gradient-to-br from-kids-blue to-kids-purple rounded-bubbly p-8 text-center text-white">
+            <p className="text-lg font-bold mb-2">
+              Ingrese el número del niño o los datos del código QR
+            </p>
+            <p className="text-sm opacity-90">
+              Puede escribir el número de 4 dígitos o pegar los datos del QR
+            </p>
           </div>
         </div>
-      </nav>
 
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] bg-gradient-to-r from-kids-yellow via-kids-blue to-kids-coral shadow-lg border-t-4 border-white/30 pb-safe backdrop-blur-sm">
-        <div className="grid grid-cols-6 gap-1 px-2 py-2">
-          {navLinks.map((link) => {
-            const Icon = link.icon;
-            return (
-              <Link
-                key={link.path}
-                to={link.path}
-                className={`flex flex-col items-center justify-center py-2 px-1 rounded-bubbly transition-all duration-300 active:scale-95 ${
-                  isActive(link.path)
-                    ? 'bg-white text-kids-purple shadow-lg transform scale-105'
-                    : 'text-white hover:bg-white/20'
-                }`}
-              >
-                <Icon className={`w-5 h-5 mb-1 transition-transform duration-300 ${isActive(link.path) ? 'scale-110' : ''}`} />
-                <span className="text-[10px] font-semibold text-center leading-tight">
-                  {link.label}
-                </span>
-              </Link>
-            );
-          })}
-          <a
-            href="https://www.icgg.us"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex flex-col items-center justify-center py-2 px-1 rounded-bubbly transition-all duration-300 active:scale-95 text-white hover:bg-white/20"
+        <form onSubmit={handleManualSubmit} className="space-y-4">
+          <div>
+            <label className="block text-lg font-bold text-gray-700 mb-2">
+              Número o Datos QR
+            </label>
+            <input
+              type="text"
+              value={manualCode}
+              onChange={(e) => setManualCode(e.target.value)}
+              placeholder="0001 o datos JSON"
+              className="w-full px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-purple focus:outline-none font-semibold"
+            />
+          </div>
+
+          <motion.button
+            type="submit"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="w-full py-4 bg-gradient-to-r from-kids-blue to-kids-purple text-white text-xl font-black rounded-bubbly shadow-lg flex items-center justify-center space-x-2"
           >
-            <Church className="w-5 h-5 mb-1 transition-transform duration-300" />
-            <span className="text-[10px] font-semibold text-center leading-tight">
-              Visite ICGG
-            </span>
-          </a>
-        </div>
-      </div>
-    </>
+            <Search className="w-6 h-6" />
+            <span>Buscar Perfil</span>
+          </motion.button>
+        </form>
+      </motion.div>
+    </motion.div>
   );
 };

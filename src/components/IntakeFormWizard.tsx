@@ -69,6 +69,19 @@ export const IntakeFormWizard = () => {
     }
   };
 
+  const handleChildPhotoUpload = async (file: File) => {
+    setPhotoUploading(prev => ({ ...prev, childPhoto: true }));
+    try {
+      const path = `child-${Date.now()}.jpg`;
+      const url = await uploadPhoto(file, 'child-photos', path);
+      if (url) {
+        setSectionA(prev => ({ ...prev, photoUrl: url }));
+      }
+    } finally {
+      setPhotoUploading(prev => ({ ...prev, childPhoto: false }));
+    }
+  };
+
   const [sectionC, setSectionC] = useState({
     allergies: [] as string[],
     restrictedFoods: '',
@@ -460,6 +473,18 @@ export const IntakeFormWizard = () => {
                 <h2 className="text-3xl font-black text-kids-yellow mb-6">
                   {STEPS[0].nameEs}
                 </h2>
+                <div className="flex flex-col items-center mb-6">
+                  <PhotoUpload
+                    currentUrl={sectionA.photoUrl}
+                    onUpload={handleChildPhotoUpload}
+                    label={language === 'es' ? 'Foto del Niño/a' : "Child's Photo"}
+                    size="lg"
+                    uploading={photoUploading.childPhoto}
+                  />
+                  <p className="text-sm text-gray-500 font-semibold mt-1">
+                    {language === 'es' ? 'Toma o sube una foto (opcional)' : 'Take or upload a photo (optional)'}
+                  </p>
+                </div>
                 <div className="space-y-4">
                   <input
                     type="text"

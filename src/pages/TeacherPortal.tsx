@@ -28,6 +28,7 @@ import { QRCodeBadge } from '../components/QRCodeBadge';
 import { TutorialSlideshow } from '../components/TutorialSlideshow';
 import { exportToPDF, exportToExcel, exportSummaryTable } from '../utils/exportUtils';
 import { TeacherLessons } from '../components/TeacherLessons';
+import { StaffChat } from '../components/StaffChat';
 import { PhotoUpload } from '../components/PhotoUpload';
 
 export const TeacherPortal = () => {
@@ -368,6 +369,24 @@ export const TeacherPortal = () => {
       })
       .select()
       .single();
+
+    // Backup SMS to the parent via Twilio (the on-screen red banner still shows regardless).
+    if (parentData?.primary_phone) {
+      try {
+        const smsMsg = `ICGG Aviva Kids: Por favor venga al salon de su nino/a (#${alertNumber}). Motivo: ${alertReason}.`;
+        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-sms`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ to: parentData.primary_phone, message: smsMsg }),
+        });
+        await supabase.from('alerts').update({ sms_sent: true }).eq('id', alertData.id);
+      } catch (smsErr) {
+        console.error('Alert SMS error (non-critical):', smsErr);
+      }
+    }
 
     if (parentData?.primary_email) {
       try {
@@ -1797,6 +1816,9 @@ export const TeacherPortal = () => {
           isOpen={showTutorial}
           onClose={() => setShowTutorial(false)}
         />
+
+        {/* Floating staff chat — teachers only (rendered inside authenticated portal) */}
+        <StaffChat />
 
         <AnimatePresence>
           {showQRScanner && (

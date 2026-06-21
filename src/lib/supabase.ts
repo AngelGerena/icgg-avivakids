@@ -103,6 +103,8 @@ export interface Alert {
   alert_type?: 'pickup_request' | 'emergency' | 'general' | 'checkout';
   pickup_photo_url?: string;
   pickup_name?: string;
+  acknowledged?: boolean;
+  acknowledged_at?: string;
 }
 
 // ============================================================

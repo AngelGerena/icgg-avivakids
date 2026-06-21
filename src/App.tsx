@@ -12,6 +12,7 @@ import { Calendar } from './pages/Calendar';
 import { Birthdays } from './pages/Birthdays';
 import { TeacherPortal } from './pages/TeacherPortal';
 import { FaithAtHome } from './pages/FaithAtHome';
+import { ChildProfile } from './pages/ChildProfile';
 
 function AppContent() {
   const location = useLocation();
@@ -40,6 +41,7 @@ function AppContent() {
               <Route path="/birthdays" element={<Birthdays />} />
               <Route path="/admin" element={<TeacherPortal />} />
               <Route path="/faith-at-home" element={<FaithAtHome />} />
+              <Route path="/child/:id" element={<ChildProfile />} />
             </Routes>
           </motion.div>
         </AnimatePresence>

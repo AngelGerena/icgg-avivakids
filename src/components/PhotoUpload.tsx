@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Camera, Upload, X, User } from 'lucide-react';
 
@@ -21,6 +21,11 @@ export const PhotoUpload = ({
 }: PhotoUploadProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(currentUrl || null);
+
+  // Keep the preview in sync when the photo is filled in externally (e.g. a lookup prefill).
+  useEffect(() => {
+    setPreview(currentUrl || null);
+  }, [currentUrl]);
 
   const sizeMap = {
     sm: 'w-16 h-16',

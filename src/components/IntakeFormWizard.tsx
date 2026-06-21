@@ -29,6 +29,11 @@ export const IntakeFormWizard = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [existingChildId, setExistingChildId] = useState<string | null>(null);
+  const [existingParentId, setExistingParentId] = useState<string | null>(null);
+  const [existingIntakeId, setExistingIntakeId] = useState<string | null>(null);
+  const [lookupNumber, setLookupNumber] = useState('');
+  const [lookupStatus, setLookupStatus] = useState<'idle' | 'loading' | 'found' | 'notfound'>('idle');
 
   const [sectionA, setSectionA] = useState({
     fullName: '',
@@ -80,6 +85,68 @@ export const IntakeFormWizard = () => {
     } finally {
       setPhotoUploading(prev => ({ ...prev, childPhoto: false }));
     }
+  };
+
+  // Look up a child already registered at Registro de Niños and pre-fill this form,
+  // so the Admision form updates that same record instead of creating a duplicate.
+  const lookupExistingChild = async () => {
+    const num = lookupNumber.trim();
+    if (!num) return;
+    setLookupStatus('loading');
+    const { data: child } = await supabase
+      .from('children')
+      .select('*')
+      .eq('unique_number', num)
+      .maybeSingle();
+    if (!child) {
+      setExistingChildId(null);
+      setExistingParentId(null);
+      setExistingIntakeId(null);
+      setLookupStatus('notfound');
+      return;
+    }
+    setExistingChildId(child.id);
+    setSectionA(prev => ({
+      ...prev,
+      fullName: child.full_name || '',
+      nickname: child.nickname || '',
+      dob: child.dob || '',
+      gender: child.gender || '',
+      room: child.room || '',
+      photoUrl: child.photo_url || '',
+    }));
+    const { data: parent } = await supabase
+      .from('parents')
+      .select('*')
+      .eq('child_id', child.id)
+      .maybeSingle();
+    if (parent) {
+      setExistingParentId(parent.id);
+      setSectionB(prev => ({
+        ...prev,
+        primaryName: parent.primary_name || '',
+        primaryRelationship: parent.primary_relationship || '',
+        primaryPhone: parent.primary_phone || '',
+        primaryEmail: parent.primary_email || '',
+        primaryPhotoUrl: parent.primary_photo_url || '',
+        secondaryName: parent.secondary_name || '',
+        secondaryRelationship: parent.secondary_relationship || '',
+        secondaryPhone: parent.secondary_phone || '',
+        secondaryPhotoUrl: parent.secondary_photo_url || '',
+        approvedPickupName: parent.approved_pickup_name || '',
+        approvedPickupPhone: parent.approved_pickup_phone || '',
+        approvedPickupPhotoUrl: parent.approved_pickup_photo_url || '',
+      }));
+    } else {
+      setExistingParentId(null);
+    }
+    const { data: intake } = await supabase
+      .from('intake_forms')
+      .select('id')
+      .eq('child_id', child.id)
+      .maybeSingle();
+    setExistingIntakeId(intake?.id || null);
+    setLookupStatus('found');
   };
 
   const [sectionC, setSectionC] = useState({
@@ -289,27 +356,47 @@ export const IntakeFormWizard = () => {
     setLoading(true);
 
     try {
-      const uniqueNumber = await generateUniqueNumber();
+      const childFields = {
+        full_name: sectionA.fullName,
+        nickname: sectionA.nickname || null,
+        dob: new Date(sectionA.dob).toISOString().split('T')[0],
+        gender: sectionA.gender || null,
+        photo_url: sectionA.photoUrl || null,
+        room: sectionA.room || 'general',
+      };
 
-      const { data: childData, error: childError } = await supabase
-        .from('children')
-        .insert({
-          full_name: sectionA.fullName,
-          nickname: sectionA.nickname || null,
-          dob: new Date(sectionA.dob).toISOString().split('T')[0],
-          gender: sectionA.gender || null,
-          photo_url: sectionA.photoUrl || null,
-          room: sectionA.room || 'general',
-          unique_number: uniqueNumber,
-          checked_in_today: false,
-        })
-        .select()
-        .single();
+      // Resolve the child: update the record from check-in if linked, else match by
+      // name + birthdate, else create a brand-new child. One child, one record.
+      let childId = existingChildId;
+      if (!childId) {
+        const { data: match } = await supabase
+          .from('children')
+          .select('id')
+          .eq('full_name', sectionA.fullName)
+          .eq('dob', childFields.dob)
+          .maybeSingle();
+        childId = match?.id || null;
+      }
 
-      if (childError) throw childError;
+      if (childId) {
+        const { error: childError } = await supabase
+          .from('children')
+          .update(childFields)
+          .eq('id', childId);
+        if (childError) throw childError;
+      } else {
+        const uniqueNumber = await generateUniqueNumber();
+        const { data: childData, error: childError } = await supabase
+          .from('children')
+          .insert({ ...childFields, unique_number: uniqueNumber, checked_in_today: false })
+          .select()
+          .single();
+        if (childError) throw childError;
+        childId = childData.id;
+      }
 
-      const { error: parentError } = await supabase.from('parents').insert({
-        child_id: childData.id,
+      const parentFields = {
+        child_id: childId,
         primary_name: sectionB.primaryName,
         primary_relationship: sectionB.primaryRelationship,
         primary_phone: sectionB.primaryPhone,
@@ -322,12 +409,29 @@ export const IntakeFormWizard = () => {
         approved_pickup_name: sectionB.approvedPickupName || null,
         approved_pickup_phone: sectionB.approvedPickupPhone || null,
         approved_pickup_photo_url: sectionB.approvedPickupPhotoUrl || null,
-      });
+      };
 
-      if (parentError) throw parentError;
+      let parentRowId = existingParentId;
+      if (!parentRowId) {
+        const { data: existingP } = await supabase
+          .from('parents')
+          .select('id')
+          .eq('child_id', childId)
+          .maybeSingle();
+        parentRowId = existingP?.id || null;
+      }
+      if (parentRowId) {
+        const { error: parentError } = await supabase
+          .from('parents')
+          .update(parentFields)
+          .eq('id', parentRowId);
+        if (parentError) throw parentError;
+      } else {
+        const { error: parentError } = await supabase.from('parents').insert(parentFields);
+        if (parentError) throw parentError;
+      }
 
-      const { error: intakeError } = await supabase.from('intake_forms').insert({
-        child_id: childData.id,
+      const intakeFields = {
         allergies: sectionC.allergies,
         restricted_foods: sectionC.restrictedFoods || null,
         medications: medications.length > 0 ? medications : null,
@@ -341,12 +445,31 @@ export const IntakeFormWizard = () => {
         photo_consent: sectionE.photoConsent,
         medical_consent: sectionE.medicalConsent,
         digital_signature: sectionE.digitalSignature,
-      });
+      };
 
-      if (intakeError) throw intakeError;
+      let intakeRowId = existingIntakeId;
+      if (!intakeRowId) {
+        const { data: existingI } = await supabase
+          .from('intake_forms')
+          .select('id')
+          .eq('child_id', childId)
+          .maybeSingle();
+        intakeRowId = existingI?.id || null;
+      }
+      if (intakeRowId) {
+        const { error: intakeError } = await supabase
+          .from('intake_forms')
+          .update(intakeFields)
+          .eq('id', intakeRowId);
+        if (intakeError) throw intakeError;
+      } else {
+        const { error: intakeError } = await supabase
+          .from('intake_forms')
+          .insert({ child_id: childId, ...intakeFields });
+        if (intakeError) throw intakeError;
+      }
 
-      // Generate PDF for local download only — blob URLs cannot be stored in DB
-      generatePDF(childData.id, sectionA.fullName);
+      generatePDF(childId, sectionA.fullName);
 
       setSuccess(true);
       confetti({
@@ -473,6 +596,53 @@ export const IntakeFormWizard = () => {
                 <h2 className="text-3xl font-black text-kids-yellow mb-6">
                   {STEPS[0].nameEs}
                 </h2>
+                <div className="bg-kids-blue/5 border-2 border-kids-blue/20 rounded-bubbly p-4 mb-6">
+                  <label className="block text-sm font-black text-kids-blue mb-1">
+                    {language === 'es'
+                      ? 'Número del niño/a (si ya fue registrado en Registro de Niños)'
+                      : "Child's number (if already registered at check-in)"}
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={lookupNumber}
+                      onChange={(e) => setLookupNumber(e.target.value)}
+                      placeholder={language === 'es' ? 'Ej: 5961' : 'e.g. 5961'}
+                      className="flex-1 px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-blue focus:outline-none font-semibold"
+                    />
+                    <button
+                      type="button"
+                      onClick={lookupExistingChild}
+                      className="px-6 py-3 bg-kids-blue text-white rounded-bubbly font-bold hover:scale-105 transition-transform"
+                    >
+                      {language === 'es' ? 'Buscar' : 'Find'}
+                    </button>
+                  </div>
+                  {lookupStatus === 'loading' && (
+                    <p className="text-sm font-bold text-gray-500 mt-2">
+                      {language === 'es' ? 'Buscando...' : 'Searching...'}
+                    </p>
+                  )}
+                  {lookupStatus === 'found' && (
+                    <p className="text-sm font-bold text-green-600 mt-2">
+                      {language === 'es'
+                        ? 'Nino/a encontrado. Sus datos se completaron abajo.'
+                        : 'Child found. Their info was filled in below.'}
+                    </p>
+                  )}
+                  {lookupStatus === 'notfound' && (
+                    <p className="text-sm font-bold text-kids-coral mt-2">
+                      {language === 'es'
+                        ? 'No se encontro ese numero. Puedes continuar y se creara un nuevo registro.'
+                        : 'Number not found. You can continue and a new record will be created.'}
+                    </p>
+                  )}
+                  <p className="text-xs text-gray-400 font-semibold mt-2">
+                    {language === 'es'
+                      ? 'Dejalo en blanco si es la primera vez que registras a este nino/a.'
+                      : 'Leave blank if this is the first time registering this child.'}
+                  </p>
+                </div>
                 <div className="flex flex-col items-center mb-6">
                   <PhotoUpload
                     currentUrl={sectionA.photoUrl}

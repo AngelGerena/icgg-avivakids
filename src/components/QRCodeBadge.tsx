@@ -75,12 +75,8 @@ export const QRCodeBadge = ({ childName, childNumber, childId }: QRCodeBadgeProp
     img.src = url;
   };
 
-  const qrData = JSON.stringify({
-    childId,
-    childNumber,
-    childName,
-    type: 'child-profile',
-  });
+  // Encode a real URL so a phone camera scan opens the child's profile page.
+  const qrData = `${window.location.origin}/child/${childId}`;
 
   return (
     <div className="flex flex-col items-center space-y-4">

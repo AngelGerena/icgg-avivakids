@@ -5,6 +5,8 @@ import { supabase } from '../lib/supabase';
 import confetti from 'canvas-confetti';
 import { CheckCircle } from 'lucide-react';
 import { QRCodeBadge } from '../components/QRCodeBadge';
+import { PhotoUpload } from '../components/PhotoUpload';
+import { uploadPhoto } from '../utils/photoUtils';
 
 export const CheckIn = () => {
   const { t } = useLanguage();
@@ -16,8 +18,21 @@ export const CheckIn = () => {
     childAge: '',
     childDob: '',
     room: '',
+    photoUrl: '',
   });
   const [loading, setLoading] = useState(false);
+  const [photoUploading, setPhotoUploading] = useState(false);
+
+  const handlePhotoUpload = async (file: File) => {
+    setPhotoUploading(true);
+    try {
+      const path = `child-${Date.now()}.jpg`;
+      const url = await uploadPhoto(file, 'child-photos', path);
+      if (url) setFormData((prev) => ({ ...prev, photoUrl: url }));
+    } finally {
+      setPhotoUploading(false);
+    }
+  };
   const [success, setSuccess] = useState(false);
   const [childNumber, setChildNumber] = useState('');
   const [childId, setChildId] = useState('');
@@ -65,6 +80,7 @@ export const CheckIn = () => {
           full_name: formData.childName,
           dob: formData.childDob,
           room: formData.room,
+          photo_url: formData.photoUrl || null,
           unique_number: uniqueNumber,
           checked_in_today: true,
           check_in_time: new Date().toISOString(),
@@ -114,6 +130,7 @@ export const CheckIn = () => {
         childAge: '',
         childDob: '',
         room: '',
+        photoUrl: '',
       });
     } catch (error) {
       console.error('Error checking in child:', error);
@@ -157,6 +174,16 @@ export const CheckIn = () => {
               className="bg-white rounded-bubbly p-8 shadow-2xl"
             >
               <div className="space-y-6">
+                <div className="flex flex-col items-center">
+                  <PhotoUpload
+                    currentUrl={formData.photoUrl}
+                    onUpload={handlePhotoUpload}
+                    label="Foto del Niño/a"
+                    size="lg"
+                    uploading={photoUploading}
+                  />
+                  <p className="text-sm text-gray-500 font-semibold mt-1">Toma o sube una foto (opcional)</p>
+                </div>
                 <div>
                   <label className="block text-lg font-bold text-gray-700 mb-2">
                     {t.checkIn.childName}

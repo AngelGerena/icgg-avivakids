@@ -6,6 +6,8 @@ import confetti from 'canvas-confetti';
 import { Plus, Trash2, Check, ChevronRight, ChevronLeft } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { uploadPhoto } from '../utils/photoUtils';
+import { PhotoUpload } from './PhotoUpload';
 
 interface Medication {
   name: string;
@@ -42,10 +44,30 @@ export const IntakeFormWizard = () => {
     primaryRelationship: '',
     primaryPhone: '',
     primaryEmail: '',
+    primaryPhotoUrl: '',
     secondaryName: '',
     secondaryRelationship: '',
     secondaryPhone: '',
+    secondaryPhotoUrl: '',
+    approvedPickupName: '',
+    approvedPickupPhone: '',
+    approvedPickupPhotoUrl: '',
   });
+
+  const [photoUploading, setPhotoUploading] = useState<Record<string, boolean>>({});
+
+  const handlePhotoUpload = async (file: File, field: string, bucket: 'child-photos' | 'parent-photos', pathPrefix: string) => {
+    setPhotoUploading(prev => ({ ...prev, [field]: true }));
+    try {
+      const path = `${pathPrefix}-${Date.now()}.jpg`;
+      const url = await uploadPhoto(file, bucket, path);
+      if (url) {
+        setSectionB(prev => ({ ...prev, [field]: url }));
+      }
+    } finally {
+      setPhotoUploading(prev => ({ ...prev, [field]: false }));
+    }
+  };
 
   const [sectionC, setSectionC] = useState({
     allergies: [] as string[],
@@ -282,6 +304,11 @@ export const IntakeFormWizard = () => {
         secondary_name: sectionB.secondaryName || null,
         secondary_relationship: sectionB.secondaryRelationship || null,
         secondary_phone: sectionB.secondaryPhone || null,
+        primary_photo_url: sectionB.primaryPhotoUrl || null,
+        secondary_photo_url: sectionB.secondaryPhotoUrl || null,
+        approved_pickup_name: sectionB.approvedPickupName || null,
+        approved_pickup_phone: sectionB.approvedPickupPhone || null,
+        approved_pickup_photo_url: sectionB.approvedPickupPhotoUrl || null,
       });
 
       if (parentError) throw parentError;
@@ -543,6 +570,23 @@ export const IntakeFormWizard = () => {
                     required
                     className="w-full px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-blue focus:outline-none font-semibold"
                   />
+                  {/* Primary parent photo */}
+                  <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-bubbly border border-blue-200">
+                    <PhotoUpload
+                      currentUrl={sectionB.primaryPhotoUrl}
+                      onUpload={(file) => handlePhotoUpload(file, 'primaryPhotoUrl', 'parent-photos', `primary-${Date.now()}`)}
+                      onRemove={() => setSectionB(prev => ({ ...prev, primaryPhotoUrl: '' }))}
+                      label={language === 'es' ? 'Foto del padre/madre' : 'Parent photo'}
+                      uploading={photoUploading['primaryPhotoUrl']}
+                      size="md"
+                    />
+                    <p className="text-xs text-gray-500 font-semibold leading-relaxed">
+                      {language === 'es'
+                        ? 'Opcional pero recomendado. Ayuda al personal a verificar su identidad al recoger al niño.'
+                        : 'Optional but recommended. Helps staff verify identity at pickup.'}
+                    </p>
+                  </div>
+
                   <h3 className="text-xl font-bold text-gray-700 mt-6">
                     {t.intakeForm.secondaryContact}
                   </h3>
@@ -580,6 +624,68 @@ export const IntakeFormWizard = () => {
                       }
                       className="w-full px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-blue focus:outline-none font-semibold"
                     />
+                  </div>
+                  {/* Secondary contact photo */}
+                  {sectionB.secondaryName && (
+                    <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-bubbly border border-blue-200">
+                      <PhotoUpload
+                        currentUrl={sectionB.secondaryPhotoUrl}
+                        onUpload={(file) => handlePhotoUpload(file, 'secondaryPhotoUrl', 'parent-photos', `secondary-${Date.now()}`)}
+                        onRemove={() => setSectionB(prev => ({ ...prev, secondaryPhotoUrl: '' }))}
+                        label={language === 'es' ? 'Foto del contacto' : 'Contact photo'}
+                        uploading={photoUploading['secondaryPhotoUrl']}
+                        size="md"
+                      />
+                      <p className="text-xs text-gray-500 font-semibold leading-relaxed">
+                        {language === 'es' ? 'Foto del contacto secundario (opcional).' : 'Secondary contact photo (optional).'}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Approved 3rd party pickup */}
+                  <div className="mt-6 p-5 bg-amber-50 border-2 border-amber-300 rounded-bubbly">
+                    <h3 className="text-xl font-bold text-amber-800 mb-1">
+                      {language === 'es' ? 'Persona Aprobada para Recoger al Niño' : 'Approved 3rd Party for Child Pickup'}
+                    </h3>
+                    <p className="text-xs text-amber-700 font-semibold mb-4">
+                      {language === 'es'
+                        ? '(El niño NO será entregado a ninguna persona que no sea usted o la persona que usted autorice aquí)'
+                        : '(The child will NOT be released to anyone other than yourself and the person you authorize here)'}
+                    </p>
+                    <div className="space-y-3">
+                      <input
+                        type="text"
+                        placeholder={language === 'es' ? 'Nombre completo del autorizado' : 'Full name of authorized person'}
+                        value={sectionB.approvedPickupName}
+                        onChange={(e) => setSectionB({ ...sectionB, approvedPickupName: e.target.value })}
+                        className="w-full px-4 py-3 rounded-bubbly border-2 border-amber-200 focus:border-amber-500 focus:outline-none font-semibold"
+                      />
+                      <input
+                        type="tel"
+                        placeholder={language === 'es' ? 'Teléfono del autorizado' : 'Phone of authorized person'}
+                        value={sectionB.approvedPickupPhone}
+                        onChange={(e) => setSectionB({ ...sectionB, approvedPickupPhone: e.target.value })}
+                        className="w-full px-4 py-3 rounded-bubbly border-2 border-amber-200 focus:border-amber-500 focus:outline-none font-semibold"
+                      />
+                      {/* Approved pickup photo */}
+                      {sectionB.approvedPickupName && (
+                        <div className="flex items-center gap-4 p-4 bg-amber-100 rounded-bubbly border border-amber-200">
+                          <PhotoUpload
+                            currentUrl={sectionB.approvedPickupPhotoUrl}
+                            onUpload={(file) => handlePhotoUpload(file, 'approvedPickupPhotoUrl', 'parent-photos', `pickup-${Date.now()}`)}
+                            onRemove={() => setSectionB(prev => ({ ...prev, approvedPickupPhotoUrl: '' }))}
+                            label={language === 'es' ? 'Foto del autorizado' : 'Authorized person photo'}
+                            uploading={photoUploading['approvedPickupPhotoUrl']}
+                            size="md"
+                          />
+                          <p className="text-xs text-amber-800 font-semibold leading-relaxed">
+                            {language === 'es'
+                              ? 'Muy recomendado. Permite al personal verificar visualmente la identidad de quien recoge al niño.'
+                              : 'Highly recommended. Allows staff to visually verify identity at pickup.'}
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

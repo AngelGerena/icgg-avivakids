@@ -31,10 +31,28 @@ export interface Parent {
   primary_relationship: string;
   primary_phone: string;
   primary_email: string;
+  primary_photo_url?: string;
   secondary_name?: string;
   secondary_relationship?: string;
   secondary_phone?: string;
+  secondary_photo_url?: string;
+  approved_pickup_name?: string;
+  approved_pickup_phone?: string;
+  approved_pickup_photo_url?: string;
   created_at: string;
+}
+
+export interface Checkout {
+  id: string;
+  child_id: string;
+  child_number: string;
+  child_name: string;
+  checked_out_at: string;
+  checked_out_date: string;
+  picked_up_by_name: string;
+  picked_up_by_relationship: string;
+  released_by_teacher: string;
+  notes?: string;
 }
 
 export interface IntakeForm {
@@ -66,6 +84,7 @@ export interface Event {
   location?: string;
   category?: string;
   color?: string;
+  flyer_url?: string;
   created_at: string;
 }
 
@@ -81,6 +100,9 @@ export interface Alert {
   sms_sent?: boolean;
   resolved_at?: string;
   resolved_by?: string;
+  alert_type?: 'pickup_request' | 'emergency' | 'general' | 'checkout';
+  pickup_photo_url?: string;
+  pickup_name?: string;
 }
 
 // ============================================================

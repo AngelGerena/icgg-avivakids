@@ -19,6 +19,8 @@ import {
 } from 'recharts';
 import { Download, TrendingUp, Users, FileText } from 'lucide-react';
 import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 import 'jspdf-autotable';
 
 const COLORS = ['#FFD700', '#4FC3F7', '#FF6B6B', '#69F0AE'];
@@ -33,15 +35,34 @@ export const Analytics = () => {
     missing: 0,
     missingNames: [] as string[],
   });
+  const [checkouts, setCheckouts] = useState<any[]>([]);
+  const [attendance, setAttendance] = useState<any[]>([]);
+  const [allChildren, setAllChildren] = useState<any[]>([]);
 
   useEffect(() => {
     fetchAnalytics();
   }, []);
 
   const fetchAnalytics = async () => {
-    const { data: allChildren } = await supabase.from('children').select('*');
+    const { data: childrenData } = await supabase.from('children').select('*');
+    const allChildren = childrenData || [];
+    setAllChildren(allChildren);
 
-    if (allChildren) {
+    // Fetch checkouts
+    const { data: checkoutData } = await supabase
+      .from('checkouts')
+      .select('*')
+      .order('checked_out_at', { ascending: false });
+    if (checkoutData) setCheckouts(checkoutData);
+
+    // Fetch attendance
+    const { data: attendanceData } = await supabase
+      .from('attendance')
+      .select('*, children(full_name, unique_number, room)')
+      .order('date', { ascending: false });
+    if (attendanceData) setAttendance(attendanceData);
+
+    if (allChildren.length > 0) {
       const roomCounts = allChildren.reduce((acc: any, child) => {
         const room = child.room || 'general';
         acc[room] = (acc[room] || 0) + 1;
@@ -120,6 +141,133 @@ export const Analytics = () => {
       missing: missingIntake?.length || 0,
       missingNames: missingIntake?.map((child) => child.full_name) || [],
     });
+  };
+
+  const exportCheckoutLog = () => {
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+    pdf.setFillColor(255, 152, 0);
+    pdf.rect(0, 0, 297, 28, 'F');
+    pdf.setFontSize(18);
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Registro de Salidas — ICGG Aviva Kids', 148, 12, { align: 'center' });
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(`Iglesia Cristiana Gracia y Gloria  |  Generado: ${new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}`, 148, 22, { align: 'center' });
+
+    const rows = checkouts.map(c => [
+      new Date(c.checked_out_at + 'T12:00:00').toLocaleDateString('es-ES'),
+      new Date(c.checked_out_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+      c.child_name,
+      c.child_number,
+      c.picked_up_by_name,
+      c.picked_up_by_relationship,
+      c.released_by_teacher,
+      c.notes || '',
+    ]);
+
+    autoTable(pdf, {
+      startY: 32,
+      head: [['Fecha', 'Hora', 'Niño', 'Código', 'Recogido por', 'Relación', 'Maestro que autorizó', 'Notas']],
+      body: rows,
+      theme: 'grid',
+      headStyles: { fillColor: [255, 152, 0], fontSize: 9, fontStyle: 'bold', textColor: 255 },
+      bodyStyles: { fontSize: 8 },
+      alternateRowStyles: { fillColor: [255, 248, 225] },
+      columnStyles: {
+        0: { cellWidth: 24 }, 1: { cellWidth: 18 }, 2: { cellWidth: 38 },
+        3: { cellWidth: 20 }, 4: { cellWidth: 40 }, 5: { cellWidth: 30 },
+        6: { cellWidth: 45 }, 7: { cellWidth: 30 },
+      },
+    });
+
+    // Add Excel version too
+    const ws = XLSX.utils.json_to_sheet(checkouts.map(c => ({
+      'Fecha': new Date(c.checked_out_at).toLocaleDateString('es-ES'),
+      'Hora': new Date(c.checked_out_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+      'Niño': c.child_name,
+      'Código': c.child_number,
+      'Recogido por': c.picked_up_by_name,
+      'Relación': c.picked_up_by_relationship,
+      'Maestro que autorizó': c.released_by_teacher,
+      'Notas': c.notes || '',
+    })));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Registro de Salidas');
+    XLSX.writeFile(wb, `Checkout-Log-${new Date().toISOString().split('T')[0]}.xlsx`);
+
+    pdf.save(`Registro-Salidas-${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
+  const exportAttendanceHistory = () => {
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+    pdf.setFillColor(126, 87, 194);
+    pdf.rect(0, 0, 297, 28, 'F');
+    pdf.setFontSize(18);
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Historial de Asistencia — ICGG Aviva Kids', 148, 12, { align: 'center' });
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(`Iglesia Cristiana Gracia y Gloria  |  Generado: ${new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}`, 148, 22, { align: 'center' });
+
+    // Get unique dates
+    const uniqueDates = [...new Set(attendance.map(a => a.date))].sort();
+
+    // Build per-child attendance grid
+    const childMap: Record<string, { name: string; number: string; room: string; days: Record<string, boolean> }> = {};
+    attendance.forEach(a => {
+      const child = a.children;
+      if (!child) return;
+      if (!childMap[a.child_id]) {
+        childMap[a.child_id] = { name: child.full_name, number: child.unique_number, room: child.room || '', days: {} };
+      }
+      childMap[a.child_id].days[a.date] = true;
+    });
+
+    const dateLabels = uniqueDates.slice(0, 20).map(d =>
+      new Date(d + 'T12:00:00').toLocaleDateString('es-ES', { month: 'numeric', day: 'numeric' })
+    );
+
+    const rows = Object.values(childMap).map(child => {
+      const total = Object.keys(child.days).length;
+      const dayMarks = uniqueDates.slice(0, 20).map(d => child.days[d] ? '✓' : '');
+      return [child.name, child.number, child.room, String(total), ...dayMarks];
+    });
+
+    autoTable(pdf, {
+      startY: 32,
+      head: [['Nombre', 'Código', 'Sala', 'Total', ...dateLabels]],
+      body: rows,
+      theme: 'grid',
+      headStyles: { fillColor: [126, 87, 194], fontSize: 8, fontStyle: 'bold', textColor: 255 },
+      bodyStyles: { fontSize: 7 },
+      alternateRowStyles: { fillColor: [237, 233, 254] },
+      columnStyles: { 0: { cellWidth: 40 }, 1: { cellWidth: 18 }, 2: { cellWidth: 28 }, 3: { cellWidth: 14, halign: 'center' } },
+    });
+
+    // Excel version
+    const excelRows = Object.values(childMap).map(child => {
+      const row: Record<string, any> = {
+        'Nombre': child.name,
+        'Código': child.number,
+        'Sala': child.room,
+        'Total Domingos': Object.keys(child.days).length,
+      };
+      uniqueDates.forEach(d => {
+        const label = new Date(d + 'T12:00:00').toLocaleDateString('es-ES');
+        row[label] = child.days[d] ? 'Presente' : '';
+      });
+      return row;
+    });
+    const ws = XLSX.utils.json_to_sheet(excelRows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Asistencia');
+    XLSX.writeFile(wb, `Asistencia-${new Date().toISOString().split('T')[0]}.xlsx`);
+
+    pdf.save(`Historial-Asistencia-${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
   const exportMonthlyReport = () => {
@@ -345,15 +493,35 @@ export const Analytics = () => {
           <TrendingUp className="w-10 h-10 mr-3" />
           Analíticas
         </h2>
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={exportMonthlyReport}
-          className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-kids-coral to-kids-purple text-white rounded-bubbly font-bold shadow-lg"
-        >
-          <Download className="w-5 h-5" />
-          <span>Exportar Reporte Mensual</span>
-        </motion.button>
+        <div className="flex flex-wrap gap-2">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={exportMonthlyReport}
+            className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-kids-coral to-kids-purple text-white rounded-bubbly font-bold shadow-lg text-sm"
+          >
+            <Download className="w-4 h-4" />
+            <span>Reporte Mensual</span>
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={exportAttendanceHistory}
+            className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-kids-purple to-kids-blue text-white rounded-bubbly font-bold shadow-lg text-sm"
+          >
+            <Download className="w-4 h-4" />
+            <span>Historial Asistencia</span>
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={exportCheckoutLog}
+            className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-400 text-white rounded-bubbly font-bold shadow-lg text-sm"
+          >
+            <Download className="w-4 h-4" />
+            <span>Registro de Salidas</span>
+          </motion.button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

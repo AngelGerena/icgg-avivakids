@@ -11,12 +11,11 @@ import { IntakeForm } from './pages/IntakeForm';
 import { Calendar } from './pages/Calendar';
 import { Birthdays } from './pages/Birthdays';
 import { TeacherPortal } from './pages/TeacherPortal';
-import { VBSRegister } from './pages/VBSRegister';
 import { FaithAtHome } from './pages/FaithAtHome';
 
 function AppContent() {
   const location = useLocation();
-  const hideFloatingShapes = location.pathname === '/intake-form' || location.pathname === '/admin' || location.pathname === '/vbs' || location.pathname === '/faith-at-home';
+  const hideFloatingShapes = location.pathname === '/intake-form' || location.pathname === '/faith-at-home';
 
   return (
     <>
@@ -40,7 +39,6 @@ function AppContent() {
               <Route path="/calendar" element={<Calendar />} />
               <Route path="/birthdays" element={<Birthdays />} />
               <Route path="/admin" element={<TeacherPortal />} />
-              <Route path="/vbs" element={<VBSRegister />} />
               <Route path="/faith-at-home" element={<FaithAtHome />} />
             </Routes>
           </motion.div>

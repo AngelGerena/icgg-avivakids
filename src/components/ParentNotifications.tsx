@@ -214,6 +214,8 @@ export const ParentNotifications = () => {
         return <AlertCircle className="w-5 h-5 text-red-500" />;
       case 'pickup_request':
         return <Bell className="w-5 h-5 text-yellow-500" />;
+      case 'checkout':
+        return <span className="text-lg">✅</span>;
       default:
         return <Info className="w-5 h-5 text-blue-500" />;
     }
@@ -225,6 +227,8 @@ export const ParentNotifications = () => {
         return 'border-red-500 bg-red-50';
       case 'pickup_request':
         return 'border-yellow-500 bg-yellow-50';
+      case 'checkout':
+        return 'border-green-500 bg-green-50';
       default:
         return 'border-blue-500 bg-blue-50';
     }

@@ -21,18 +21,14 @@ import {
   BookOpen,
   CheckCircle,
   KeyRound,
-  ClipboardCheck,
-  Lock,
-  Delete,
-  Star,
 } from 'lucide-react';
 import { QRScanner } from '../components/QRScanner';
 import { Analytics } from '../components/Analytics';
 import { QRCodeBadge } from '../components/QRCodeBadge';
 import { TutorialSlideshow } from '../components/TutorialSlideshow';
 import { exportToPDF, exportToExcel, exportSummaryTable } from '../utils/exportUtils';
-import { VBSAdminTab } from '../components/VBSAdminTab';
 import { TeacherLessons } from '../components/TeacherLessons';
+import { PhotoUpload } from '../components/PhotoUpload';
 
 export const TeacherPortal = () => {
   const { t } = useLanguage();
@@ -62,6 +58,18 @@ export const TeacherPortal = () => {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [alertNumber, setAlertNumber] = useState('');
   const [alertReason, setAlertReason] = useState('');
+  const [alertCountdown, setAlertCountdown] = useState(0);
+  const [alertSentMessage, setAlertSentMessage] = useState('');
+
+  // Checkout state
+  const [checkoutChildId, setCheckoutChildId] = useState<string | null>(null);
+  const [checkoutForm, setCheckoutForm] = useState({ pickedUpBy: '', relationship: '', pin: '' });
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState('');
+
+  // Photo upload state
+  const [photoUploading, setPhotoUploading] = useState<Record<string, boolean>>({});
+
   const [events, setEvents] = useState<Event[]>([]);
   const [birthdayChildren, setBirthdayChildren] = useState<Child[]>([]);
   const [showExportMenu, setShowExportMenu] = useState(false);
@@ -75,7 +83,9 @@ export const TeacherPortal = () => {
     location: '',
     category: '',
     color: '#CE93D8',
+    flyer_url: '',
   });
+  const [flyerUploading, setFlyerUploading] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -260,18 +270,55 @@ export const TeacherPortal = () => {
       childNumber = data.childNumber || data.child_number || '';
     }
 
-    const { data: childData } = await supabase
+    const { data: childData, error } = await supabase
       .from('children')
       .select('*, parents(*), intake_forms(*)')
       .eq('unique_number', childNumber)
       .maybeSingle();
 
-    if (childData) {
-      setSelectedChild(childData);
-      setShowQRScanner(false);
-    } else {
-      alert('Niño no encontrado');
+    if (error) {
+      console.error('QR scan error:', error.message);
+      alert('Error al buscar el niño');
+      return;
     }
+
+    if (!childData) {
+      alert('Niño no encontrado — verifique el código QR');
+      return;
+    }
+
+    // Mark child as checked in today
+    const now = new Date().toISOString();
+    await supabase
+      .from('children')
+      .update({
+        checked_in_today: true,
+        check_in_time: now,
+      })
+      .eq('id', childData.id);
+
+    // Insert attendance record for today
+    const today = new Date().toISOString().split('T')[0];
+    const { data: existingAttendance } = await supabase
+      .from('attendance')
+      .select('id')
+      .eq('child_id', childData.id)
+      .eq('date', today)
+      .maybeSingle();
+
+    if (!existingAttendance) {
+      await supabase.from('attendance').insert({
+        child_id: childData.id,
+        child_number: childData.unique_number,
+        date: today,
+        checked_in_at: now,
+        checked_in_by: 'qr-scan',
+      });
+    }
+
+    setSelectedChild({ ...childData, checked_in_today: true, check_in_time: now });
+    setShowQRScanner(false);
+    fetchDashboardData();
   };
 
   const handleSearch = async () => {
@@ -365,7 +412,128 @@ export const TeacherPortal = () => {
     setAlertNumber('');
     setAlertReason('');
     fetchDashboardData();
-    alert('Alerta activada y notificación enviada');
+
+    // Start 12-second countdown then auto-clear
+    setAlertSentMessage(`Alerta enviada — pantalla se limpiará en`);
+    setAlertCountdown(12);
+    const interval = setInterval(() => {
+      setAlertCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          setAlertSentMessage('');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const STAFF_PIN_PORTAL = import.meta.env.VITE_CHECKIN_PIN || '1234';
+
+  const handleCheckout = async (child: any) => {
+    if (!checkoutForm.pickedUpBy) {
+      setCheckoutError('Seleccione quién recoge al niño.');
+      return;
+    }
+    if (checkoutForm.pin !== STAFF_PIN_PORTAL) {
+      setCheckoutError('PIN incorrecto.');
+      return;
+    }
+    setCheckoutLoading(true);
+    setCheckoutError('');
+    try {
+      const parent = child.parents?.[0];
+      let relationship = '';
+      let pickupPhoto: string | null = null;
+      if (checkoutForm.pickedUpBy === parent?.primary_name) {
+        relationship = parent?.primary_relationship || 'Padre/Madre';
+        pickupPhoto = parent?.primary_photo_url || null;
+      } else if (checkoutForm.pickedUpBy === parent?.secondary_name) {
+        relationship = parent?.secondary_relationship || 'Contacto Secundario';
+        pickupPhoto = parent?.secondary_photo_url || null;
+      } else if (checkoutForm.pickedUpBy === parent?.approved_pickup_name) {
+        relationship = 'Persona Autorizada';
+        pickupPhoto = parent?.approved_pickup_photo_url || null;
+      }
+
+      const checkoutTime = new Date();
+      const timeStr = checkoutTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+      const dateStr = checkoutTime.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+      // 1. Record checkout
+      const { error } = await supabase.from('checkouts').insert({
+        child_id: child.id,
+        child_number: child.unique_number,
+        child_name: child.full_name,
+        picked_up_by_name: checkoutForm.pickedUpBy,
+        picked_up_by_relationship: relationship,
+        released_by_teacher: email,
+        checked_out_at: checkoutTime.toISOString(),
+        checked_out_date: checkoutTime.toISOString().split('T')[0],
+      });
+      if (error) throw error;
+
+      // 2. Send real-time notification to parent alerts page
+      const notificationMessage = `✅ ${child.full_name} fue recogido/a a las ${timeStr} por ${checkoutForm.pickedUpBy} (${relationship}). Fecha: ${dateStr}. Autorizado por: ${email}.`;
+      await supabase.from('alerts').insert({
+        child_number: child.unique_number,
+        child_id: child.id,
+        reason: notificationMessage,
+        resolved: false,
+        parent_name: parent?.primary_name || '',
+        parent_phone: parent?.primary_phone || '',
+        sms_sent: false,
+        alert_type: 'checkout',
+        pickup_name: checkoutForm.pickedUpBy,
+        pickup_photo_url: pickupPhoto,
+      });
+
+      // 3. Send SMS via Twilio if phone available
+      const parentPhone = parent?.primary_phone;
+      if (parentPhone) {
+        try {
+          const smsMessage = `ICGG Aviva Kids: ${child.full_name} fue recogido/a a las ${timeStr} por ${checkoutForm.pickedUpBy}. Si tiene preguntas llame a la iglesia.`;
+          await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-sms`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ to: parentPhone, message: smsMessage }),
+          });
+        } catch (smsErr) {
+          console.error('SMS send error (non-critical):', smsErr);
+        }
+      }
+
+      // 4. Mark child as not checked in
+      await supabase.from('children').update({ checked_in_today: false, check_in_time: null }).eq('id', child.id);
+
+      setCheckoutChildId(null);
+      setCheckoutForm({ pickedUpBy: '', relationship: '', pin: '' });
+      fetchDashboardData();
+    } catch (err: any) {
+      setCheckoutError(err.message || 'Error al registrar salida');
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
+  const handleChildPhotoUpload = async (file: File, childId: string) => {
+    setPhotoUploading(prev => ({ ...prev, [childId]: true }));
+    try {
+      const { uploadPhoto } = await import('../utils/photoUtils');
+      const path = `child-${childId}-${Date.now()}.jpg`;
+      const url = await uploadPhoto(file, 'child-photos', path);
+      if (url) {
+        await supabase.from('children').update({ photo_url: url }).eq('id', childId);
+        fetchDashboardData();
+      }
+    } catch (err) {
+      console.error('Child photo upload error:', err);
+    } finally {
+      setPhotoUploading(prev => ({ ...prev, [childId]: false }));
+    }
   };
 
   const resolveAlert = async (alertId: string) => {
@@ -384,7 +552,16 @@ export const TeacherPortal = () => {
   const addEvent = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    await supabase.from('events').insert(newEvent);
+    const fixedDate = newEvent.date
+      ? new Date(newEvent.date + 'T12:00:00').toISOString().split('T')[0]
+      : newEvent.date;
+
+    const { error } = await supabase.from('events').insert({ ...newEvent, date: fixedDate });
+
+    if (error) {
+      alert(`Error al guardar evento: ${error.message}`);
+      return;
+    }
 
     setNewEvent({
       title: '',
@@ -394,9 +571,24 @@ export const TeacherPortal = () => {
       location: '',
       category: '',
       color: '#CE93D8',
+      flyer_url: '',
     });
 
     fetchDashboardData();
+  };
+
+  const handleFlyerUpload = async (file: File) => {
+    setFlyerUploading(true);
+    try {
+      const { uploadPhoto } = await import('../utils/photoUtils');
+      const path = `flyer-${Date.now()}.jpg`;
+      const url = await uploadPhoto(file, 'child-photos', path);
+      if (url) setNewEvent(prev => ({ ...prev, flyer_url: url }));
+    } catch (err) {
+      console.error('Flyer upload error:', err);
+    } finally {
+      setFlyerUploading(false);
+    }
   };
 
   const deleteEvent = async (id: string) => {
@@ -776,15 +968,6 @@ export const TeacherPortal = () => {
             {t.teacherPortal.dashboard}
           </h1>
           <div className="flex items-center gap-3">
-            <a
-              href="/Fe-en-Casa-Guia-Maestros.pdf"
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-kids-purple to-kids-coral text-white rounded-bubbly font-bold hover:scale-105 transition-transform shadow-lg"
-            >
-              <Download className="w-5 h-5" />
-              <span>Guía del Maestro</span>
-            </a>
             <button
               onClick={() => setShowTutorial(true)}
               className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-kids-yellow to-kids-blue text-white rounded-bubbly font-bold hover:scale-105 transition-transform shadow-lg"
@@ -808,10 +991,9 @@ export const TeacherPortal = () => {
             { id: 'children', label: 'Todos los Niños', icon: Users },
             { id: 'alerts', label: t.teacherPortal.alertPanel, icon: Bell },
             { id: 'events', label: t.teacherPortal.eventManager, icon: Calendar },
-            { id: 'lessons', label: '\ud83d\udcd6 Lecciones', icon: BookOpen },
             { id: 'birthdays', label: t.teacherPortal.birthdayManager, icon: Cake },
             { id: 'analytics', label: 'Analíticas', icon: TrendingUp },
-            { id: 'vbs', label: '🌊 VBS', icon: Star },
+            { id: 'lessons', label: 'Lecciones', icon: BookOpen },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -916,23 +1098,124 @@ export const TeacherPortal = () => {
                     >
                       <div>
                         <div className="text-xl font-black text-gray-800">
-                          {child.full_name}
+                          <div className="flex items-center gap-3">
+                            {/* Child photo thumbnail */}
+                            {child.photo_url ? (
+                              <img src={child.photo_url} alt={child.full_name}
+                                className="w-12 h-12 rounded-full object-cover border-2 border-kids-purple flex-shrink-0" />
+                            ) : (
+                              <div className="w-12 h-12 rounded-full bg-kids-purple/10 flex items-center justify-center flex-shrink-0 border-2 border-kids-purple/20">
+                                <span className="text-kids-purple font-black text-lg">{child.full_name.charAt(0)}</span>
+                              </div>
+                            )}
+                            <div>
+                              <div className="text-xl font-black text-kids-purple">
+                                {child.full_name}
+                              </div>
+                              <div className="text-sm font-semibold text-gray-600">
+                                {t.teacherPortal.childNumber}: {child.unique_number} |{' '}
+                                {child.room}
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-sm font-semibold text-gray-600">
-                          {t.teacherPortal.childNumber}: {child.unique_number} |{' '}
-                          {child.room}
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <div className="text-sm font-bold text-kids-blue">
+                              {t.teacherPortal.checkedInAt}
+                            </div>
+                            <div className="text-lg font-black text-gray-700">
+                              {child.check_in_time
+                                ? new Date(child.check_in_time).toLocaleTimeString()
+                                : ''}
+                            </div>
+                          </div>
+                          {/* Checkout button */}
+                          <button
+                            onClick={() => {
+                              setCheckoutChildId(checkoutChildId === child.id ? null : child.id);
+                              setCheckoutForm({ pickedUpBy: '', relationship: '', pin: '' });
+                              setCheckoutError('');
+                            }}
+                            className={`px-4 py-2 rounded-bubbly font-bold text-sm transition-all ${checkoutChildId === child.id ? 'bg-red-500 text-white' : 'bg-orange-100 text-orange-600 border-2 border-orange-200 hover:bg-orange-500 hover:text-white hover:border-orange-500'}`}
+                          >
+                            {checkoutChildId === child.id ? 'Cancelar' : '🚪 Check-Out'}
+                          </button>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-sm font-bold text-kids-blue">
-                          {t.teacherPortal.checkedInAt}
-                        </div>
-                        <div className="text-lg font-black text-gray-700">
-                          {child.check_in_time
-                            ? new Date(child.check_in_time).toLocaleTimeString()
-                            : ''}
-                        </div>
-                      </div>
+
+                      {/* Checkout panel */}
+                      <AnimatePresence>
+                        {checkoutChildId === child.id && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="mt-4 pt-4 border-t-2 border-orange-200"
+                          >
+                            <p className="text-sm font-black text-orange-600 uppercase tracking-wide mb-3">Registrar Salida</p>
+                            {(() => {
+                              const parent = child.parents?.[0];
+                              const approvedList = [
+                                parent?.primary_name && { name: parent.primary_name, rel: parent.primary_relationship || 'Padre/Madre', photo: parent.primary_photo_url },
+                                parent?.secondary_name && { name: parent.secondary_name, rel: parent.secondary_relationship || 'Contacto Secundario', photo: parent.secondary_photo_url },
+                                parent?.approved_pickup_name && { name: parent.approved_pickup_name, rel: 'Persona Autorizada', photo: parent.approved_pickup_photo_url },
+                              ].filter(Boolean) as { name: string; rel: string; photo?: string }[];
+
+                              return (
+                                <div className="space-y-3">
+                                  <div>
+                                    <label className="block text-xs font-black text-gray-600 mb-2">¿Quién recoge al niño?</label>
+                                    {approvedList.length > 0 ? (
+                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                                        {approvedList.map((person, i) => (
+                                          <button key={i} type="button"
+                                            onClick={() => setCheckoutForm(prev => ({ ...prev, pickedUpBy: person.name, relationship: person.rel }))}
+                                            className={`flex items-center gap-3 p-3 rounded-bubbly border-2 transition-all text-left ${checkoutForm.pickedUpBy === person.name ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-orange-300'}`}
+                                          >
+                                            {person.photo ? (
+                                              <img src={person.photo} alt={person.name} className="w-12 h-12 rounded-full object-cover flex-shrink-0 border-2 border-orange-200" />
+                                            ) : (
+                                              <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
+                                                <span className="text-orange-600 font-black">{person.name.charAt(0)}</span>
+                                              </div>
+                                            )}
+                                            <div>
+                                              <p className="font-black text-gray-800 text-sm">{person.name}</p>
+                                              <p className="text-xs text-gray-500">{person.rel}</p>
+                                            </div>
+                                          </button>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <input type="text" value={checkoutForm.pickedUpBy}
+                                        onChange={e => setCheckoutForm(prev => ({ ...prev, pickedUpBy: e.target.value }))}
+                                        placeholder="Nombre de quien recoge"
+                                        className="w-full px-3 py-2 rounded-bubbly border-2 border-gray-300 focus:border-orange-400 focus:outline-none font-semibold text-sm" />
+                                    )}
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-black text-gray-600 mb-1">PIN de Personal</label>
+                                    <input type="password" maxLength={4} value={checkoutForm.pin}
+                                      onChange={e => { setCheckoutForm(prev => ({ ...prev, pin: e.target.value })); setCheckoutError(''); }}
+                                      placeholder="••••"
+                                      className="w-32 px-3 py-2 rounded-bubbly border-2 border-gray-300 focus:border-orange-400 focus:outline-none font-black text-center text-xl tracking-widest" />
+                                  </div>
+                                  {checkoutError && <p className="text-red-500 font-bold text-sm">{checkoutError}</p>}
+                                  <motion.button
+                                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                                    onClick={() => handleCheckout(child)}
+                                    disabled={checkoutLoading}
+                                    className="px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white font-black rounded-bubbly shadow-lg disabled:opacity-50"
+                                  >
+                                    {checkoutLoading ? 'Registrando...' : '🚪 Confirmar Salida'}
+                                  </motion.button>
+                                </div>
+                              );
+                            })()}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   ))}
                 </div>
@@ -1048,6 +1331,41 @@ export const TeacherPortal = () => {
               >
                 {t.teacherPortal.triggerAlert}
               </button>
+
+              {/* Countdown banner after alert sent */}
+              <AnimatePresence>
+                {alertCountdown > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="bg-gradient-to-r from-kids-mint to-kids-blue rounded-bubbly p-5 text-center shadow-lg"
+                  >
+                    <div className="text-white font-black text-lg mb-1">
+                      ✅ ¡Alerta enviada exitosamente!
+                    </div>
+                    <div className="text-white/80 font-semibold text-sm mb-3">
+                      {alertSentMessage}
+                    </div>
+                    <motion.div
+                      key={alertCountdown}
+                      initial={{ scale: 1.3 }}
+                      animate={{ scale: 1 }}
+                      className="text-white font-black text-5xl"
+                    >
+                      {alertCountdown}
+                    </motion.div>
+                    <div className="mt-2 h-2 bg-white/20 rounded-full overflow-hidden">
+                      <motion.div
+                        className="h-full bg-white rounded-full"
+                        initial={{ width: '100%' }}
+                        animate={{ width: `${(alertCountdown / 12) * 100}%` }}
+                        transition={{ duration: 1, ease: 'linear' }}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             <div className="bg-white/95 backdrop-blur-xl rounded-bubbly p-8 shadow-xl border border-white/20 mt-8">
@@ -1177,6 +1495,30 @@ export const TeacherPortal = () => {
                   <option value="Especial">Especial</option>
                 </select>
 
+                {/* Flyer upload */}
+                <div className="border-2 border-dashed border-kids-blue/40 rounded-bubbly p-4 bg-kids-blue/5">
+                  <p className="text-sm font-black text-kids-blue mb-2">📋 Flyer del Evento (opcional)</p>
+                  {newEvent.flyer_url ? (
+                    <div className="flex items-center gap-3">
+                      <img src={newEvent.flyer_url} alt="Flyer" className="w-20 h-20 object-cover rounded-lg border-2 border-kids-blue" />
+                      <div>
+                        <p className="text-xs font-bold text-green-600 mb-1">✓ Flyer subido</p>
+                        <button type="button" onClick={() => setNewEvent(prev => ({ ...prev, flyer_url: '' }))}
+                          className="text-xs text-red-500 font-bold hover:underline">Eliminar</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <div className={`px-4 py-2 rounded-bubbly font-bold text-sm transition-all ${flyerUploading ? 'bg-gray-100 text-gray-400' : 'bg-kids-blue text-white hover:bg-kids-blue/80'}`}>
+                        {flyerUploading ? 'Subiendo...' : '📤 Subir Flyer'}
+                      </div>
+                      <span className="text-xs text-gray-400 font-semibold">JPG, PNG — se comprime automáticamente</span>
+                      <input type="file" accept="image/*" className="hidden" disabled={flyerUploading}
+                        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFlyerUpload(f); }} />
+                    </label>
+                  )}
+                </div>
+
                 <button
                   type="submit"
                   className="w-full py-4 bg-kids-blue text-white text-xl font-black rounded-bubbly shadow-lg hover:scale-105 transition-transform"
@@ -1261,8 +1603,6 @@ export const TeacherPortal = () => {
         )}
 
         {activeTab === 'analytics' && <Analytics />}
-
-        {activeTab === 'vbs' && <VBSAdminTab />}
 
         {activeTab === 'lessons' && <TeacherLessons />}
 
@@ -1426,9 +1766,17 @@ export const TeacherPortal = () => {
                         </div>
                       </div>
                       <div className="flex flex-col items-center gap-2">
+                        {/* Child photo upload */}
+                        <PhotoUpload
+                          currentUrl={child.photo_url}
+                          onUpload={(file) => handleChildPhotoUpload(file, child.id)}
+                          label="Foto del niño"
+                          uploading={photoUploading[child.id]}
+                          size="md"
+                        />
                         <button
                           onClick={() => setSelectedChild(child)}
-                          className="px-4 py-2 bg-kids-mint text-white rounded-bubbly font-bold hover:scale-105 transition-transform"
+                          className="px-4 py-2 bg-kids-mint text-white rounded-bubbly font-bold hover:scale-105 transition-transform w-full"
                         >
                           Ver QR Code
                         </button>

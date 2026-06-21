@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
-import { MessageCircle, X, Send, Smile, Paperclip, Image as ImageIcon, FileText, Download } from 'lucide-react';
+import { MessageCircle, X, Send, Smile, Paperclip, Image as ImageIcon, FileText, Download, Trash2 } from 'lucide-react';
+
+// Only this account can moderate (delete messages / clear history). Enforced in the
+// database via RLS too, so the controls below are useless to anyone else.
+const SUPER_ADMIN_EMAIL = 'finessemediapro@gmail.com';
 
 interface StaffMessage {
   id: string;
@@ -27,7 +31,9 @@ export const StaffChat = () => {
   const [showEmojis, setShowEmojis] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [unread, setUnread] = useState(0);
-  const [me, setMe] = useState<{ id: string | null; name: string }>({ id: null, name: 'Maestro/a' });
+  const [me, setMe] = useState<{ id: string | null; name: string; email: string }>({ id: null, name: 'Maestro/a', email: '' });
+
+  const isAdmin = !!me.email && me.email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase();
 
   const listRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -41,7 +47,7 @@ export const StaffChat = () => {
         const name =
           (u.user_metadata && (u.user_metadata.full_name || u.user_metadata.name)) ||
           (u.email ? u.email.split('@')[0] : 'Maestro/a');
-        setMe({ id: u.id, name });
+        setMe({ id: u.id, name, email: u.email || '' });
       }
     });
 
@@ -57,10 +63,15 @@ export const StaffChat = () => {
 
     const channel = supabase
       .channel('staff-chat')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'staff_messages' }, (payload) => {
-        const msg = payload.new as StaffMessage;
-        setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
-        if (!openRef.current) setUnread((u) => u + 1);
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'staff_messages' }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          const msg = payload.new as StaffMessage;
+          setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
+          if (!openRef.current) setUnread((u) => u + 1);
+        } else if (payload.eventType === 'DELETE') {
+          const oldId = (payload.old as { id?: string }).id;
+          if (oldId) setMessages((prev) => prev.filter((m) => m.id !== oldId));
+        }
       })
       .subscribe();
 
@@ -118,6 +129,37 @@ export const StaffChat = () => {
     }
   };
 
+  // Admin-only: remove a single message (and its stored file).
+  const handleDelete = async (msg: StaffMessage) => {
+    if (!isAdmin) return;
+    setMessages((prev) => prev.filter((m) => m.id !== msg.id));
+    try {
+      await supabase.from('staff_messages').delete().eq('id', msg.id);
+      if (msg.attachment_url) {
+        const marker = '/staff-chat/';
+        const i = msg.attachment_url.indexOf(marker);
+        if (i >= 0) {
+          const path = msg.attachment_url.slice(i + marker.length);
+          await supabase.storage.from('staff-chat').remove([path]);
+        }
+      }
+    } catch (e) {
+      console.error('delete message error', e);
+    }
+  };
+
+  // Admin-only: wipe the entire chat history.
+  const handleClearAll = async () => {
+    if (!isAdmin) return;
+    if (!window.confirm('¿Borrar TODO el historial del chat? Esta acción no se puede deshacer.')) return;
+    setMessages([]);
+    try {
+      await supabase.from('staff_messages').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    } catch (e) {
+      console.error('clear chat error', e);
+    }
+  };
+
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     send(text);
@@ -161,15 +203,27 @@ export const StaffChat = () => {
                 </div>
                 <div>
                   <p className="text-white font-black text-sm leading-none">Chat de Maestros</p>
-                  <p className="text-white/80 text-xs">Equipo Aviva Kids</p>
+                  <p className="text-white/80 text-xs">{isAdmin ? 'Admin · puedes moderar' : 'Equipo Aviva Kids'}</p>
                 </div>
               </div>
-              <button
-                onClick={() => setOpen(false)}
-                className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
-              >
-                <X className="w-5 h-5 text-white" />
-              </button>
+              <div className="flex items-center gap-1">
+                {isAdmin && messages.length > 0 && (
+                  <button
+                    onClick={handleClearAll}
+                    title="Borrar todo el historial"
+                    className="h-8 px-2 rounded-full bg-white/20 hover:bg-kids-coral flex items-center gap-1 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4 text-white" />
+                    <span className="text-white text-xs font-bold">Limpiar</span>
+                  </button>
+                )}
+                <button
+                  onClick={() => setOpen(false)}
+                  className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+                >
+                  <X className="w-5 h-5 text-white" />
+                </button>
+              </div>
             </div>
 
             {/* Messages */}
@@ -184,8 +238,17 @@ export const StaffChat = () => {
               {messages.map((m) => {
                 const mine = !!me.id && m.author_id === me.id;
                 return (
-                  <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[80%] ${mine ? 'items-end' : 'items-start'} flex flex-col`}>
+                  <div key={m.id} className={`flex items-center gap-1 ${mine ? 'justify-end' : 'justify-start'}`}>
+                    {isAdmin && mine && (
+                      <button
+                        onClick={() => handleDelete(m)}
+                        title="Eliminar mensaje"
+                        className="w-7 h-7 rounded-full hover:bg-kids-coral/10 flex items-center justify-center text-gray-300 hover:text-kids-coral flex-shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                    <div className={`max-w-[78%] ${mine ? 'items-end' : 'items-start'} flex flex-col`}>
                       {!mine && (
                         <span className="text-xs font-bold text-kids-purple mb-0.5 px-1">{m.author_name || 'Maestro/a'}</span>
                       )}
@@ -215,6 +278,15 @@ export const StaffChat = () => {
                       </div>
                       <span className="text-[10px] text-gray-400 mt-0.5 px-1">{fmtTime(m.created_at)}</span>
                     </div>
+                    {isAdmin && !mine && (
+                      <button
+                        onClick={() => handleDelete(m)}
+                        title="Eliminar mensaje"
+                        className="w-7 h-7 rounded-full hover:bg-kids-coral/10 flex items-center justify-center text-gray-300 hover:text-kids-coral flex-shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 );
               })}

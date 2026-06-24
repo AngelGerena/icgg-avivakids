@@ -54,6 +54,7 @@ export const TeacherPortal = () => {
   const [alertHistory, setAlertHistory] = useState<Alert[]>([]);
   const [selectedChild, setSelectedChild] = useState<any>(null);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [idleLoggedOut, setIdleLoggedOut] = useState(false);
 
   const [checkedInChildren, setCheckedInChildren] = useState<Child[]>([]);
   const [allChildren, setAllChildren] = useState<Child[]>([]);
@@ -100,6 +101,30 @@ export const TeacherPortal = () => {
     }
   }, [authenticated]);
 
+  // Auto-logout after 30 minutes of inactivity (shared-device safeguard).
+  useEffect(() => {
+    if (!authenticated) return;
+    const IDLE_LIMIT_MS = 30 * 60 * 1000;
+    let timer: ReturnType<typeof setTimeout>;
+    const doIdleLogout = async () => {
+      try { window.localStorage.removeItem('avk_pending_reset'); } catch (_e) { /* ignore */ }
+      await supabase.auth.signOut();
+      setAuthenticated(false);
+      setIdleLoggedOut(true);
+    };
+    const reset = () => {
+      clearTimeout(timer);
+      timer = setTimeout(doIdleLogout, IDLE_LIMIT_MS);
+    };
+    const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click'];
+    events.forEach((e) => window.addEventListener(e, reset, { passive: true }));
+    reset();
+    return () => {
+      clearTimeout(timer);
+      events.forEach((e) => window.removeEventListener(e, reset));
+    };
+  }, [authenticated]);
+
   const checkAuth = async () => {
     // Register the listener FIRST so the one-time PASSWORD_RECOVERY event is never missed.
     supabase.auth.onAuthStateChange((event) => {
@@ -142,6 +167,7 @@ export const TeacherPortal = () => {
       if (error) throw error;
 
       try { window.localStorage.removeItem('avk_pending_reset'); } catch (_e) { /* ignore */ }
+      setIdleLoggedOut(false);
       setAuthenticated(true);
     } catch (error: any) {
       alert(error.message || 'Error al iniciar sesión');
@@ -806,6 +832,11 @@ export const TeacherPortal = () => {
           animate={{ opacity: 1, scale: 1 }}
           className="bg-white/95 backdrop-blur-xl rounded-bubbly p-8 sm:p-12 shadow-2xl max-w-md w-full border-2 border-white/20"
         >
+          {idleLoggedOut && (
+            <div className="mb-6 bg-kids-yellow/15 border-2 border-kids-yellow rounded-bubbly p-4 text-center">
+              <p className="text-sm font-bold text-gray-700">Tu sesion se cerro por inactividad. Inicia sesion de nuevo.</p>
+            </div>
+          )}
           <AnimatePresence mode="wait">
             {isForgotPassword ? (
               <motion.div

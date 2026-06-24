@@ -1048,11 +1048,11 @@ export const TeacherPortal = () => {
   return (
     <div className="min-h-screen py-8 px-4">
       <div className="container mx-auto max-w-7xl">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-4xl md:text-5xl font-black text-kids-purple">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-kids-purple">
             {t.teacherPortal.dashboard}
           </h1>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={() => setShowTutorial(true)}
               className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-kids-yellow to-kids-blue text-white rounded-bubbly font-bold hover:scale-105 transition-transform shadow-lg"
@@ -1151,12 +1151,12 @@ export const TeacherPortal = () => {
             </div>
 
             <div className="bg-white/95 backdrop-blur-xl rounded-bubbly p-8 shadow-xl border border-white/20">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-3xl font-black text-kids-blue flex items-center">
-                  <Users className="w-8 h-8 mr-3" />
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+                <h2 className="text-2xl sm:text-3xl font-black text-kids-blue flex items-center">
+                  <Users className="w-8 h-8 mr-3 flex-shrink-0" />
                   {t.teacherPortal.checkInList}
                 </h2>
-                <div className="flex space-x-4">
+                <div className="flex flex-wrap gap-3">
                   <button
                     onClick={() => setShowQRScanner(true)}
                     className="flex items-center space-x-2 px-4 py-2 bg-kids-purple text-white rounded-bubbly font-bold hover:scale-105 transition-transform"
@@ -1693,12 +1693,12 @@ export const TeacherPortal = () => {
 
         {activeTab === 'children' && (
           <div className="bg-white/95 backdrop-blur-xl rounded-bubbly p-8 shadow-xl border border-white/20">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-3xl font-black text-kids-blue flex items-center">
-                <Users className="w-8 h-8 mr-3" />
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+              <h2 className="text-2xl sm:text-3xl font-black text-kids-blue flex items-center">
+                <Users className="w-8 h-8 mr-3 flex-shrink-0" />
                 Todos los Niños Registrados
               </h2>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center gap-4">
                 <div className="text-lg font-bold text-gray-600">
                   Total: {allChildren.length}
                 </div>
@@ -1717,7 +1717,7 @@ export const TeacherPortal = () => {
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        className="absolute right-0 mt-2 w-80 bg-white rounded-bubbly shadow-2xl border-2 border-kids-blue z-50 p-4"
+                        className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] bg-white rounded-bubbly shadow-2xl border-2 border-kids-blue z-50 p-4"
                       >
                         <h3 className="text-lg font-black text-kids-purple mb-4">
                           Seleccione el formato de exportación

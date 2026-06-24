@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
-import { supabase, Child, Event, Alert } from '../lib/supabase';
+import { supabase, Child, Event, Alert, isRecoveryLink } from '../lib/supabase';
 import {
   ChevronLeft,
   LogIn,
@@ -41,7 +41,9 @@ export const TeacherPortal = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [forgotPasswordSent, setForgotPasswordSent] = useState(false);
-  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(
+    () => isRecoveryLink || (typeof window !== 'undefined' && window.localStorage.getItem('avk_pending_reset') === '1')
+  );
   const [newPassword, setNewPassword] = useState('');
   const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
   const [resetSuccess, setResetSuccess] = useState(false);
@@ -99,16 +101,32 @@ export const TeacherPortal = () => {
   }, [authenticated]);
 
   const checkAuth = async () => {
-    const { data } = await supabase.auth.getSession();
-    setAuthenticated(!!data.session);
-    setLoading(false);
-
+    // Register the listener FIRST so the one-time PASSWORD_RECOVERY event is never missed.
     supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
+        try { window.localStorage.setItem('avk_pending_reset', '1'); } catch (_e) { /* ignore */ }
         setIsResettingPassword(true);
+        setAuthenticated(false);
+      } else if (event === 'SIGNED_OUT') {
         setAuthenticated(false);
       }
     });
+
+    const { data } = await supabase.auth.getSession();
+
+    // A password-recovery session must ALWAYS land on the reset screen, never the
+    // dashboard — even if a valid session exists — until the password is actually reset.
+    const pendingReset =
+      isRecoveryLink ||
+      (typeof window !== 'undefined' && window.localStorage.getItem('avk_pending_reset') === '1');
+
+    if (pendingReset) {
+      setIsResettingPassword(true);
+      setAuthenticated(false);
+    } else {
+      setAuthenticated(!!data.session);
+    }
+    setLoading(false);
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -123,6 +141,7 @@ export const TeacherPortal = () => {
 
       if (error) throw error;
 
+      try { window.localStorage.removeItem('avk_pending_reset'); } catch (_e) { /* ignore */ }
       setAuthenticated(true);
     } catch (error: any) {
       alert(error.message || 'Error al iniciar sesión');
@@ -195,6 +214,9 @@ export const TeacherPortal = () => {
     try {
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
+      try { window.localStorage.removeItem('avk_pending_reset'); } catch (_e) { /* ignore */ }
+      await supabase.auth.signOut();
+      setAuthenticated(false);
       setResetSuccess(true);
       setNewPassword('');
       setNewPasswordConfirm('');
@@ -206,6 +228,7 @@ export const TeacherPortal = () => {
   };
 
   const handleLogout = async () => {
+    try { window.localStorage.removeItem('avk_pending_reset'); } catch (_e) { /* ignore */ }
     await supabase.auth.signOut();
     setAuthenticated(false);
   };
@@ -756,6 +779,18 @@ export const TeacherPortal = () => {
               >
                 {loading ? 'Guardando...' : 'Guardar Nueva Contrasena'}
               </motion.button>
+              <button
+                type="button"
+                onClick={async () => {
+                  try { window.localStorage.removeItem('avk_pending_reset'); } catch (_e) { /* ignore */ }
+                  await supabase.auth.signOut();
+                  setIsResettingPassword(false);
+                  setAuthenticated(false);
+                }}
+                className="w-full text-center text-gray-500 font-bold text-sm hover:text-kids-purple"
+              >
+                Volver al inicio de sesion
+              </button>
             </form>
           )}
         </motion.div>

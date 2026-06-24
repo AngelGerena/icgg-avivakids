@@ -7,6 +7,16 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
+// Detect a Supabase password-recovery link synchronously, BEFORE the client parses
+// and strips the URL hash. A recovery session must never silently grant portal
+// access, so we persist a flag until the password is actually reset.
+export const isRecoveryLink =
+  typeof window !== 'undefined' &&
+  /type=recovery/.test(window.location.hash + window.location.search);
+if (isRecoveryLink) {
+  try { window.localStorage.setItem('avk_pending_reset', '1'); } catch (_e) { /* ignore */ }
+}
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export interface Child {

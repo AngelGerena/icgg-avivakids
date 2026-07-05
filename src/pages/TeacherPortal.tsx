@@ -1074,6 +1074,15 @@ export const TeacherPortal = () => {
           </div>
         </div>
 
+        {/* Prominent QR check-in button — always visible at the top on every device (no nav overlap) */}
+        <button
+          onClick={() => setShowQRScanner(true)}
+          className="w-full sm:w-auto mb-6 flex items-center justify-center gap-3 px-8 py-5 bg-gradient-to-r from-kids-purple to-kids-blue text-white rounded-bubbly font-black text-xl shadow-xl hover:scale-[1.02] active:scale-95 transition-transform"
+        >
+          <QrCode className="w-7 h-7" />
+          <span>Escanear QR — Registrar Niño</span>
+        </button>
+
         <div className="flex flex-wrap gap-4 mb-8">
           {[
             { id: 'dashboard', label: t.teacherPortal.dashboard, icon: Users },
@@ -1886,19 +1895,6 @@ export const TeacherPortal = () => {
           isOpen={showTutorial}
           onClose={() => setShowTutorial(false)}
         />
-
-        {/* Floating quick-access QR scanner — one tap from any tab (for Sunday check-in).
-            Raised above the mobile bottom-nav bar (which is fixed bottom-0 z-[100]). */}
-        {!showQRScanner && (
-          <button
-            onClick={() => setShowQRScanner(true)}
-            aria-label="Escanear QR"
-            className="fixed bottom-24 left-4 z-[110] lg:bottom-6 lg:left-5 flex items-center gap-2 px-5 py-4 bg-gradient-to-br from-kids-purple to-kids-blue text-white rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-transform"
-          >
-            <QrCode className="w-6 h-6" />
-            <span className="font-black">Escanear QR</span>
-          </button>
-        )}
 
         {/* Floating staff chat — teachers only (rendered inside authenticated portal) */}
         <StaffChat />

@@ -307,24 +307,28 @@ export const TeacherPortal = () => {
   };
 
   const handleQRScan = async (data: any) => {
+    const raw = typeof data === 'string' ? data.trim() : JSON.stringify(data);
+    let childId = '';
     let childNumber = '';
 
-    if (typeof data === 'string') {
-      try {
-        const parsed = JSON.parse(data);
-        childNumber = parsed.childNumber || parsed.child_number || data;
-      } catch {
-        childNumber = data;
-      }
+    // The printed badge QR encodes the profile URL: .../child/<uuid>
+    const urlMatch = raw.match(/\/child\/([0-9a-fA-F-]{16,})/);
+    if (urlMatch) {
+      childId = urlMatch[1];
     } else {
-      childNumber = data.childNumber || data.child_number || '';
+      try {
+        const parsed = JSON.parse(raw);
+        childId = parsed.childId || parsed.child_id || '';
+        childNumber = parsed.childNumber || parsed.child_number || '';
+      } catch {
+        childNumber = raw;
+      }
     }
 
-    const { data: childData, error } = await supabase
-      .from('children')
-      .select('*, parents(*), intake_forms(*)')
-      .eq('unique_number', childNumber)
-      .maybeSingle();
+    const baseQuery = supabase.from('children').select('*, parents(*), intake_forms(*)');
+    const { data: childData, error } = childId
+      ? await baseQuery.eq('id', childId).maybeSingle()
+      : await baseQuery.eq('unique_number', childNumber).maybeSingle();
 
     if (error) {
       console.error('QR scan error:', error.message);

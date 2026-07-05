@@ -106,17 +106,6 @@ export const Navbar = () => {
               </Link>
             );
           })}
-          <a
-            href="https://www.icgg.us"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex flex-col items-center justify-center py-2 px-1 rounded-bubbly transition-all duration-300 active:scale-95 text-white hover:bg-white/20"
-          >
-            <Church className="w-5 h-5 mb-1 transition-transform duration-300" />
-            <span className="text-[10px] font-semibold text-center leading-tight">
-              Visite ICGG
-            </span>
-          </a>
         </div>
       </div>
     </>

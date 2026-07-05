@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Languages, Home, ClipboardCheck, FileText, CalendarDays, Cake, Church, Heart, QrCode } from 'lucide-react';
 import { ParentNotifications } from './ParentNotifications';
+import { isMobileOrTablet } from '../utils/device';
 
 export const Navbar = () => {
   const { t, language, setLanguage } = useLanguage();
@@ -11,6 +12,7 @@ export const Navbar = () => {
   // The teacher portal broadcasts whether the "Escanear QR" button should show
   // (i.e. we're inside /admin and logged in). Keeps the button out of public pages.
   const [showScan, setShowScan] = useState(false);
+  const [isMobile] = useState(() => isMobileOrTablet());
   useEffect(() => {
     const onState = (e: any) => setShowScan(!!(e.detail && e.detail.authed));
     window.addEventListener('avk:admin-auth', onState);
@@ -78,7 +80,7 @@ export const Navbar = () => {
             </div>
 
             <div className="flex items-center gap-2 lg:gap-3 lg:mr-4">
-              {showScan && (
+              {showScan && isMobile && (
                 <button
                   onClick={() => window.dispatchEvent(new CustomEvent('avk:open-qr'))}
                   aria-label="Escanear QR"

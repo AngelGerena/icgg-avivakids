@@ -1176,15 +1176,6 @@ export const TeacherPortal = () => {
                   {t.teacherPortal.checkInList}
                 </h2>
                 <div className="flex flex-wrap gap-3">
-                  {isMobileDevice && (
-                    <button
-                      onClick={() => setShowQRScanner(true)}
-                      className="flex items-center space-x-2 px-4 py-2 bg-kids-purple text-white rounded-bubbly font-bold hover:scale-105 transition-transform"
-                    >
-                      <QrCode className="w-5 h-5" />
-                      <span>Escanear QR</span>
-                    </button>
-                  )}
                   <button
                     onClick={exportCSV}
                     className="flex items-center space-x-2 px-4 py-2 bg-kids-mint text-white rounded-bubbly font-bold hover:scale-105 transition-transform"

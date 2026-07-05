@@ -7,48 +7,86 @@ interface QRScannerProps {
   onClose: () => void;
 }
 
-const CDN = 'https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js';
-const REGION = 'qr-reader-region';
+// jsQR: a robust, pure-JS QR decoder that works reliably on iOS Safari (which has
+// no native barcode support). We drive the camera ourselves and decode each frame.
+const JSQR_CDN = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
 
 export const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
   const [manualCode, setManualCode] = useState('');
   const [camError, setCamError] = useState('');
   const [starting, setStarting] = useState(true);
-  const scannerRef = useRef<any>(null);
+
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const rafRef = useRef<number>(0);
   const decodedRef = useRef(false);
+  const lastScanRef = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true } as any);
 
-    const startScanner = async () => {
+    const stopCamera = () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      const s = streamRef.current;
+      if (s) s.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    };
+
+    const tick = (ts: number) => {
+      if (cancelled || decodedRef.current) return;
+      const video = videoRef.current;
       const w: any = window;
-      if (!w.Html5Qrcode) {
-        if (!cancelled) { setCamError('No se pudo cargar el escáner. Usa el ingreso manual abajo.'); setStarting(false); }
-        return;
+      // Throttle decoding to ~12 fps to keep it smooth on phones.
+      if (video && ctx && w.jsQR && video.readyState >= 2 && ts - lastScanRef.current > 80) {
+        lastScanRef.current = ts;
+        const vw = video.videoWidth;
+        const vh = video.videoHeight;
+        if (vw && vh) {
+          canvas.width = vw;
+          canvas.height = vh;
+          ctx.drawImage(video, 0, 0, vw, vh);
+          try {
+            const img = ctx.getImageData(0, 0, vw, vh);
+            const code = w.jsQR(img.data, vw, vh, { inversionAttempts: 'attemptBoth' });
+            if (code && code.data) {
+              decodedRef.current = true;
+              stopCamera();
+              onScanSuccess(code.data);
+              return;
+            }
+          } catch (_e) {
+            /* frame not ready; keep going */
+          }
+        }
       }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    const startCamera = async () => {
       try {
-        const scanner = new w.Html5Qrcode(REGION, {
-          verbose: false,
-          // Use the browser's built-in barcode detector where available (much more
-          // robust); falls back to the JS decoder on Safari.
-          experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' } },
+          audio: false,
         });
-        scannerRef.current = scanner;
-        await scanner.start(
-          { facingMode: 'environment' },
-          // No qrbox => decode the ENTIRE camera frame (far more forgiving: the code
-          // no longer has to be centered inside a small box).
-          { fps: 12, aspectRatio: 1.0 },
-          (decodedText: string) => {
-            if (decodedRef.current) return;
-            decodedRef.current = true;
-            const stopping = scanner.stop().catch(() => {});
-            Promise.resolve(stopping).finally(() => onScanSuccess(decodedText));
-          },
-          () => {}
-        );
+        if (cancelled) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
+        streamRef.current = stream;
+        const video = videoRef.current;
+        if (!video) return;
+        // iOS requires these for inline autoplay without going fullscreen.
+        video.setAttribute('playsinline', 'true');
+        video.setAttribute('webkit-playsinline', 'true');
+        (video as any).playsInline = true;
+        video.muted = true;
+        video.srcObject = stream;
+        await video.play().catch(() => {});
         if (!cancelled) setStarting(false);
-      } catch (e: any) {
+        rafRef.current = requestAnimationFrame(tick);
+      } catch (_e) {
         if (!cancelled) {
           setCamError('No se pudo acceder a la cámara. Permite el acceso a la cámara o usa el ingreso manual abajo.');
           setStarting(false);
@@ -56,38 +94,27 @@ export const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
       }
     };
 
-    const loadAndStart = () => {
+    const loadJsQR = () => {
       const w: any = window;
-      if (w.Html5Qrcode) { startScanner(); return; }
-      const existing = document.getElementById('html5qrcode-cdn') as HTMLScriptElement | null;
-      if (existing) { existing.addEventListener('load', startScanner); return; }
-      const s = document.createElement('script');
-      s.id = 'html5qrcode-cdn';
-      s.src = CDN;
-      s.async = true;
-      s.onload = startScanner;
-      s.onerror = () => {
+      if (w.jsQR) { startCamera(); return; }
+      const existing = document.getElementById('jsqr-cdn') as HTMLScriptElement | null;
+      if (existing) { existing.addEventListener('load', startCamera); return; }
+      const sc = document.createElement('script');
+      sc.id = 'jsqr-cdn';
+      sc.src = JSQR_CDN;
+      sc.async = true;
+      sc.onload = startCamera;
+      sc.onerror = () => {
         if (!cancelled) { setCamError('No se pudo cargar el escáner. Usa el ingreso manual abajo.'); setStarting(false); }
       };
-      document.body.appendChild(s);
+      document.body.appendChild(sc);
     };
 
-    loadAndStart();
+    loadJsQR();
 
     return () => {
       cancelled = true;
-      const scanner = scannerRef.current;
-      if (scanner) {
-        try {
-          if (scanner.isScanning) {
-            scanner.stop().then(() => { try { scanner.clear(); } catch (_e) {} }).catch(() => {});
-          } else if (scanner.clear) {
-            try { scanner.clear(); } catch (_e) {}
-          }
-        } catch (_e) {
-          /* ignore */
-        }
-      }
+      stopCamera();
     };
   }, []);
 
@@ -118,14 +145,17 @@ export const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
           </button>
         </div>
 
-        {/* Live camera.
-            IMPORTANT: the #REGION div is owned by the html5-qrcode library and must
-            stay EMPTY from React's perspective. The spinner/overlay is a SIBLING
-            (absolutely positioned), never a child of REGION — otherwise React and the
-            library fight over the same DOM node and crash the app (removeChild error). */}
+        {/* Live camera — we own the <video>; jsQR reads frames via an off-DOM canvas,
+            so there is no DOM conflict with React. */}
         <div className="mb-4">
           <div className="relative w-full aspect-square max-w-xs mx-auto bg-black rounded-bubbly overflow-hidden">
-            <div id={REGION} className="w-full h-full" />
+            <video ref={videoRef} className="w-full h-full object-cover" playsInline muted autoPlay />
+            {/* Aiming frame */}
+            {!starting && !camError && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="w-2/3 h-2/3 border-4 border-white/80 rounded-2xl" />
+              </div>
+            )}
             {starting && !camError && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-white/80 pointer-events-none">
                 <Camera className="w-10 h-10 animate-pulse" />
@@ -135,7 +165,7 @@ export const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
           </div>
           {!camError ? (
             <p className="text-center text-xs text-gray-500 font-semibold mt-2">
-              Apunta la cámara al código QR de la tarjeta del niño.
+              Centra el código QR de la tarjeta dentro del recuadro.
             </p>
           ) : (
             <div className="mt-3 flex items-start gap-2 bg-kids-yellow/15 border border-kids-yellow rounded-2xl p-3">

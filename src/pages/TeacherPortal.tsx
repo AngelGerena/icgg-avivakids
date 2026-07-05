@@ -29,6 +29,7 @@ import { TutorialSlideshow } from '../components/TutorialSlideshow';
 import { exportToPDF, exportToExcel, exportSummaryTable } from '../utils/exportUtils';
 import { TeacherLessons } from '../components/TeacherLessons';
 import { StaffChat } from '../components/StaffChat';
+import { isMobileOrTablet } from '../utils/device';
 import { PhotoUpload } from '../components/PhotoUpload';
 
 export const TeacherPortal = () => {
@@ -55,6 +56,7 @@ export const TeacherPortal = () => {
   const [selectedChild, setSelectedChild] = useState<any>(null);
   const [showTutorial, setShowTutorial] = useState(false);
   const [idleLoggedOut, setIdleLoggedOut] = useState(false);
+  const [isMobileDevice] = useState(() => isMobileOrTablet());
 
   const [checkedInChildren, setCheckedInChildren] = useState<Child[]>([]);
   const [allChildren, setAllChildren] = useState<Child[]>([]);
@@ -1174,13 +1176,15 @@ export const TeacherPortal = () => {
                   {t.teacherPortal.checkInList}
                 </h2>
                 <div className="flex flex-wrap gap-3">
-                  <button
-                    onClick={() => setShowQRScanner(true)}
-                    className="flex items-center space-x-2 px-4 py-2 bg-kids-purple text-white rounded-bubbly font-bold hover:scale-105 transition-transform"
-                  >
-                    <QrCode className="w-5 h-5" />
-                    <span>Escanear QR</span>
-                  </button>
+                  {isMobileDevice && (
+                    <button
+                      onClick={() => setShowQRScanner(true)}
+                      className="flex items-center space-x-2 px-4 py-2 bg-kids-purple text-white rounded-bubbly font-bold hover:scale-105 transition-transform"
+                    >
+                      <QrCode className="w-5 h-5" />
+                      <span>Escanear QR</span>
+                    </button>
+                  )}
                   <button
                     onClick={exportCSV}
                     className="flex items-center space-x-2 px-4 py-2 bg-kids-mint text-white rounded-bubbly font-bold hover:scale-105 transition-transform"

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
-import { User, Hash, Home as HomeIcon, ShieldCheck, Loader } from 'lucide-react';
+import { User, Hash, Home as HomeIcon, ShieldCheck, Loader, CheckCircle } from 'lucide-react';
 
 const ROOMS: Record<string, string> = {
   babies: 'Bebés (0-2 años)',
@@ -17,8 +17,18 @@ export const ChildProfile = () => {
   const [child, setChild] = useState<any>(null);
   const [parent, setParent] = useState<any>(null);
 
+  // Staff check-in (only shown to logged-in ministry staff)
+  const [isStaff, setIsStaff] = useState(false);
+  const [checkedIn, setCheckedIn] = useState(false);
+  const [checkInTime, setCheckInTime] = useState<string | null>(null);
+  const [checkingIn, setCheckingIn] = useState(false);
+
   useEffect(() => {
     const load = async () => {
+      // Is a teacher logged in on this device? (session is shared across the site)
+      const { data: sess } = await supabase.auth.getSession();
+      setIsStaff(!!sess.session);
+
       if (!id) {
         setLoading(false);
         return;
@@ -30,6 +40,8 @@ export const ChildProfile = () => {
         .maybeSingle();
       setChild(c);
       if (c) {
+        setCheckedIn(!!c.checked_in_today);
+        setCheckInTime(c.check_in_time || null);
         const { data: p } = await supabase
           .from('parents')
           .select('primary_name, approved_pickup_name')
@@ -41,6 +53,42 @@ export const ChildProfile = () => {
     };
     load();
   }, [id]);
+
+  const handleCheckIn = async () => {
+    if (!child) return;
+    setCheckingIn(true);
+    try {
+      const now = new Date().toISOString();
+      await supabase
+        .from('children')
+        .update({ checked_in_today: true, check_in_time: now })
+        .eq('id', child.id);
+
+      const today = now.split('T')[0];
+      const { data: existing } = await supabase
+        .from('attendance')
+        .select('id')
+        .eq('child_id', child.id)
+        .eq('date', today)
+        .maybeSingle();
+      if (!existing) {
+        await supabase.from('attendance').insert({
+          child_id: child.id,
+          child_number: child.unique_number,
+          date: today,
+          checked_in_at: now,
+          checked_in_by: 'qr-profile',
+        });
+      }
+      setCheckedIn(true);
+      setCheckInTime(now);
+    } catch (e) {
+      console.error('check-in error', e);
+      alert('No se pudo registrar la entrada. Verifica que iniciaste sesión en el portal.');
+    } finally {
+      setCheckingIn(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -73,6 +121,9 @@ export const ChildProfile = () => {
       </div>
     </div>
   );
+
+  const fmtTime = (iso: string) =>
+    new Date(iso).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
 
   return (
     <div className="min-h-screen py-10 px-4 flex items-start justify-center">
@@ -131,6 +182,33 @@ export const ChildProfile = () => {
               />
             )}
           </div>
+
+          {/* Staff-only check-in */}
+          {isStaff && (
+            <div className="w-full mt-6 pt-6 border-t-2 border-gray-100">
+              {checkedIn ? (
+                <div className="bg-green-50 border-2 border-green-400 rounded-2xl p-4 text-center">
+                  <CheckCircle className="w-10 h-10 text-green-500 mx-auto mb-1" />
+                  <p className="text-green-700 font-black text-lg">Entrada registrada</p>
+                  {checkInTime && (
+                    <p className="text-green-600 text-sm font-semibold">Hoy a las {fmtTime(checkInTime)}</p>
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={handleCheckIn}
+                  disabled={checkingIn}
+                  className="w-full py-4 bg-gradient-to-r from-kids-mint to-green-500 text-white text-xl font-black rounded-bubbly shadow-lg flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-60"
+                >
+                  <CheckCircle className="w-6 h-6" />
+                  {checkingIn ? 'Registrando...' : 'Registrar entrada (Check-In)'}
+                </button>
+              )}
+              <p className="text-xs text-gray-400 font-semibold text-center mt-2">
+                Solo visible para el personal con sesión iniciada.
+              </p>
+            </div>
+          )}
 
           <p className="text-xs text-gray-400 font-semibold mt-6">
             Para uso del ministerio infantil

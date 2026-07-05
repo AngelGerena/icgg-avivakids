@@ -27,11 +27,18 @@ export const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
         return;
       }
       try {
-        const scanner = new w.Html5Qrcode(REGION, { verbose: false });
+        const scanner = new w.Html5Qrcode(REGION, {
+          verbose: false,
+          // Use the browser's built-in barcode detector where available (much more
+          // robust); falls back to the JS decoder on Safari.
+          experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+        });
         scannerRef.current = scanner;
         await scanner.start(
           { facingMode: 'environment' },
-          { fps: 10, qrbox: { width: 220, height: 220 } },
+          // No qrbox => decode the ENTIRE camera frame (far more forgiving: the code
+          // no longer has to be centered inside a small box).
+          { fps: 12, aspectRatio: 1.0 },
           (decodedText: string) => {
             if (decodedRef.current) return;
             decodedRef.current = true;

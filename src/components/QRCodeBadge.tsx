@@ -104,7 +104,7 @@ export const QRCodeBadge = ({ childName, childNumber, childId }: QRCodeBadgeProp
             size={200}
             level="H"
             includeMargin={true}
-            fgColor="#CE93D8"
+            fgColor="#000000"
           />
         </div>
 

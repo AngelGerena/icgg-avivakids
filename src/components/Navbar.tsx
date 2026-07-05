@@ -80,16 +80,6 @@ export const Navbar = () => {
             </div>
 
             <div className="flex items-center gap-2 lg:gap-3 lg:mr-4">
-              {showScan && isMobile && (
-                <button
-                  onClick={() => window.dispatchEvent(new CustomEvent('avk:open-qr'))}
-                  aria-label="Escanear QR"
-                  className="flex items-center space-x-1 lg:space-x-2 bg-kids-purple text-white px-2 py-1.5 lg:px-5 lg:py-2.5 rounded-full shadow-lg hover:scale-110 active:scale-95 transition-all border border-white/50"
-                >
-                  <QrCode className="w-4 h-4 lg:w-5 lg:h-5" />
-                  <span className="font-bold text-sm lg:text-base hidden sm:inline">Escanear</span>
-                </button>
-              )}
               <button
                 onClick={toggleLanguage}
                 className="flex items-center space-x-1 lg:space-x-2 bg-white/90 backdrop-blur-sm px-2 py-1.5 lg:px-5 lg:py-2.5 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 hover:-translate-y-1 active:scale-95 border border-white/50"

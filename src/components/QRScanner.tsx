@@ -1,122 +1,97 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, X, Camera, AlertCircle } from 'lucide-react';
+import { Search, X, Camera, AlertCircle, Loader2 } from 'lucide-react';
 
 interface QRScannerProps {
   onScanSuccess: (data: any) => void;
   onClose: () => void;
 }
 
-// jsQR: a robust, pure-JS QR decoder that works reliably on iOS Safari (which has
-// no native barcode support). We drive the camera ourselves and decode each frame.
 const JSQR_CDN = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+
+// Load the jsQR decoder once (verified to decode our badge QR format).
+const loadJsQR = (): Promise<any> =>
+  new Promise((resolve, reject) => {
+    const w = window as any;
+    if (w.jsQR) return resolve(w.jsQR);
+    const existing = document.getElementById('jsqr-cdn') as HTMLScriptElement | null;
+    if (existing) {
+      existing.addEventListener('load', () => resolve((window as any).jsQR));
+      existing.addEventListener('error', reject);
+      return;
+    }
+    const s = document.createElement('script');
+    s.id = 'jsqr-cdn';
+    s.src = JSQR_CDN;
+    s.onload = () => resolve((window as any).jsQR);
+    s.onerror = reject;
+    document.body.appendChild(s);
+  });
+
+// Turn the captured photo into a bitmap, honoring EXIF orientation (iOS photos).
+async function fileToBitmap(file: File): Promise<any> {
+  const w = window as any;
+  if (w.createImageBitmap) {
+    try {
+      return await w.createImageBitmap(file, { imageOrientation: 'from-image' });
+    } catch (_e) {
+      /* fall through */
+    }
+  }
+  return await new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => res(img);
+    img.onerror = rej;
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+function decodeAt(jsQR: any, bitmap: any, maxSide: number): any {
+  const width = bitmap.width;
+  const height = bitmap.height;
+  const scale = Math.min(1, maxSide / Math.max(width, height));
+  const cw = Math.max(1, Math.round(width * scale));
+  const ch = Math.max(1, Math.round(height * scale));
+  const canvas = document.createElement('canvas');
+  canvas.width = cw;
+  canvas.height = ch;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true } as any);
+  if (!ctx) return null;
+  ctx.drawImage(bitmap, 0, 0, cw, ch);
+  const img = ctx.getImageData(0, 0, cw, ch);
+  return jsQR(img.data, cw, ch, { inversionAttempts: 'attemptBoth' });
+}
 
 export const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
   const [manualCode, setManualCode] = useState('');
-  const [camError, setCamError] = useState('');
-  const [starting, setStarting] = useState(true);
+  const [status, setStatus] = useState<'idle' | 'analyzing' | 'error'>('idle');
+  const [errMsg, setErrMsg] = useState('');
+  const fileRef = useRef<HTMLInputElement>(null);
 
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const rafRef = useRef<number>(0);
-  const decodedRef = useRef(false);
-  const lastScanRef = useRef(0);
-
-  useEffect(() => {
-    let cancelled = false;
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d', { willReadFrequently: true } as any);
-
-    const stopCamera = () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      const s = streamRef.current;
-      if (s) s.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
-    };
-
-    const tick = (ts: number) => {
-      if (cancelled || decodedRef.current) return;
-      const video = videoRef.current;
-      const w: any = window;
-      // Throttle decoding to ~12 fps to keep it smooth on phones.
-      if (video && ctx && w.jsQR && video.readyState >= 2 && ts - lastScanRef.current > 80) {
-        lastScanRef.current = ts;
-        const vw = video.videoWidth;
-        const vh = video.videoHeight;
-        if (vw && vh) {
-          canvas.width = vw;
-          canvas.height = vh;
-          ctx.drawImage(video, 0, 0, vw, vh);
-          try {
-            const img = ctx.getImageData(0, 0, vw, vh);
-            const code = w.jsQR(img.data, vw, vh, { inversionAttempts: 'attemptBoth' });
-            if (code && code.data) {
-              decodedRef.current = true;
-              stopCamera();
-              onScanSuccess(code.data);
-              return;
-            }
-          } catch (_e) {
-            /* frame not ready; keep going */
-          }
-        }
+  const handlePhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setStatus('analyzing');
+    setErrMsg('');
+    try {
+      const jsQR = await loadJsQR();
+      const bitmap = await fileToBitmap(file);
+      // Try a downscaled pass (fast), then full resolution if needed.
+      let code = decodeAt(jsQR, bitmap, 1600);
+      if (!code || !code.data) code = decodeAt(jsQR, bitmap, Math.max(bitmap.width, bitmap.height));
+      if (code && code.data) {
+        onScanSuccess(code.data);
+        return;
       }
-      rafRef.current = requestAnimationFrame(tick);
-    };
-
-    const startCamera = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: 'environment' } },
-          audio: false,
-        });
-        if (cancelled) {
-          stream.getTracks().forEach((t) => t.stop());
-          return;
-        }
-        streamRef.current = stream;
-        const video = videoRef.current;
-        if (!video) return;
-        // iOS requires these for inline autoplay without going fullscreen.
-        video.setAttribute('playsinline', 'true');
-        video.setAttribute('webkit-playsinline', 'true');
-        (video as any).playsInline = true;
-        video.muted = true;
-        video.srcObject = stream;
-        await video.play().catch(() => {});
-        if (!cancelled) setStarting(false);
-        rafRef.current = requestAnimationFrame(tick);
-      } catch (_e) {
-        if (!cancelled) {
-          setCamError('No se pudo acceder a la cámara. Permite el acceso a la cámara o usa el ingreso manual abajo.');
-          setStarting(false);
-        }
-      }
-    };
-
-    const loadJsQR = () => {
-      const w: any = window;
-      if (w.jsQR) { startCamera(); return; }
-      const existing = document.getElementById('jsqr-cdn') as HTMLScriptElement | null;
-      if (existing) { existing.addEventListener('load', startCamera); return; }
-      const sc = document.createElement('script');
-      sc.id = 'jsqr-cdn';
-      sc.src = JSQR_CDN;
-      sc.async = true;
-      sc.onload = startCamera;
-      sc.onerror = () => {
-        if (!cancelled) { setCamError('No se pudo cargar el escáner. Usa el ingreso manual abajo.'); setStarting(false); }
-      };
-      document.body.appendChild(sc);
-    };
-
-    loadJsQR();
-
-    return () => {
-      cancelled = true;
-      stopCamera();
-    };
-  }, []);
+      setStatus('error');
+      setErrMsg('No se detectó el código QR en la foto. Vuelve a intentarlo con buena luz y el código bien centrado y enfocado, o ingresa el número abajo.');
+    } catch (_err) {
+      setStatus('error');
+      setErrMsg('No se pudo analizar la foto. Intenta de nuevo o usa el ingreso manual abajo.');
+    } finally {
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  };
 
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -145,35 +120,42 @@ export const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
           </button>
         </div>
 
-        {/* Live camera — we own the <video>; jsQR reads frames via an off-DOM canvas,
-            so there is no DOM conflict with React. */}
-        <div className="mb-4">
-          <div className="relative w-full aspect-square max-w-xs mx-auto bg-black rounded-bubbly overflow-hidden">
-            <video ref={videoRef} className="w-full h-full object-cover" playsInline muted autoPlay />
-            {/* Aiming frame */}
-            {!starting && !camError && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="w-2/3 h-2/3 border-4 border-white/80 rounded-2xl" />
-              </div>
-            )}
-            {starting && !camError && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-white/80 pointer-events-none">
-                <Camera className="w-10 h-10 animate-pulse" />
-                <span className="text-sm font-semibold">Iniciando cámara…</span>
-              </div>
-            )}
-          </div>
-          {!camError ? (
-            <p className="text-center text-xs text-gray-500 font-semibold mt-2">
-              Centra el código QR de la tarjeta dentro del recuadro.
-            </p>
+        {/* Native camera capture: opens the phone camera to take a sharp photo of the
+            QR, which we then decode in-app. Far more reliable than live video. */}
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handlePhoto}
+          className="hidden"
+        />
+
+        <button
+          onClick={() => fileRef.current?.click()}
+          disabled={status === 'analyzing'}
+          className="w-full flex flex-col items-center justify-center gap-2 py-8 bg-gradient-to-br from-kids-purple to-kids-blue text-white rounded-bubbly shadow-lg hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-70"
+        >
+          {status === 'analyzing' ? (
+            <>
+              <Loader2 className="w-10 h-10 animate-spin" />
+              <span className="font-black text-lg">Analizando…</span>
+            </>
           ) : (
-            <div className="mt-3 flex items-start gap-2 bg-kids-yellow/15 border border-kids-yellow rounded-2xl p-3">
-              <AlertCircle className="w-5 h-5 text-kids-coral flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-gray-700 font-semibold">{camError}</p>
-            </div>
+            <>
+              <Camera className="w-12 h-12" />
+              <span className="font-black text-lg">Abrir cámara y tomar foto del QR</span>
+              <span className="text-xs opacity-90 font-semibold">Enfoca el código de la tarjeta y toma la foto</span>
+            </>
           )}
-        </div>
+        </button>
+
+        {status === 'error' && errMsg && (
+          <div className="mt-3 flex items-start gap-2 bg-kids-yellow/15 border border-kids-yellow rounded-2xl p-3">
+            <AlertCircle className="w-5 h-5 text-kids-coral flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-gray-700 font-semibold">{errMsg}</p>
+          </div>
+        )}
 
         {/* Manual fallback */}
         <div className="flex items-center gap-3 my-4">

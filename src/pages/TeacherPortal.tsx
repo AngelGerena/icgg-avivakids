@@ -1887,6 +1887,16 @@ export const TeacherPortal = () => {
           onClose={() => setShowTutorial(false)}
         />
 
+        {/* Floating quick-access QR scanner — one tap from any tab (for Sunday check-in) */}
+        <button
+          onClick={() => setShowQRScanner(true)}
+          aria-label="Escanear QR"
+          className="fixed bottom-6 left-5 z-40 flex items-center gap-2 px-5 py-4 bg-gradient-to-br from-kids-purple to-kids-blue text-white rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-transform"
+        >
+          <QrCode className="w-6 h-6" />
+          <span className="font-black hidden sm:inline">Escanear QR</span>
+        </button>
+
         {/* Floating staff chat — teachers only (rendered inside authenticated portal) */}
         <StaffChat />
 

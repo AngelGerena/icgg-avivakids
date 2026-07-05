@@ -174,7 +174,7 @@ export const StaffChat = () => {
       <button
         onClick={() => setOpen((o) => !o)}
         aria-label="Chat de Maestros"
-        className="fixed bottom-5 right-5 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-kids-purple to-kids-blue text-white shadow-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+        className="fixed bottom-24 right-4 z-[110] lg:bottom-5 lg:right-5 w-14 h-14 rounded-full bg-gradient-to-br from-kids-purple to-kids-blue text-white shadow-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
       >
         {open ? <X className="w-6 h-6" /> : <MessageCircle className="w-7 h-7" />}
         {!open && unread > 0 && (
@@ -191,7 +191,7 @@ export const StaffChat = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.97 }}
             transition={{ duration: 0.2 }}
-            className="fixed z-50 bg-white shadow-2xl border border-gray-200 flex flex-col overflow-hidden
+            className="fixed z-[120] bg-white shadow-2xl border border-gray-200 flex flex-col overflow-hidden
                        inset-x-0 bottom-0 top-0 rounded-none
                        sm:inset-auto sm:bottom-24 sm:right-5 sm:top-auto sm:w-[380px] sm:h-[70vh] sm:max-h-[600px] sm:rounded-3xl"
           >

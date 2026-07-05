@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
-import { User, Hash, Home as HomeIcon, ShieldCheck, Loader, CheckCircle } from 'lucide-react';
+import { User, Hash, Home as HomeIcon, ShieldCheck, Loader, CheckCircle, RotateCcw } from 'lucide-react';
 
 const ROOMS: Record<string, string> = {
   babies: 'Bebés (0-2 años)',
@@ -17,78 +17,80 @@ export const ChildProfile = () => {
   const [child, setChild] = useState<any>(null);
   const [parent, setParent] = useState<any>(null);
 
-  // Staff check-in (only shown to logged-in ministry staff)
   const [isStaff, setIsStaff] = useState(false);
   const [checkedIn, setCheckedIn] = useState(false);
   const [checkInTime, setCheckInTime] = useState<string | null>(null);
-  const [checkingIn, setCheckingIn] = useState(false);
+  const [autoDone, setAutoDone] = useState(false);
+  const [working, setWorking] = useState(false);
+
+  const doCheckIn = async (c: any, auto: boolean) => {
+    setWorking(true);
+    try {
+      const now = new Date().toISOString();
+      await supabase.from('children').update({ checked_in_today: true, check_in_time: now }).eq('id', c.id);
+      const today = now.split('T')[0];
+      const { data: ex } = await supabase
+        .from('attendance').select('id').eq('child_id', c.id).eq('date', today).maybeSingle();
+      if (!ex) {
+        await supabase.from('attendance').insert({
+          child_id: c.id, child_number: c.unique_number, date: today,
+          checked_in_at: now, checked_in_by: auto ? 'qr-auto' : 'qr-profile',
+        });
+      }
+      setCheckedIn(true);
+      setCheckInTime(now);
+      setAutoDone(auto);
+    } catch (e) {
+      console.error('check-in error', e);
+      if (!auto) alert('No se pudo registrar la entrada. Verifica que iniciaste sesión en el portal.');
+    } finally {
+      setWorking(false);
+    }
+  };
+
+  const undoCheckIn = async () => {
+    if (!child) return;
+    setWorking(true);
+    try {
+      await supabase.from('children').update({ checked_in_today: false, check_in_time: null }).eq('id', child.id);
+      const today = new Date().toISOString().split('T')[0];
+      await supabase.from('attendance').delete().eq('child_id', child.id).eq('date', today);
+      setCheckedIn(false);
+      setCheckInTime(null);
+      setAutoDone(false);
+    } catch (e) {
+      console.error('undo error', e);
+    } finally {
+      setWorking(false);
+    }
+  };
 
   useEffect(() => {
     const load = async () => {
-      // Is a teacher logged in on this device? (session is shared across the site)
       const { data: sess } = await supabase.auth.getSession();
-      setIsStaff(!!sess.session);
+      const staff = !!sess.session;
+      setIsStaff(staff);
 
-      if (!id) {
-        setLoading(false);
-        return;
-      }
-      const { data: c } = await supabase
-        .from('children')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle();
+      if (!id) { setLoading(false); return; }
+      const { data: c } = await supabase.from('children').select('*').eq('id', id).maybeSingle();
       setChild(c);
       if (c) {
         setCheckedIn(!!c.checked_in_today);
         setCheckInTime(c.check_in_time || null);
         const { data: p } = await supabase
-          .from('parents')
-          .select('primary_name, approved_pickup_name')
-          .eq('child_id', c.id)
-          .maybeSingle();
+          .from('parents').select('primary_name, approved_pickup_name').eq('child_id', c.id).maybeSingle();
         setParent(p);
+        setLoading(false);
+        // Auto check-in for staff when they scan a child who isn't checked in yet.
+        if (staff && !c.checked_in_today) {
+          doCheckIn(c, true);
+        }
+      } else {
+        setLoading(false);
       }
-      setLoading(false);
     };
     load();
   }, [id]);
-
-  const handleCheckIn = async () => {
-    if (!child) return;
-    setCheckingIn(true);
-    try {
-      const now = new Date().toISOString();
-      await supabase
-        .from('children')
-        .update({ checked_in_today: true, check_in_time: now })
-        .eq('id', child.id);
-
-      const today = now.split('T')[0];
-      const { data: existing } = await supabase
-        .from('attendance')
-        .select('id')
-        .eq('child_id', child.id)
-        .eq('date', today)
-        .maybeSingle();
-      if (!existing) {
-        await supabase.from('attendance').insert({
-          child_id: child.id,
-          child_number: child.unique_number,
-          date: today,
-          checked_in_at: now,
-          checked_in_by: 'qr-profile',
-        });
-      }
-      setCheckedIn(true);
-      setCheckInTime(now);
-    } catch (e) {
-      console.error('check-in error', e);
-      alert('No se pudo registrar la entrada. Verifica que iniciaste sesión en el portal.');
-    } finally {
-      setCheckingIn(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -138,11 +140,8 @@ export const ChildProfile = () => {
 
         <div className="p-8 flex flex-col items-center text-center">
           {child.photo_url ? (
-            <img
-              src={child.photo_url}
-              alt={child.full_name}
-              className="w-40 h-40 rounded-full object-cover border-4 border-kids-purple shadow-lg"
-            />
+            <img src={child.photo_url} alt={child.full_name}
+              className="w-40 h-40 rounded-full object-cover border-4 border-kids-purple shadow-lg" />
           ) : (
             <div className="w-40 h-40 rounded-full bg-kids-purple/10 flex items-center justify-center border-4 border-dashed border-kids-purple/40">
               <User className="w-20 h-20 text-kids-purple/40" />
@@ -156,63 +155,51 @@ export const ChildProfile = () => {
 
           <div className="text-5xl font-black text-kids-blue my-4">{child.unique_number}</div>
 
-          <div className="w-full space-y-3 mt-2">
-            <Row
-              icon={<HomeIcon className="w-5 h-5" />}
-              label="Salón / Clase"
-              value={ROOMS[child.room] || child.room || '-'}
-            />
-            <Row
-              icon={<Hash className="w-5 h-5" />}
-              label="Número del niño/a"
-              value={child.unique_number}
-            />
-            {parent?.primary_name && (
-              <Row
-                icon={<User className="w-5 h-5" />}
-                label="Padre / Tutor"
-                value={parent.primary_name}
-              />
-            )}
-            {parent?.approved_pickup_name && (
-              <Row
-                icon={<ShieldCheck className="w-5 h-5" />}
-                label="Persona autorizada"
-                value={parent.approved_pickup_name}
-              />
-            )}
-          </div>
-
-          {/* Staff-only check-in */}
+          {/* Staff-only check-in (auto on scan, with undo) */}
           {isStaff && (
-            <div className="w-full mt-6 pt-6 border-t-2 border-gray-100">
+            <div className="w-full mb-4">
               {checkedIn ? (
                 <div className="bg-green-50 border-2 border-green-400 rounded-2xl p-4 text-center">
-                  <CheckCircle className="w-10 h-10 text-green-500 mx-auto mb-1" />
-                  <p className="text-green-700 font-black text-lg">Entrada registrada</p>
+                  <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-1" />
+                  <p className="text-green-700 font-black text-xl">
+                    {autoDone ? 'Entrada registrada' : 'Ya está presente'}
+                  </p>
                   {checkInTime && (
                     <p className="text-green-600 text-sm font-semibold">Hoy a las {fmtTime(checkInTime)}</p>
                   )}
+                  <button
+                    onClick={undoCheckIn}
+                    disabled={working}
+                    className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-200 text-gray-600 rounded-bubbly font-bold text-sm hover:border-kids-coral hover:text-kids-coral disabled:opacity-60"
+                  >
+                    <RotateCcw className="w-4 h-4" /> Deshacer
+                  </button>
                 </div>
               ) : (
                 <button
-                  onClick={handleCheckIn}
-                  disabled={checkingIn}
+                  onClick={() => doCheckIn(child, false)}
+                  disabled={working}
                   className="w-full py-4 bg-gradient-to-r from-kids-mint to-green-500 text-white text-xl font-black rounded-bubbly shadow-lg flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-transform disabled:opacity-60"
                 >
                   <CheckCircle className="w-6 h-6" />
-                  {checkingIn ? 'Registrando...' : 'Registrar entrada (Check-In)'}
+                  {working ? 'Registrando...' : 'Registrar entrada (Check-In)'}
                 </button>
               )}
-              <p className="text-xs text-gray-400 font-semibold text-center mt-2">
-                Solo visible para el personal con sesión iniciada.
-              </p>
             </div>
           )}
 
-          <p className="text-xs text-gray-400 font-semibold mt-6">
-            Para uso del ministerio infantil
-          </p>
+          <div className="w-full space-y-3 mt-2">
+            <Row icon={<HomeIcon className="w-5 h-5" />} label="Salón / Clase" value={ROOMS[child.room] || child.room || '-'} />
+            <Row icon={<Hash className="w-5 h-5" />} label="Número del niño/a" value={child.unique_number} />
+            {parent?.primary_name && (
+              <Row icon={<User className="w-5 h-5" />} label="Padre / Tutor" value={parent.primary_name} />
+            )}
+            {parent?.approved_pickup_name && (
+              <Row icon={<ShieldCheck className="w-5 h-5" />} label="Persona autorizada" value={parent.approved_pickup_name} />
+            )}
+          </div>
+
+          <p className="text-xs text-gray-400 font-semibold mt-6">Para uso del ministerio infantil</p>
         </div>
       </motion.div>
     </div>

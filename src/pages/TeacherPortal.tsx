@@ -30,6 +30,7 @@ import { exportToPDF, exportToExcel, exportSummaryTable } from '../utils/exportU
 import { TeacherLessons } from '../components/TeacherLessons';
 import { StaffChat } from '../components/StaffChat';
 import { isMobileOrTablet } from '../utils/device';
+import { CheckInStation } from '../components/CheckInStation';
 import { PhotoUpload } from '../components/PhotoUpload';
 
 export const TeacherPortal = () => {
@@ -49,7 +50,7 @@ export const TeacherPortal = () => {
   const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
   const [resetSuccess, setResetSuccess] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    'dashboard' | 'alerts' | 'events' | 'birthdays' | 'analytics' | 'children' | 'lessons'
+    'dashboard' | 'station' | 'alerts' | 'events' | 'birthdays' | 'analytics' | 'children' | 'lessons'
   >('dashboard');
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [alertHistory, setAlertHistory] = useState<Alert[]>([]);
@@ -1092,6 +1093,7 @@ export const TeacherPortal = () => {
         <div className="flex flex-wrap gap-4 mb-8">
           {[
             { id: 'dashboard', label: t.teacherPortal.dashboard, icon: Users },
+            { id: 'station', label: 'Registro Rápido', icon: CheckCircle },
             { id: 'children', label: 'Todos los Niños', icon: Users },
             { id: 'alerts', label: t.teacherPortal.alertPanel, icon: Bell },
             { id: 'events', label: t.teacherPortal.eventManager, icon: Calendar },
@@ -1700,6 +1702,8 @@ export const TeacherPortal = () => {
         )}
 
         {activeTab === 'analytics' && <Analytics />}
+
+        {activeTab === 'station' && <CheckInStation />}
 
         {activeTab === 'lessons' && <TeacherLessons />}
 

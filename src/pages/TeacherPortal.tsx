@@ -95,10 +95,23 @@ export const TeacherPortal = () => {
     checkAuth();
   }, []);
 
+  // Open the QR scanner when the top-navbar "Escanear QR" button is tapped.
+  useEffect(() => {
+    const openScan = () => setShowQRScanner(true);
+    window.addEventListener('avk:open-qr', openScan);
+    return () => window.removeEventListener('avk:open-qr', openScan);
+  }, []);
+
   useEffect(() => {
     if (authenticated) {
       fetchDashboardData();
     }
+  }, [authenticated]);
+
+  // Tell the navbar whether to show its "Escanear QR" button (only while logged in here).
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('avk:admin-auth', { detail: { authed: authenticated } }));
+    return () => window.dispatchEvent(new CustomEvent('avk:admin-auth', { detail: { authed: false } }));
   }, [authenticated]);
 
   // Auto-logout after 30 minutes of inactivity (shared-device safeguard).
@@ -1073,15 +1086,6 @@ export const TeacherPortal = () => {
             </button>
           </div>
         </div>
-
-        {/* Prominent QR check-in button — always visible at the top on every device (no nav overlap) */}
-        <button
-          onClick={() => setShowQRScanner(true)}
-          className="w-full sm:w-auto mb-6 flex items-center justify-center gap-3 px-8 py-5 bg-gradient-to-r from-kids-purple to-kids-blue text-white rounded-bubbly font-black text-xl shadow-xl hover:scale-[1.02] active:scale-95 transition-transform"
-        >
-          <QrCode className="w-7 h-7" />
-          <span>Escanear QR — Registrar Niño</span>
-        </button>
 
         <div className="flex flex-wrap gap-4 mb-8">
           {[

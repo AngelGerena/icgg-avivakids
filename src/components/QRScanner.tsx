@@ -23,8 +23,7 @@ export const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
     const startScanner = async () => {
       const w: any = window;
       if (!w.Html5Qrcode) {
-        setCamError('No se pudo cargar el escáner. Usa el ingreso manual abajo.');
-        setStarting(false);
+        if (!cancelled) { setCamError('No se pudo cargar el escáner. Usa el ingreso manual abajo.'); setStarting(false); }
         return;
       }
       try {
@@ -44,9 +43,7 @@ export const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
         if (!cancelled) setStarting(false);
       } catch (e: any) {
         if (!cancelled) {
-          setCamError(
-            'No se pudo acceder a la cámara. Permite el acceso a la cámara o usa el ingreso manual abajo.'
-          );
+          setCamError('No se pudo acceder a la cámara. Permite el acceso a la cámara o usa el ingreso manual abajo.');
           setStarting(false);
         }
       }
@@ -54,23 +51,16 @@ export const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
 
     const loadAndStart = () => {
       const w: any = window;
-      if (w.Html5Qrcode) {
-        startScanner();
-        return;
-      }
+      if (w.Html5Qrcode) { startScanner(); return; }
       const existing = document.getElementById('html5qrcode-cdn') as HTMLScriptElement | null;
-      if (existing) {
-        existing.addEventListener('load', startScanner);
-        return;
-      }
+      if (existing) { existing.addEventListener('load', startScanner); return; }
       const s = document.createElement('script');
       s.id = 'html5qrcode-cdn';
       s.src = CDN;
       s.async = true;
       s.onload = startScanner;
       s.onerror = () => {
-        setCamError('No se pudo cargar el escáner. Usa el ingreso manual abajo.');
-        setStarting(false);
+        if (!cancelled) { setCamError('No se pudo cargar el escáner. Usa el ingreso manual abajo.'); setStarting(false); }
       };
       document.body.appendChild(s);
     };
@@ -83,11 +73,11 @@ export const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
       if (scanner) {
         try {
           if (scanner.isScanning) {
-            scanner.stop().then(() => scanner.clear()).catch(() => {});
+            scanner.stop().then(() => { try { scanner.clear(); } catch (_e) {} }).catch(() => {});
           } else if (scanner.clear) {
-            scanner.clear();
+            try { scanner.clear(); } catch (_e) {}
           }
-        } catch {
+        } catch (_e) {
           /* ignore */
         }
       }
@@ -121,14 +111,16 @@ export const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
           </button>
         </div>
 
-        {/* Live camera */}
+        {/* Live camera.
+            IMPORTANT: the #REGION div is owned by the html5-qrcode library and must
+            stay EMPTY from React's perspective. The spinner/overlay is a SIBLING
+            (absolutely positioned), never a child of REGION — otherwise React and the
+            library fight over the same DOM node and crash the app (removeChild error). */}
         <div className="mb-4">
-          <div
-            id={REGION}
-            className="w-full aspect-square max-w-xs mx-auto bg-black rounded-bubbly overflow-hidden flex items-center justify-center"
-          >
+          <div className="relative w-full aspect-square max-w-xs mx-auto bg-black rounded-bubbly overflow-hidden">
+            <div id={REGION} className="w-full h-full" />
             {starting && !camError && (
-              <div className="text-white/80 flex flex-col items-center gap-2">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-white/80 pointer-events-none">
                 <Camera className="w-10 h-10 animate-pulse" />
                 <span className="text-sm font-semibold">Iniciando cámara…</span>
               </div>

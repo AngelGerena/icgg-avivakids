@@ -41,10 +41,15 @@ export const Navbar = () => {
       <nav className="sticky top-0 z-50 bg-gradient-to-r from-kids-yellow via-kids-blue to-kids-coral shadow-lg">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16 lg:h-24">
-            <Link to="/" className="flex items-center space-x-2 lg:space-x-3 group lg:ml-4">
-              <span className="text-kids-purple font-black text-lg lg:text-2xl transition-all duration-300 group-hover:scale-105 group-hover:tracking-wide drop-shadow-lg">
-                ICGG AVIVA KIDS
-              </span>
+            <Link to="/" aria-label="ICGG Aviva Kids" className="flex items-center flex-shrink-0 lg:ml-4">
+              <img
+                src="/images/aviva-kids-logo-nav.webp"
+                alt="ICGG Aviva Kids"
+                width={286}
+                height={180}
+                className="h-12 lg:h-20 w-auto object-contain drop-shadow-md select-none"
+                draggable={false}
+              />
             </Link>
 
             <div className="hidden lg:flex items-center space-x-2 bg-white/10 backdrop-blur-md rounded-full px-3 py-2 border border-white/20 shadow-lg">

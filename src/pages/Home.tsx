@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Heart, Shield, Users, BookOpen, Calendar, Baby, Church } from 'lucide-react';
+import { Heart, Users, BookOpen, Calendar, Baby, HandHeart, Sun, Moon, Sparkles, ArrowRight } from 'lucide-react';
 
 export const Home = () => {
   const { t } = useLanguage();
@@ -26,7 +27,7 @@ export const Home = () => {
     },
   ];
 
-  const ageGroups = [
+  const ageGroups: { icon: typeof Baby; titleKey: 'babies' | 'explorers' | 'adventurers'; color: string; image: string }[] = [
     {
       icon: Baby,
       titleKey: 'babies',
@@ -44,12 +45,6 @@ export const Home = () => {
       titleKey: 'adventurers',
       color: 'kids-blue',
       image: 'https://images.pexels.com/photos/8612990/pexels-photo-8612990.jpeg?auto=compress&cs=tinysrgb&w=600',
-    },
-    {
-      icon: Shield,
-      titleKey: 'youth',
-      color: 'kids-mint',
-      image: '/TEENS.png',
     },
   ];
 
@@ -167,7 +162,7 @@ export const Home = () => {
           <h2 className="text-4xl font-black text-kids-purple text-center mb-10">
             {t.home.ourAgeGroups}
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {ageGroups.map((group, index) => (
               <motion.div
                 key={group.titleKey}
@@ -195,6 +190,59 @@ export const Home = () => {
               </motion.div>
             ))}
           </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.6 }}
+          className="mb-16"
+        >
+          <Link
+            to="/volunteer"
+            className="group relative block overflow-hidden rounded-bubbly bg-gradient-to-r from-kids-coral via-kids-purple to-kids-blue p-8 sm:p-10 shadow-2xl hover:shadow-[0_25px_60px_-15px_rgba(155,89,182,0.6)] transition-shadow"
+          >
+            <div className="absolute -top-16 -left-10 w-56 h-56 bg-kids-yellow/40 rounded-full blur-3xl group-hover:scale-125 transition-transform duration-700" />
+            <div className="absolute -bottom-20 -right-10 w-64 h-64 bg-kids-mint/40 rounded-full blur-3xl group-hover:scale-125 transition-transform duration-700" />
+            <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 md:gap-10 text-center md:text-left">
+              <motion.div
+                animate={{ rotate: [0, -8, 8, 0], scale: [1, 1.08, 1] }}
+                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                className="flex-shrink-0 w-24 h-24 sm:w-28 sm:h-28 bg-white rounded-full flex items-center justify-center shadow-xl"
+              >
+                <HandHeart className="w-14 h-14 sm:w-16 sm:h-16 text-kids-coral" />
+              </motion.div>
+              <div className="flex-1 text-white">
+                <p className="inline-block bg-kids-yellow text-gray-900 text-xs sm:text-sm font-black uppercase tracking-wider rounded-full px-4 py-1 mb-3 shadow">
+                  {t.home.volunteerBadge}
+                </p>
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-3 drop-shadow-lg">
+                  {t.home.volunteerTitle}
+                </h2>
+                <p className="text-base sm:text-lg md:text-xl font-semibold leading-relaxed text-white/95 max-w-2xl">
+                  {t.home.volunteerDesc}
+                </p>
+                <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-4">
+                  <span className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1 text-sm font-bold">
+                    <Sun className="w-4 h-4" />{t.home.volunteerSundays}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1 text-sm font-bold">
+                    <Moon className="w-4 h-4" />{t.home.volunteerThursdays}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1 text-sm font-bold">
+                    <Sparkles className="w-4 h-4" />{t.home.volunteerEvents}
+                  </span>
+                </div>
+              </div>
+              <div className="flex-shrink-0">
+                <span className="inline-flex items-center gap-2 bg-white text-kids-purple text-lg sm:text-xl font-black rounded-full px-7 py-4 shadow-xl group-hover:scale-110 group-hover:bg-kids-yellow group-hover:text-gray-900 transition-all">
+                  {t.home.volunteerButton}
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </span>
+              </div>
+            </div>
+          </Link>
         </motion.div>
 
         <motion.div

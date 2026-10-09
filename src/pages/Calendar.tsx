@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase, Event } from '../lib/supabase';
-import { ChevronLeft, ChevronRight, CalendarDays, List, MapPin, Clock, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CalendarDays, List, MapPin, Clock, X, HandHeart } from 'lucide-react';
 
 const CATEGORY_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
   'Actividad':   { bg: 'bg-kids-blue',   text: 'text-white', dot: 'bg-kids-blue'   },
@@ -79,6 +80,13 @@ export const Calendar = () => {
           <p className="text-gray-500 font-semibold mb-6">
             {es ? 'Mantente al día con todo lo que ocurre en ICGG Aviva Kids' : 'Stay up to date with everything at ICGG Aviva Kids'}
           </p>
+          <div className="mb-6">
+            <Link to="/volunteer"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-kids-coral via-kids-purple to-kids-blue text-white font-black rounded-full shadow-lg hover:scale-105 hover:shadow-xl transition-all">
+              <HandHeart className="w-5 h-5" />
+              {es ? 'Anótese como Padre Voluntario' : 'Sign Up as a Parent Volunteer'}
+            </Link>
+          </div>
           {/* View toggle */}
           <div className="inline-flex bg-white rounded-bubbly shadow-lg border border-gray-200 p-1">
             {(['month', 'list'] as const).map(v => (

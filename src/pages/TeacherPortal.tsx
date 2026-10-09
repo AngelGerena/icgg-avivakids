@@ -21,6 +21,7 @@ import {
   BookOpen,
   CheckCircle,
   KeyRound,
+  HandHeart,
 } from 'lucide-react';
 import { QRScanner } from '../components/QRScanner';
 import { Analytics } from '../components/Analytics';
@@ -32,6 +33,7 @@ import { StaffChat } from '../components/StaffChat';
 import { isMobileOrTablet } from '../utils/device';
 import { CheckInStation } from '../components/CheckInStation';
 import { PhotoUpload } from '../components/PhotoUpload';
+import { VolunteerAdminTab } from '../components/VolunteerAdminTab';
 
 export const TeacherPortal = () => {
   const { t } = useLanguage();
@@ -50,7 +52,7 @@ export const TeacherPortal = () => {
   const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
   const [resetSuccess, setResetSuccess] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    'dashboard' | 'station' | 'alerts' | 'events' | 'birthdays' | 'analytics' | 'children' | 'lessons'
+    'dashboard' | 'station' | 'alerts' | 'events' | 'birthdays' | 'analytics' | 'children' | 'lessons' | 'volunteers'
   >('dashboard');
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [alertHistory, setAlertHistory] = useState<Alert[]>([]);
@@ -1100,6 +1102,7 @@ export const TeacherPortal = () => {
             { id: 'birthdays', label: t.teacherPortal.birthdayManager, icon: Cake },
             { id: 'analytics', label: 'Analíticas', icon: TrendingUp },
             { id: 'lessons', label: 'Lecciones', icon: BookOpen },
+            { id: 'volunteers', label: 'Voluntarios', icon: HandHeart },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -1706,6 +1709,8 @@ export const TeacherPortal = () => {
         {activeTab === 'station' && <CheckInStation />}
 
         {activeTab === 'lessons' && <TeacherLessons />}
+
+        {activeTab === 'volunteers' && <VolunteerAdminTab />}
 
         {activeTab === 'children' && (
           <div className="bg-white/95 backdrop-blur-xl rounded-bubbly p-8 shadow-xl border border-white/20">

@@ -31,6 +31,13 @@ interface Translations {
     step2: string;
     step3: string;
     step4: string;
+    volunteerBadge: string;
+    volunteerTitle: string;
+    volunteerDesc: string;
+    volunteerSundays: string;
+    volunteerThursdays: string;
+    volunteerEvents: string;
+    volunteerButton: string;
   };
   checkIn: {
     title: string;
@@ -50,7 +57,6 @@ interface Translations {
       babies: string;
       explorers: string;
       adventurers: string;
-      youth: string;
     };
   };
   intakeForm: {
@@ -199,6 +205,13 @@ const translations: Record<Language, Translations> = {
       step2: 'Al llegar, regístrese en nuestra mesa de registro',
       step3: 'Recibirá un número único para usted y su hijo',
       step4: 'Si necesitamos contactarlo durante el servicio, su número aparecerá en las pantallas',
+      volunteerBadge: 'Padres Voluntarios',
+      volunteerTitle: '¡Más manos, más amor!',
+      volunteerDesc: 'Si su hijo asiste a la Escuela Dominical, tome un turno para ayudar a nuestros maestros. Escoja un día y anótese en menos de un minuto.',
+      volunteerSundays: 'Domingos',
+      volunteerThursdays: 'Jueves',
+      volunteerEvents: 'Eventos Especiales',
+      volunteerButton: 'Quiero Ayudar',
     },
     checkIn: {
       title: 'Registro de Niños',
@@ -218,7 +231,6 @@ const translations: Record<Language, Translations> = {
         babies: 'Cuna/Guardería 0-3 años',
         explorers: 'Párvulos/Preescolares 3-5 años',
         adventurers: 'Principiantes/Primarios 5-6 o 7-8 años',
-        youth: 'Primarios/Junior 7-10 o 11 años',
       },
     },
     intakeForm: {
@@ -365,6 +377,13 @@ const translations: Record<Language, Translations> = {
       step2: 'Upon arrival, check in at our registration desk',
       step3: 'You\'ll receive a unique number for you and your child',
       step4: 'If we need to reach you during service, your number will appear on screens',
+      volunteerBadge: 'Parent Volunteers',
+      volunteerTitle: 'More hands, more love!',
+      volunteerDesc: 'If your child attends Sunday School, take a turn helping our teachers. Pick a day and sign up in under a minute.',
+      volunteerSundays: 'Sundays',
+      volunteerThursdays: 'Thursdays',
+      volunteerEvents: 'Special Events',
+      volunteerButton: 'I Want to Help',
     },
     checkIn: {
       title: 'Child Check-In',
@@ -384,7 +403,6 @@ const translations: Record<Language, Translations> = {
         babies: 'Nursery 0-3 years',
         explorers: 'Preschool 3-5 years',
         adventurers: 'Beginners/Primary 5-6 or 7-8 years',
-        youth: 'Primary/Junior 7-10 or 11 years',
       },
     },
     intakeForm: {

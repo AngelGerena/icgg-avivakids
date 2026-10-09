@@ -243,7 +243,6 @@ export const CheckIn = () => {
                     <option value="babies">{t.checkIn.rooms.babies}</option>
                     <option value="explorers">{t.checkIn.rooms.explorers}</option>
                     <option value="adventurers">{t.checkIn.rooms.adventurers}</option>
-                    <option value="youth">{t.checkIn.rooms.youth}</option>
                   </select>
                 </div>
 

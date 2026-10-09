@@ -110,7 +110,7 @@ export const Home = () => {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.9 }}
-            className="text-base sm:text-lg md:text-xl text-white max-w-3xl mx-auto leading-relaxed drop-shadow-lg bg-kids-purple/40 backdrop-blur-sm rounded-bubbly p-6"
+            className="avk-nav-bar text-base sm:text-lg md:text-xl text-white max-w-3xl mx-auto leading-relaxed rounded-bubbly p-6 shadow-xl border border-white/10"
           >
             {t.home.missionStatement}
           </motion.p>
@@ -250,7 +250,7 @@ export const Home = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.6 }}
-          className="bg-gradient-to-r from-kids-purple to-kids-blue rounded-bubbly p-10 shadow-2xl text-white text-center"
+          className="bg-gradient-to-r from-[#4A1F78] via-[#3B3590] to-[#0B6FA8] rounded-bubbly p-10 shadow-2xl text-white text-center"
         >
           <h2 className="text-3xl md:text-4xl font-black mb-4">
             {t.home.firstTimeTitle}
@@ -258,7 +258,7 @@ export const Home = () => {
           <p className="text-lg md:text-xl mb-6 max-w-3xl mx-auto leading-relaxed">
             {t.home.firstTimeDesc}
           </p>
-          <div className="bg-white bg-opacity-20 rounded-bubbly p-6 max-w-2xl mx-auto">
+          <div className="bg-[#1B2452]/45 border border-white/15 rounded-bubbly p-6 max-w-2xl mx-auto">
             <h3 className="text-2xl font-black mb-3">{t.home.checkInProcess}</h3>
             <ol className="text-left space-y-2 text-lg">
               <li className="flex items-start">

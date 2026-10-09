@@ -241,7 +241,6 @@ export const ParentNotifications = () => {
   return (
     <div className="relative">
       <motion.button
-        whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
         onClick={() => {
           if (isAuthenticated) {
@@ -250,9 +249,11 @@ export const ParentNotifications = () => {
             setShowLogin(true);
           }
         }}
-        className="relative p-3 bg-white rounded-full shadow-lg"
+        aria-label="Notificaciones"
+        style={{ '--c': '#FFD000' } as React.CSSProperties}
+        className="avk-nav-link avk-nav-btn relative p-2.5 rounded-full text-white"
       >
-        <Bell className="w-6 h-6 text-gray-700" />
+        <Bell className="avk-nav-icon w-6 h-6" />
         {unreadCount > 0 && (
           <motion.span
             initial={{ scale: 0 }}

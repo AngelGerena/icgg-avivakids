@@ -706,8 +706,8 @@ export const IntakeFormWizard = () => {
                   >
                     <option value="">{language === 'es' ? 'Sala/Clase *' : 'Classroom *'}</option>
                     <option value="babies">{language === 'es' ? 'Bebés (0-2 años)' : 'Babies (0-2 yrs)'}</option>
-                    <option value="explorers">{language === 'es' ? 'Exploradores (3-4 años)' : 'Explorers (3-4 yrs)'}</option>
-                    <option value="adventurers">{language === 'es' ? 'Principiantes/Primarios (5-8 años)' : 'Beginners/Primary (5-8 yrs)'}</option>
+                    <option value="explorers">{language === 'es' ? 'Exploradores (3-6 años)' : 'Explorers (3-6 yrs)'}</option>
+                    <option value="adventurers">{language === 'es' ? 'Principiantes/Primarios (7-12 años)' : 'Beginners/Primary (7-12 yrs)'}</option>
                   </select>
                 </div>
               </div>

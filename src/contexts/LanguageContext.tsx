@@ -229,8 +229,8 @@ const translations: Record<Language, Translations> = {
       alertInstruction: 'Por favor, mantén este número visible.',
       rooms: {
         babies: 'Cuna/Guardería 0-3 años',
-        explorers: 'Párvulos/Preescolares 3-5 años',
-        adventurers: 'Principiantes/Primarios 5-6 o 7-8 años',
+        explorers: 'Párvulos/Preescolares 3-6 años',
+        adventurers: 'Principiantes/Primarios 7-12 años',
       },
     },
     intakeForm: {
@@ -401,8 +401,8 @@ const translations: Record<Language, Translations> = {
       alertInstruction: 'Please keep this number visible.',
       rooms: {
         babies: 'Nursery 0-3 years',
-        explorers: 'Preschool 3-5 years',
-        adventurers: 'Beginners/Primary 5-6 or 7-8 years',
+        explorers: 'Preschool 3-6 years',
+        adventurers: 'Beginners/Primary 7-12 years',
       },
     },
     intakeForm: {

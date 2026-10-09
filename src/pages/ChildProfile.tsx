@@ -6,8 +6,8 @@ import { User, Hash, Home as HomeIcon, ShieldCheck, Loader, CheckCircle, RotateC
 
 const ROOMS: Record<string, string> = {
   babies: 'Bebés (0-2 años)',
-  explorers: 'Exploradores (3-4 años)',
-  adventurers: 'Principiantes/Primarios (5-8 años)',
+  explorers: 'Exploradores (3-6 años)',
+  adventurers: 'Principiantes/Primarios (7-12 años)',
   youth: 'Jóvenes (9-12 años)',
 };
 

@@ -96,8 +96,29 @@
   transition: transform 0.25s ease;
 }
 
-.avk-nav-link.is-active .avk-nav-icon {
-  color: #9B59B6;
+/* Language toggle and bell: same family as the menu pill */
+.avk-nav-btn {
+  background-color: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+/* Active page: rainbow ring that marches around the pill */
+@property --avk-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes avk-march {
+  to { --avk-angle: 360deg; }
+}
+
+.avk-ring {
+  background:
+    linear-gradient(#25205A, #25205A) padding-box,
+    conic-gradient(from var(--avk-angle), #FFD000, #4FC3F7, #FF6B6B, #00C9A7, #D7A6F5, #FFD000) border-box;
+  box-shadow: 0 0 14px rgba(215, 166, 245, 0.35);
+  animation: avk-march 3s linear infinite;
 }
 
 @keyframes avk-hop {
@@ -126,24 +147,20 @@
   outline-offset: 2px;
 }
 
-/* Mobile bottom menu: tapped icon hops, active tab gets a colored dot */
+/* Mobile bottom menu: tapped or active icon hops */
 .avk-tab:active .avk-nav-icon,
 .avk-tab.is-active .avk-nav-icon {
   animation: avk-hop 0.55s ease-out;
-}
-
-.avk-tab-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 9999px;
-  background: var(--c, #ffffff);
-  margin-top: 3px;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .avk-nav-link,
   .avk-nav-link .avk-nav-icon {
     transition: none !important;
+    animation: none !important;
+  }
+  .avk-ring,
+  .avk-tab .avk-nav-icon {
     animation: none !important;
   }
 }

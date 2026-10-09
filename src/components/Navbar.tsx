@@ -61,8 +61,9 @@ export const Navbar = () => {
                     key={link.path}
                     to={link.path}
                     style={{ '--c': link.color } as React.CSSProperties}
-                    className={`avk-nav-link flex items-center gap-2 px-4 py-2.5 rounded-full font-bold ${
-                      active ? 'is-active bg-white text-kids-purple shadow-lg' : 'text-white'
+                    aria-current={active ? 'page' : undefined}
+                    className={`avk-nav-link flex items-center gap-2 px-4 py-2 rounded-full font-bold text-white border-2 border-transparent ${
+                      active ? 'is-active avk-ring' : ''
                     }`}
                   >
                     <Icon className="avk-nav-icon w-5 h-5" />
@@ -75,7 +76,7 @@ export const Navbar = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ '--c': '#FFD000' } as React.CSSProperties}
-                className="avk-nav-link flex items-center gap-2 px-4 py-2.5 rounded-full font-bold text-white"
+                className="avk-nav-link flex items-center gap-2 px-4 py-2 rounded-full font-bold text-white border-2 border-transparent"
               >
                 <Church className="avk-nav-icon w-5 h-5" />
                 <span className="text-sm whitespace-nowrap">Visite ICGG</span>
@@ -85,10 +86,11 @@ export const Navbar = () => {
             <div className="flex items-center gap-2 lg:gap-3 lg:mr-4">
               <button
                 onClick={toggleLanguage}
-                className="flex items-center space-x-1 lg:space-x-2 bg-white px-2 py-1.5 lg:px-5 lg:py-2.5 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95"
+                style={{ '--c': '#D7A6F5' } as React.CSSProperties}
+                className="avk-nav-link avk-nav-btn flex items-center gap-1.5 lg:gap-2 px-3 py-1.5 lg:px-5 lg:py-2.5 rounded-full text-white active:scale-95"
               >
-                <Languages className="w-4 h-4 lg:w-5 lg:h-5 text-kids-purple" />
-                <span className="font-bold text-kids-purple text-sm lg:text-base">
+                <Languages className="avk-nav-icon w-4 h-4 lg:w-5 lg:h-5" />
+                <span className="font-bold text-sm lg:text-base">
                   {language === 'es' ? 'EN' : 'ES'}
                 </span>
               </button>
@@ -110,15 +112,15 @@ export const Navbar = () => {
                 key={link.path}
                 to={link.path}
                 style={{ '--c': link.color } as React.CSSProperties}
-                className={`avk-tab flex flex-col items-center justify-center py-2 px-1 rounded-bubbly text-white transition-colors duration-300 ${
-                  active ? 'is-active bg-white/[0.12]' : ''
+                aria-current={active ? 'page' : undefined}
+                className={`avk-tab flex flex-col items-center justify-center py-2 px-1 rounded-2xl text-white border-2 border-transparent ${
+                  active ? 'is-active avk-ring' : ''
                 }`}
               >
                 <Icon className="avk-nav-icon w-5 h-5 mb-1" />
                 <span className="text-[10px] font-semibold text-center leading-tight">
                   {link.label}
                 </span>
-                {active && <span className="avk-tab-dot" aria-hidden="true" />}
               </Link>
             );
           })}

@@ -100,7 +100,7 @@ export const PhotoUpload = ({
         type="button"
         onClick={() => inputRef.current?.click()}
         disabled={uploading}
-        className="flex items-center gap-1 text-xs font-bold text-kids-purple hover:text-kids-blue transition-colors disabled:opacity-50"
+        className="flex items-center gap-1.5 text-xs font-black bg-kids-yellow text-[#1B2452] px-3 py-1 rounded-full shadow hover:brightness-105 transition disabled:opacity-50"
       >
         <Upload className="w-3 h-3" />
         {uploading ? 'Subiendo...' : label}

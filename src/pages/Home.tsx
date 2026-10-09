@@ -12,38 +12,44 @@ export const Home = () => {
       titleKey: 'safeEnvironment',
       descKey: 'safeEnvironmentDesc',
       color: 'kids-coral',
+      hex: '#FF6B6B',
     },
     {
       icon: BookOpen,
       titleKey: 'bibleTeaching',
       descKey: 'bibleTeachingDesc',
       color: 'kids-blue',
+      hex: '#4FC3F7',
     },
     {
       icon: Users,
       titleKey: 'ageGroups',
       descKey: 'ageGroupsDesc',
       color: 'kids-mint',
+      hex: '#00C9A7',
     },
   ];
 
-  const ageGroups: { icon: typeof Baby; titleKey: 'babies' | 'explorers' | 'adventurers'; color: string; image: string }[] = [
+  const ageGroups: { icon: typeof Baby; titleKey: 'babies' | 'explorers' | 'adventurers'; color: string; hex: string; image: string }[] = [
     {
       icon: Baby,
       titleKey: 'babies',
       color: 'kids-yellow',
+      hex: '#FFC400',
       image: 'https://images.pexels.com/photos/3661383/pexels-photo-3661383.jpeg?auto=compress&cs=tinysrgb&w=600',
     },
     {
       icon: Users,
       titleKey: 'explorers',
       color: 'kids-coral',
+      hex: '#FF6B6B',
       image: 'https://images.pexels.com/photos/8613089/pexels-photo-8613089.jpeg?auto=compress&cs=tinysrgb&w=600',
     },
     {
       icon: Calendar,
       titleKey: 'adventurers',
       color: 'kids-blue',
+      hex: '#4FC3F7',
       image: 'https://images.pexels.com/photos/8612990/pexels-photo-8612990.jpeg?auto=compress&cs=tinysrgb&w=600',
     },
   ];
@@ -62,7 +68,7 @@ export const Home = () => {
             alt="Happy children"
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-kids-purple/80 via-kids-blue/70 to-kids-mint/60"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-[#1B2452]/85 via-[#4A1F78]/70 to-[#8A4CC4]/60"></div>
         </div>
 
         <div className="relative z-10 container mx-auto max-w-6xl h-full flex flex-col justify-center items-center text-center px-4">
@@ -126,8 +132,9 @@ export const Home = () => {
           transition={{ duration: 0.6 }}
           className="mb-16"
         >
-          <h2 className="text-4xl font-black text-kids-purple text-center mb-10">
+          <h2 className="avk-title text-4xl md:text-5xl text-center mb-10">
             {t.home.whatWeOffer}
+            <span className="avk-title-bar" aria-hidden="true" />
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {features.map((feature, index) => (
@@ -138,14 +145,20 @@ export const Home = () => {
                 viewport={{ once: true, amount: 0.3 }}
                 transition={{ delay: index * 0.15, duration: 0.5 }}
                 whileHover={{ scale: 1.05 }}
-                className={`bg-white rounded-bubbly p-8 shadow-xl border-4 border-${feature.color}`}
+                style={{ '--c': feature.hex } as React.CSSProperties}
+                className="avk-panel avk-panel-stripe rounded-bubbly p-8"
               >
-                <feature.icon className={`w-16 h-16 text-${feature.color} mx-auto mb-4`} />
-                <h3 className="text-2xl font-black text-gray-800 text-center mb-3">
-                  {t.home[feature.titleKey]}
+                <div
+                  className="w-20 h-20 mx-auto mb-5 rounded-full flex items-center justify-center shadow-lg"
+                  style={{ background: feature.hex, boxShadow: `0 0 24px ${feature.hex}80` }}
+                >
+                  <feature.icon className="w-10 h-10 text-white" strokeWidth={2.5} />
+                </div>
+                <h3 className="text-2xl font-black text-white text-center mb-3">
+                  {t.home[feature.titleKey as keyof typeof t.home]}
                 </h3>
-                <p className="text-gray-600 text-center leading-relaxed">
-                  {t.home[feature.descKey]}
+                <p className="text-white/85 text-center leading-relaxed font-medium">
+                  {t.home[feature.descKey as keyof typeof t.home]}
                 </p>
               </motion.div>
             ))}
@@ -159,8 +172,9 @@ export const Home = () => {
           transition={{ duration: 0.6 }}
           className="mb-16"
         >
-          <h2 className="text-4xl font-black text-kids-purple text-center mb-10">
+          <h2 className="avk-title text-4xl md:text-5xl text-center mb-10">
             {t.home.ourAgeGroups}
+            <span className="avk-title-bar" aria-hidden="true" />
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {ageGroups.map((group, index) => (
@@ -171,7 +185,7 @@ export const Home = () => {
                 viewport={{ once: true, amount: 0.3 }}
                 transition={{ delay: index * 0.1, duration: 0.4 }}
                 whileHover={{ scale: 1.08 }}
-                className={`relative overflow-hidden rounded-bubbly shadow-lg border-4 border-${group.color} text-center h-64`}
+                className={`relative overflow-hidden rounded-bubbly shadow-[0_22px_44px_-18px_rgba(42,30,87,0.65)] border-4 border-${group.color} text-center h-72`}
               >
                 <div className="absolute inset-0">
                   <img
@@ -179,11 +193,16 @@ export const Home = () => {
                     alt={t.checkIn.rooms[group.titleKey]}
                     className="w-full h-full object-cover"
                   />
-                  <div className={`absolute inset-0 bg-gradient-to-t from-${group.color} via-${group.color}/80 to-${group.color}/40`}></div>
+                  <div
+                    className="absolute inset-0"
+                    style={{ background: `linear-gradient(to top, rgba(27,36,82,0.96) 0%, rgba(42,30,87,0.7) 42%, ${group.hex}66 100%)` }}
+                  ></div>
                 </div>
                 <div className="relative z-10 flex flex-col items-center justify-end h-full pb-6 px-4">
-                  <group.icon className="w-12 h-12 text-white drop-shadow-lg mb-3" />
-                  <h3 className="text-xl font-black text-white drop-shadow-lg text-center">
+                  <div className="w-14 h-14 mb-3 rounded-full flex items-center justify-center shadow-lg" style={{ background: group.hex }}>
+                    <group.icon className="w-8 h-8 text-white" strokeWidth={2.5} />
+                  </div>
+                  <h3 className="text-xl md:text-2xl font-black text-white drop-shadow-lg text-center leading-tight">
                     {t.checkIn.rooms[group.titleKey]}
                   </h3>
                 </div>

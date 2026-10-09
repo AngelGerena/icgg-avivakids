@@ -10,7 +10,9 @@
 
   body {
     font-family: 'Baloo 2', cursive;
-    @apply bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 min-h-screen;
+    @apply min-h-screen;
+    background: linear-gradient(180deg, #EFE8FA 0%, #F6F1FC 40%, #EAF4FB 100%);
+    color: #1B2452;
     overflow-x: hidden;
     position: relative;
   }
@@ -51,9 +53,9 @@
 
 .floating-shape {
   position: fixed;
-  opacity: 0.3;
+  opacity: 0.22;
   pointer-events: none;
-  z-index: 0;
+  z-index: -1; /* stays behind page content instead of washing over it */
 }
 
 .floating-shape-1 {
@@ -163,4 +165,78 @@
   .avk-tab .avk-nav-icon {
     animation: none !important;
   }
+}
+
+/* ===== Glam refresh: shared surfaces ===== */
+.avk-panel {
+  background: linear-gradient(160deg, #1B2452 0%, #3A1F6E 48%, #8A4CC4 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 22px 44px -18px rgba(42, 30, 87, 0.65);
+}
+
+/* Colored top stripe for panels that belong to a color (age group, feature) */
+.avk-panel-stripe {
+  position: relative;
+  overflow: hidden;
+}
+.avk-panel-stripe::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 6px;
+  background: var(--c, linear-gradient(90deg, #FFD000, #4FC3F7, #FF6B6B, #00C9A7, #D7A6F5));
+}
+
+.avk-title {
+  font-weight: 800;
+  line-height: 1.05;
+  text-wrap: balance;
+  background: linear-gradient(90deg, #2A1E57 0%, #6A2C9E 55%, #B84FA8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.avk-title-bar {
+  display: block;
+  width: 96px;
+  height: 6px;
+  margin: 14px auto 0;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #FFD000, #4FC3F7, #FF6B6B, #00C9A7, #D7A6F5);
+}
+
+.avk-input {
+  background: #ffffff;
+  color: #1B2452;
+  border: 2px solid transparent;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.12) inset;
+}
+.avk-input::placeholder { color: #8A86A8; }
+.avk-input:focus {
+  outline: none;
+  border-color: #FFD000;
+  box-shadow: 0 0 0 4px rgba(255, 208, 0, 0.35);
+}
+
+.avk-btn {
+  background: linear-gradient(90deg, #FF6B6B 0%, #D9468F 50%, #9B59B6 100%);
+  color: #ffffff;
+  box-shadow: 0 10px 24px -8px rgba(217, 70, 143, 0.6);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.avk-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 28px -8px rgba(217, 70, 143, 0.7); }
+.avk-btn:disabled { opacity: 0.6; transform: none; }
+
+.avk-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 9999px;
+  padding: 4px 12px;
+  font-weight: 800;
+  font-size: 0.85rem;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #ffffff;
 }

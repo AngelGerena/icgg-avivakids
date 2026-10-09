@@ -157,8 +157,9 @@ export const CheckIn = () => {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-8"
         >
-          <h1 className="text-5xl md:text-6xl font-black text-kids-purple mb-4">
+          <h1 className="avk-title text-5xl md:text-6xl mb-2">
             {t.checkIn.title}
+            <span className="avk-title-bar" aria-hidden="true" />
           </h1>
         </motion.div>
 
@@ -171,7 +172,7 @@ export const CheckIn = () => {
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ duration: 0.5 }}
               onSubmit={handleSubmit}
-              className="bg-white rounded-bubbly p-8 shadow-2xl"
+              className="avk-panel rounded-bubbly p-8"
             >
               <div className="space-y-6">
                 <div className="flex flex-col items-center">
@@ -182,10 +183,10 @@ export const CheckIn = () => {
                     size="lg"
                     uploading={photoUploading}
                   />
-                  <p className="text-sm text-gray-500 font-semibold mt-1">Toma o sube una foto (opcional)</p>
+                  <p className="text-sm text-white/75 font-semibold mt-1">Toma o sube una foto (opcional)</p>
                 </div>
                 <div>
-                  <label className="block text-lg font-bold text-gray-700 mb-2">
+                  <label className="block text-lg font-bold text-white mb-2">
                     {t.checkIn.childName}
                   </label>
                   <input
@@ -194,13 +195,13 @@ export const CheckIn = () => {
                     value={formData.childName}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 rounded-bubbly border-4 border-kids-blue focus:border-kids-purple focus:outline-none text-lg font-semibold"
+                    className="w-full px-4 py-3 rounded-bubbly border-4 border-kids-blue focus:border-kids-purple focus:outline-none text-lg font-semibold bg-white text-[#1B2452]"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-lg font-bold text-gray-700 mb-2">
+                    <label className="block text-lg font-bold text-white mb-2">
                       {t.checkIn.childAge}
                     </label>
                     <input
@@ -209,12 +210,12 @@ export const CheckIn = () => {
                       value={formData.childAge}
                       onChange={handleChange}
                       required
-                      className="w-full px-4 py-3 rounded-bubbly border-4 border-kids-yellow focus:border-kids-purple focus:outline-none text-lg font-semibold"
+                      className="w-full px-4 py-3 rounded-bubbly border-4 border-kids-yellow focus:border-kids-purple focus:outline-none text-lg font-semibold bg-white text-[#1B2452]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-lg font-bold text-gray-700 mb-2">
+                    <label className="block text-lg font-bold text-white mb-2">
                       {t.checkIn.childDob}
                     </label>
                     <input
@@ -223,13 +224,13 @@ export const CheckIn = () => {
                       value={formData.childDob}
                       onChange={handleChange}
                       required
-                      className="w-full px-4 py-3 rounded-bubbly border-4 border-kids-yellow focus:border-kids-purple focus:outline-none text-lg font-semibold"
+                      className="w-full px-4 py-3 rounded-bubbly border-4 border-kids-yellow focus:border-kids-purple focus:outline-none text-lg font-semibold bg-white text-[#1B2452]"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-lg font-bold text-gray-700 mb-2">
+                  <label className="block text-lg font-bold text-white mb-2">
                     {t.checkIn.room}
                   </label>
                   <select
@@ -237,7 +238,7 @@ export const CheckIn = () => {
                     value={formData.room}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 rounded-bubbly border-4 border-kids-mint focus:border-kids-purple focus:outline-none text-lg font-semibold"
+                    className="w-full px-4 py-3 rounded-bubbly border-4 border-kids-mint focus:border-kids-purple focus:outline-none text-lg font-semibold bg-white text-[#1B2452]"
                   >
                     <option value="">Seleccione...</option>
                     <option value="babies">{t.checkIn.rooms.babies}</option>
@@ -247,7 +248,7 @@ export const CheckIn = () => {
                 </div>
 
                 <div>
-                  <label className="block text-lg font-bold text-gray-700 mb-2">
+                  <label className="block text-lg font-bold text-white mb-2">
                     {t.checkIn.parentName}
                   </label>
                   <input
@@ -256,13 +257,13 @@ export const CheckIn = () => {
                     value={formData.parentName}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 rounded-bubbly border-4 border-kids-coral focus:border-kids-purple focus:outline-none text-lg font-semibold"
+                    className="w-full px-4 py-3 rounded-bubbly border-4 border-kids-coral focus:border-kids-purple focus:outline-none text-lg font-semibold bg-white text-[#1B2452]"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-lg font-bold text-gray-700 mb-2">
+                    <label className="block text-lg font-bold text-white mb-2">
                       {t.checkIn.parentPhone}
                     </label>
                     <input
@@ -271,12 +272,12 @@ export const CheckIn = () => {
                       value={formData.parentPhone}
                       onChange={handleChange}
                       required
-                      className="w-full px-4 py-3 rounded-bubbly border-4 border-kids-purple focus:border-kids-blue focus:outline-none text-lg font-semibold"
+                      className="w-full px-4 py-3 rounded-bubbly border-4 border-kids-purple focus:border-kids-blue focus:outline-none text-lg font-semibold bg-white text-[#1B2452]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-lg font-bold text-gray-700 mb-2">
+                    <label className="block text-lg font-bold text-white mb-2">
                       {t.checkIn.parentEmail}
                     </label>
                     <input
@@ -285,7 +286,7 @@ export const CheckIn = () => {
                       value={formData.parentEmail}
                       onChange={handleChange}
                       required
-                      className="w-full px-4 py-3 rounded-bubbly border-4 border-kids-purple focus:border-kids-blue focus:outline-none text-lg font-semibold"
+                      className="w-full px-4 py-3 rounded-bubbly border-4 border-kids-purple focus:border-kids-blue focus:outline-none text-lg font-semibold bg-white text-[#1B2452]"
                     />
                   </div>
                 </div>
@@ -295,7 +296,7 @@ export const CheckIn = () => {
                   disabled={loading}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="w-full py-4 bg-gradient-to-r from-kids-blue to-kids-purple text-white text-xl font-black rounded-bubbly shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50"
+                  className="avk-btn w-full py-4 text-xl font-black rounded-bubbly"
                 >
                   {loading ? t.common.loading : t.checkIn.submitButton}
                 </motion.button>

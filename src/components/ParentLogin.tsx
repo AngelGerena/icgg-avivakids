@@ -59,23 +59,23 @@ export const ParentLogin = () => {
     }
   };
 
-  const input = 'w-full pl-12 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:border-kids-blue outline-none font-semibold';
+  const input = 'avk-input w-full pl-12 pr-4 py-3 rounded-xl font-semibold';
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12">
       <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
-        className="bg-white/95 backdrop-blur-md rounded-bubbly p-8 shadow-2xl max-w-md w-full">
+        className="avk-panel avk-panel-stripe rounded-bubbly p-8 max-w-md w-full">
         <div className="text-center mb-6">
-          <div className="inline-flex p-4 bg-kids-purple/10 rounded-full mb-3"><Heart className="w-10 h-10 text-kids-purple" /></div>
-          <h1 className="text-3xl font-black text-kids-purple">{T.title}</h1>
-          <p className="text-gray-500 font-semibold mt-2">{T.subtitle}</p>
+          <div className="inline-flex p-4 bg-kids-coral rounded-full mb-3 shadow-[0_0_24px_rgba(255,107,107,0.55)]"><Heart className="w-10 h-10 text-white" strokeWidth={2.5} /></div>
+          <h1 className="text-3xl font-black text-white">{T.title}</h1>
+          <p className="text-white/85 font-semibold mt-2">{T.subtitle}</p>
         </div>
 
         {sent ? (
           <div className="text-center py-6">
             <CheckCircle className="w-16 h-16 text-kids-mint mx-auto mb-4" />
-            <h2 className="text-2xl font-black text-gray-800 mb-2">{T.sentTitle}</h2>
-            <p className="text-gray-500 font-semibold">{T.sentBody}</p>
+            <h2 className="text-2xl font-black text-white mb-2">{T.sentTitle}</h2>
+            <p className="text-white/85 font-semibold">{T.sentBody}</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -87,12 +87,12 @@ export const ParentLogin = () => {
               <Mail className="w-5 h-5 text-gray-400 absolute left-4 top-3.5" />
               <input type="email" className={input} placeholder={T.email} value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
-            {error && <p className="text-kids-coral font-bold text-sm text-center">{error}</p>}
+            {error && <p className="bg-kids-coral/20 text-white font-bold text-sm text-center rounded-xl px-3 py-2">{error}</p>}
             <button onClick={submit} disabled={loading}
-              className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-kids-blue text-white rounded-bubbly font-black hover:scale-105 transition-transform shadow-lg disabled:opacity-50">
+              className="avk-btn w-full flex items-center justify-center gap-2 px-6 py-3 rounded-bubbly font-black">
               <Send className="w-5 h-5" />{loading ? T.sending : T.send}
             </button>
-            <p className="text-xs text-gray-400 text-center font-semibold">{T.help}</p>
+            <p className="text-xs text-white/70 text-center font-semibold">{T.help}</p>
           </div>
         )}
       </motion.div>

@@ -6,7 +6,7 @@ import { Cake, PartyPopper } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 export const Birthdays = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [thisMonthBirthdays, setThisMonthBirthdays] = useState<Child[]>([]);
   const [upcomingBirthdays, setUpcomingBirthdays] = useState<Child[]>([]);
   const [todaysBirthdays, setTodaysBirthdays] = useState<Child[]>([]);
@@ -42,7 +42,7 @@ export const Birthdays = () => {
       const todayDate = today.getDate();
 
       const todaysBdayChildren = data.filter((child) => {
-        const birthDate = new Date(child.dob);
+        const birthDate = new Date(child.dob + 'T12:00:00');
         const birthMonth = birthDate.getMonth() + 1;
         const birthDay = birthDate.getDate();
         return birthMonth === currentMonth && birthDay === todayDate;
@@ -51,12 +51,12 @@ export const Birthdays = () => {
       setTodaysBirthdays(todaysBdayChildren);
 
       const thisMonth = data.filter((child) => {
-        const birthMonth = new Date(child.dob).getMonth() + 1;
+        const birthMonth = new Date(child.dob + 'T12:00:00').getMonth() + 1;
         return birthMonth === currentMonth;
       });
 
       const upcoming = data.filter((child) => {
-        const birthDate = new Date(child.dob);
+        const birthDate = new Date(child.dob + 'T12:00:00');
         const thisYear = today.getFullYear();
         const nextBirthday = new Date(
           thisYear,
@@ -64,7 +64,8 @@ export const Birthdays = () => {
           birthDate.getDate()
         );
 
-        if (nextBirthday < today) {
+        const startOfToday = new Date(thisYear, today.getMonth(), today.getDate());
+        if (nextBirthday < startOfToday) {
           nextBirthday.setFullYear(thisYear + 1);
         }
 
@@ -74,8 +75,8 @@ export const Birthdays = () => {
       });
 
       upcoming.sort((a, b) => {
-        const dateA = new Date(a.dob);
-        const dateB = new Date(b.dob);
+        const dateA = new Date(a.dob + 'T12:00:00');
+        const dateB = new Date(b.dob + 'T12:00:00');
         const thisYear = today.getFullYear();
 
         const nextA = new Date(thisYear, dateA.getMonth(), dateA.getDate());
@@ -92,23 +93,23 @@ export const Birthdays = () => {
     }
   };
 
-  const calculateAge = (dob: string) => {
-    const birthDate = new Date(dob);
+  // Age the child turns on the birthday being shown: this month's birthday
+  // (even if it already happened) or the next one for upcoming lists.
+  const calculateAge = (dob: string, upcoming = false) => {
+    const birthDate = new Date(dob + 'T12:00:00');
     const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (
-      monthDiff < 0 ||
-      (monthDiff === 0 && today.getDate() < birthDate.getDate())
-    ) {
-      age--;
+    let year = today.getFullYear();
+    if (upcoming) {
+      const startOfToday = new Date(year, today.getMonth(), today.getDate());
+      const thisYearBirthday = new Date(year, birthDate.getMonth(), birthDate.getDate());
+      if (thisYearBirthday < startOfToday) year += 1;
     }
-    return age + 1;
+    return year - birthDate.getFullYear();
   };
 
   const formatDate = (dob: string) => {
-    const date = new Date(dob);
-    return date.toLocaleDateString(t === undefined ? 'es-ES' : 'es-ES', {
+    const date = new Date(dob + 'T12:00:00');
+    return date.toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', {
       month: 'long',
       day: 'numeric',
     });
@@ -118,17 +119,20 @@ export const Birthdays = () => {
     child,
     index,
     celebrated,
+    upcoming,
   }: {
     child: Child;
     index: number;
     celebrated?: boolean;
+    upcoming?: boolean;
   }) => (
     <motion.div
-      whileHover={{ scale: 1.05, rotate: 2 }}
-      className="bg-white rounded-bubbly p-6 shadow-xl border-4 border-kids-yellow relative overflow-hidden"
+      whileHover={{ scale: 1.04, rotate: 1 }}
+      style={{ '--c': '#FFD000' } as React.CSSProperties}
+      className="avk-panel avk-panel-stripe rounded-bubbly p-6 pt-8"
     >
       {celebrated && (
-        <div className="absolute top-4 right-4 bg-kids-mint text-white px-3 py-1 rounded-full text-sm font-bold">
+        <div className="absolute top-4 right-4 bg-kids-mint text-[#1B2452] px-3 py-1 rounded-full text-sm font-black shadow">
           {t.birthdays.celebrated}
         </div>
       )}
@@ -145,21 +149,23 @@ export const Birthdays = () => {
             ease: 'easeInOut',
           }}
         >
-          <Cake className="w-16 h-16 text-kids-coral" />
+          <div className="w-20 h-20 rounded-full bg-kids-coral flex items-center justify-center shadow-[0_0_24px_rgba(255,107,107,0.55)]">
+            <Cake className="w-11 h-11 text-white" strokeWidth={2.5} />
+          </div>
         </motion.div>
       </div>
 
-      <h3 className="text-2xl font-black text-kids-purple text-center mb-2">
+      <h3 className="text-2xl font-black text-white text-center mb-3 leading-tight">
         {child.full_name}
       </h3>
 
-      <div className="text-center">
-        <div className="text-lg font-bold text-kids-blue mb-1">
-          {t.birthdays.turnsAge.replace('{age}', calculateAge(child.dob).toString())}
-        </div>
-        <div className="text-md font-semibold text-gray-600">
+      <div className="flex flex-wrap justify-center gap-2">
+        <span className="inline-flex items-center rounded-full bg-kids-yellow text-[#1B2452] px-4 py-1 font-black">
+          {t.birthdays.turnsAge.replace('{age}', calculateAge(child.dob, upcoming).toString())}
+        </span>
+        <span className="avk-chip">
           {formatDate(child.dob)}
-        </div>
+        </span>
       </div>
 
       <div className="mt-4 flex justify-center">
@@ -173,7 +179,7 @@ export const Birthdays = () => {
             ease: 'easeInOut',
           }}
         >
-          <PartyPopper className="w-8 h-8 text-kids-yellow" />
+          <PartyPopper className="w-8 h-8 text-kids-yellow drop-shadow" />
         </motion.div>
       </div>
     </motion.div>
@@ -198,11 +204,14 @@ export const Birthdays = () => {
                 ease: 'linear',
               }}
             >
-              <Cake className="w-24 h-24 text-kids-coral" />
+              <div className="w-24 h-24 rounded-full avk-panel flex items-center justify-center">
+                <Cake className="w-14 h-14 text-kids-yellow" strokeWidth={2.5} />
+              </div>
             </motion.div>
           </div>
-          <h1 className="text-5xl md:text-6xl font-black text-kids-purple mb-4">
+          <h1 className="avk-title text-5xl md:text-6xl mb-2">
             {t.birthdays.title}
+            <span className="avk-title-bar" aria-hidden="true" />
           </h1>
         </motion.div>
 
@@ -210,7 +219,7 @@ export const Birthdays = () => {
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="mb-12 bg-gradient-to-r from-kids-yellow via-kids-coral to-kids-purple rounded-bubbly p-8 shadow-2xl"
+            className="mb-12 bg-gradient-to-r from-[#E0A800] via-[#E0446B] to-[#5B2C8F] rounded-bubbly p-8 shadow-2xl border border-white/20"
           >
             <div className="flex items-center justify-between">
               <motion.div
@@ -321,8 +330,10 @@ export const Birthdays = () => {
           transition={{ duration: 0.5 }}
           className="mb-12"
         >
-          <h2 className="text-3xl font-black text-kids-blue mb-6 flex items-center">
-            <PartyPopper className="w-8 h-8 mr-3" />
+          <h2 className="text-3xl md:text-4xl font-black text-[#2A1E57] mb-6 flex items-center gap-3">
+            <span className="w-12 h-12 rounded-full bg-kids-blue flex items-center justify-center shadow-lg">
+              <PartyPopper className="w-7 h-7 text-white" strokeWidth={2.5} />
+            </span>
             {t.birthdays.thisMonth}
           </h2>
 
@@ -345,8 +356,8 @@ export const Birthdays = () => {
               ))}
             </div>
           ) : (
-            <div className="bg-white rounded-bubbly p-12 shadow-xl text-center">
-              <p className="text-xl font-bold text-gray-500">
+            <div className="avk-panel rounded-bubbly p-12 text-center">
+              <p className="text-xl font-bold text-white/85">
                 {t.birthdays.noBirthdays}
               </p>
             </div>
@@ -359,8 +370,10 @@ export const Birthdays = () => {
           viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.5 }}
         >
-          <h2 className="text-3xl font-black text-kids-mint mb-6 flex items-center">
-            <Cake className="w-8 h-8 mr-3" />
+          <h2 className="text-3xl md:text-4xl font-black text-[#2A1E57] mb-6 flex items-center gap-3">
+            <span className="w-12 h-12 rounded-full bg-kids-mint flex items-center justify-center shadow-lg">
+              <Cake className="w-7 h-7 text-white" strokeWidth={2.5} />
+            </span>
             {t.birthdays.upcoming}
           </h2>
 
@@ -374,13 +387,13 @@ export const Birthdays = () => {
                   viewport={{ once: true, amount: 0.2 }}
                   transition={{ delay: index * 0.1, duration: 0.4 }}
                 >
-                  <BirthdayCard child={child} index={0} />
+                  <BirthdayCard child={child} index={0} upcoming />
                 </motion.div>
               ))}
             </div>
           ) : (
-            <div className="bg-white rounded-bubbly p-12 shadow-xl text-center">
-              <p className="text-xl font-bold text-gray-500">
+            <div className="avk-panel rounded-bubbly p-12 text-center">
+              <p className="text-xl font-bold text-white/85">
                 {t.birthdays.noBirthdays}
               </p>
             </div>

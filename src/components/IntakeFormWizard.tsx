@@ -541,8 +541,9 @@ export const IntakeFormWizard = () => {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-8"
         >
-          <h1 className="text-5xl md:text-6xl font-black text-kids-purple mb-8">
+          <h1 className="avk-title text-5xl md:text-6xl mb-8">
             {t.intakeForm.title}
+            <span className="avk-title-bar" aria-hidden="true" />
           </h1>
 
           <div className="flex items-center justify-between mb-4">
@@ -553,7 +554,7 @@ export const IntakeFormWizard = () => {
                     animate={{
                       scale: currentStep === step.id ? 1.2 : 1,
                       backgroundColor:
-                        currentStep >= step.id ? '#CE93D8' : '#E5E7EB',
+                        currentStep > step.id ? '#00C9A7' : currentStep === step.id ? '#8A4CC4' : '#CFC6E3',
                     }}
                     className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-white shadow-lg`}
                   >
@@ -563,7 +564,7 @@ export const IntakeFormWizard = () => {
                       step.id
                     )}
                   </motion.div>
-                  <div className="text-xs md:text-sm font-bold text-gray-700 mt-2 text-center">
+                  <div className="text-xs md:text-sm font-black text-[#2A1E57] mt-2 text-center">
                     {language === 'es' ? step.nameEs : step.nameEn}
                   </div>
                 </div>
@@ -571,9 +572,9 @@ export const IntakeFormWizard = () => {
                   <motion.div
                     animate={{
                       backgroundColor:
-                        currentStep > step.id ? '#CE93D8' : '#E5E7EB',
+                        currentStep > step.id ? '#00C9A7' : '#CFC6E3',
                     }}
-                    className="h-2 flex-1 mx-2"
+                    className="h-2 flex-1 mx-2 rounded-full"
                   />
                 )}
               </div>
@@ -592,8 +593,11 @@ export const IntakeFormWizard = () => {
             transition={{ type: 'tween', duration: 0.4, ease: 'easeOut' }}
           >
             {currentStep === 1 && (
-              <div className="bg-white rounded-bubbly p-8 shadow-xl border-4 border-kids-yellow">
-                <h2 className="text-3xl font-black text-kids-yellow mb-6">
+              <div className="bg-white rounded-bubbly p-8 overflow-hidden shadow-[0_22px_44px_-18px_rgba(42,30,87,0.55)]">
+                <h2
+                  style={{ '--c': '#FFD000' } as React.CSSProperties}
+                  className="avk-panel avk-panel-stripe -mx-8 -mt-8 mb-6 px-8 pt-8 pb-5 text-3xl font-black text-white border-0 shadow-none"
+                >
                   {STEPS[0].nameEs}
                 </h2>
                 <div className="bg-kids-blue/5 border-2 border-kids-blue/20 rounded-bubbly p-4 mb-6">
@@ -714,8 +718,11 @@ export const IntakeFormWizard = () => {
             )}
 
             {currentStep === 2 && (
-              <div className="bg-white rounded-bubbly p-8 shadow-xl border-4 border-kids-blue">
-                <h2 className="text-3xl font-black text-kids-blue mb-6">
+              <div className="bg-white rounded-bubbly p-8 overflow-hidden shadow-[0_22px_44px_-18px_rgba(42,30,87,0.55)]">
+                <h2
+                  style={{ '--c': '#4FC3F7' } as React.CSSProperties}
+                  className="avk-panel avk-panel-stripe -mx-8 -mt-8 mb-6 px-8 pt-8 pb-5 text-3xl font-black text-white border-0 shadow-none"
+                >
                   {STEPS[1].nameEs}
                 </h2>
                 <div className="space-y-4">
@@ -886,8 +893,11 @@ export const IntakeFormWizard = () => {
             )}
 
             {currentStep === 3 && (
-              <div className="bg-white rounded-bubbly p-8 shadow-xl border-4 border-kids-coral">
-                <h2 className="text-3xl font-black text-kids-coral mb-6">
+              <div className="bg-white rounded-bubbly p-8 overflow-hidden shadow-[0_22px_44px_-18px_rgba(42,30,87,0.55)]">
+                <h2
+                  style={{ '--c': '#FF6B6B' } as React.CSSProperties}
+                  className="avk-panel avk-panel-stripe -mx-8 -mt-8 mb-6 px-8 pt-8 pb-5 text-3xl font-black text-white border-0 shadow-none"
+                >
                   {STEPS[2].nameEs}
                 </h2>
                 <div className="space-y-6">
@@ -1027,8 +1037,11 @@ export const IntakeFormWizard = () => {
             )}
 
             {currentStep === 4 && (
-              <div className="bg-white rounded-bubbly p-8 shadow-xl border-4 border-kids-mint">
-                <h2 className="text-3xl font-black text-kids-mint mb-6">
+              <div className="bg-white rounded-bubbly p-8 overflow-hidden shadow-[0_22px_44px_-18px_rgba(42,30,87,0.55)]">
+                <h2
+                  style={{ '--c': '#00C9A7' } as React.CSSProperties}
+                  className="avk-panel avk-panel-stripe -mx-8 -mt-8 mb-6 px-8 pt-8 pb-5 text-3xl font-black text-white border-0 shadow-none"
+                >
                   {STEPS[3].nameEs}
                 </h2>
                 <div className="space-y-4">
@@ -1076,8 +1089,11 @@ export const IntakeFormWizard = () => {
             )}
 
             {currentStep === 5 && (
-              <div className="bg-white rounded-bubbly p-8 shadow-xl border-4 border-kids-purple">
-                <h2 className="text-3xl font-black text-kids-purple mb-6">
+              <div className="bg-white rounded-bubbly p-8 overflow-hidden shadow-[0_22px_44px_-18px_rgba(42,30,87,0.55)]">
+                <h2
+                  style={{ '--c': '#D7A6F5' } as React.CSSProperties}
+                  className="avk-panel avk-panel-stripe -mx-8 -mt-8 mb-6 px-8 pt-8 pb-5 text-3xl font-black text-white border-0 shadow-none"
+                >
                   {STEPS[4].nameEs}
                 </h2>
 
@@ -1198,7 +1214,7 @@ export const IntakeFormWizard = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={prevStep}
-              className="flex items-center space-x-2 px-6 py-4 bg-gray-300 text-gray-700 rounded-bubbly font-bold shadow-lg"
+              className="flex items-center space-x-2 px-6 py-4 bg-[#2A1E57] text-white rounded-bubbly font-bold shadow-lg"
             >
               <ChevronLeft className="w-6 h-6" />
               <span>Anterior</span>
@@ -1210,7 +1226,7 @@ export const IntakeFormWizard = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={nextStep}
-              className="flex items-center space-x-2 px-6 py-4 bg-gradient-to-r from-kids-blue to-kids-purple text-white rounded-bubbly font-bold shadow-lg ml-auto"
+              className="avk-btn flex items-center space-x-2 px-7 py-4 rounded-bubbly font-black text-lg ml-auto"
             >
               <span>Siguiente</span>
               <ChevronRight className="w-6 h-6" />
@@ -1221,7 +1237,7 @@ export const IntakeFormWizard = () => {
               whileTap={{ scale: 0.95 }}
               onClick={handleSubmit}
               disabled={loading}
-              className="flex items-center space-x-2 px-6 py-4 bg-gradient-to-r from-kids-mint to-kids-coral text-white rounded-bubbly font-bold shadow-lg ml-auto disabled:opacity-50"
+              className="avk-btn flex items-center space-x-2 px-7 py-4 rounded-bubbly font-black text-lg ml-auto"
             >
               <span>{loading ? 'Enviando...' : 'Enviar Formulario'}</span>
               <Check className="w-6 h-6" />

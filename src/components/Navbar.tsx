@@ -39,20 +39,20 @@ export const Navbar = () => {
   return (
     <>
       <nav className="avk-nav-bar sticky top-0 z-50 shadow-lg">
-        <div className="container mx-auto px-4">
+        <div className="mx-auto max-w-[1440px] px-3 xl:px-4">
           <div className="flex items-center justify-between h-16 lg:h-24">
-            <Link to="/" aria-label="ICGG Aviva Kids" className="flex items-center flex-shrink-0 lg:ml-4">
+            <Link to="/" aria-label="ICGG Aviva Kids" className="flex items-center flex-shrink-0 xl:ml-2">
               <img
                 src="/images/aviva-kids-logo-nav.webp"
                 alt="ICGG Aviva Kids"
                 width={286}
                 height={180}
-                className="h-12 lg:h-20 w-auto object-contain drop-shadow-md select-none"
+                className="h-12 lg:h-16 2xl:h-20 w-auto object-contain drop-shadow-md select-none"
                 draggable={false}
               />
             </Link>
 
-            <div className="hidden lg:flex items-center gap-1 bg-white/[0.06] rounded-full px-2 py-1.5 border border-white/[0.12] shadow-lg">
+            <div className="hidden lg:flex items-center gap-0.5 2xl:gap-1 bg-white/[0.06] rounded-full px-1.5 2xl:px-2 py-1.5 border border-white/[0.12] shadow-lg">
               {navLinks.map((link) => {
                 const Icon = link.icon;
                 const active = isActive(link.path);
@@ -62,12 +62,13 @@ export const Navbar = () => {
                     to={link.path}
                     style={{ '--c': link.color } as React.CSSProperties}
                     aria-current={active ? 'page' : undefined}
-                    className={`avk-nav-link flex items-center gap-2 px-4 py-2 rounded-full font-bold text-white border-2 border-transparent ${
+                    title={link.label}
+                    className={`avk-nav-link flex items-center gap-1.5 2xl:gap-2 px-2.5 xl:px-2 2xl:px-4 py-2 rounded-full font-bold text-white border-2 border-transparent ${
                       active ? 'is-active avk-ring' : ''
                     }`}
                   >
                     <Icon className="avk-nav-icon w-5 h-5" />
-                    <span className="text-sm whitespace-nowrap">{link.label}</span>
+                    <span className="hidden xl:inline text-[13px] 2xl:text-sm whitespace-nowrap">{link.label}</span>
                   </Link>
                 );
               })}
@@ -76,18 +77,19 @@ export const Navbar = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ '--c': '#FFD000' } as React.CSSProperties}
-                className="avk-nav-link flex items-center gap-2 px-4 py-2 rounded-full font-bold text-white border-2 border-transparent"
+                title="Visite ICGG"
+                className="avk-nav-link flex items-center gap-1.5 2xl:gap-2 px-2.5 xl:px-2 2xl:px-4 py-2 rounded-full font-bold text-white border-2 border-transparent"
               >
                 <Church className="avk-nav-icon w-5 h-5" />
-                <span className="text-sm whitespace-nowrap">Visite ICGG</span>
+                <span className="hidden xl:inline text-[13px] 2xl:text-sm whitespace-nowrap">Visite ICGG</span>
               </a>
             </div>
 
-            <div className="flex items-center gap-2 lg:gap-3 lg:mr-4">
+            <div className="flex items-center gap-2 lg:gap-2.5 xl:mr-2">
               <button
                 onClick={toggleLanguage}
                 style={{ '--c': '#D7A6F5' } as React.CSSProperties}
-                className="avk-nav-link avk-nav-btn flex items-center gap-1.5 lg:gap-2 px-3 py-1.5 lg:px-5 lg:py-2.5 rounded-full text-white active:scale-95"
+                className="avk-nav-link avk-nav-btn flex items-center gap-1.5 px-3 py-1.5 lg:py-2 2xl:px-5 2xl:py-2.5 rounded-full text-white active:scale-95"
               >
                 <Languages className="avk-nav-icon w-4 h-4 lg:w-5 lg:h-5" />
                 <span className="font-bold text-sm lg:text-base">

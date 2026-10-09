@@ -78,7 +78,7 @@ export const FaithAtHome = () => {
     <div className="min-h-screen py-8 px-4">
       <div className="container mx-auto max-w-3xl">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-4xl md:text-5xl font-black text-kids-purple flex items-center gap-3"><Heart className="w-9 h-9" />{T.title}</h1>
+          <h1 className="avk-title text-4xl md:text-5xl flex items-center gap-3"><span className="w-12 h-12 rounded-full bg-kids-coral flex items-center justify-center shadow-lg"><Heart className="w-7 h-7 text-white" strokeWidth={2.5} /></span>{T.title}</h1>
           <button onClick={signOut} className="flex items-center gap-2 px-5 py-2.5 bg-kids-coral text-white rounded-bubbly font-bold hover:scale-105 transition-transform">
             <LogOut className="w-4 h-4" />{T.signOut}
           </button>
@@ -88,19 +88,19 @@ export const FaithAtHome = () => {
           <div className="flex flex-wrap gap-2 mb-6">
             {children.map((c) => (
               <button key={c.id} onClick={() => switchChild(c)}
-                className={`px-5 py-2.5 rounded-bubbly font-bold transition-all ${activeChild === c.id ? 'bg-kids-blue text-white shadow-lg' : 'bg-white text-kids-blue border-2 border-kids-blue'}`}>
+                className={`px-5 py-2.5 rounded-bubbly font-bold transition-all ${activeChild === c.id ? 'avk-panel text-white' : 'bg-white text-[#2A1E57] border-2 border-[#2A1E57]/20'}`}>
                 {c.nickname || c.full_name}
               </button>
             ))}
           </div>
         )}
 
-        {current && <p className="text-gray-500 font-bold mb-4">{T.forChild} {current.nickname || current.full_name}</p>}
+        {current && <p className="text-[#2A1E57]/80 font-bold mb-4">{T.forChild} {current.nickname || current.full_name}</p>}
 
         {lessons.length === 0 ? (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-16 bg-white/90 rounded-bubbly shadow-xl">
-            <Heart className="w-16 h-16 text-kids-purple/30 mx-auto mb-4" />
-            <p className="text-xl font-bold text-gray-400">{T.noLessons}</p>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-16 avk-panel rounded-bubbly">
+            <Heart className="w-16 h-16 text-white/40 mx-auto mb-4" />
+            <p className="text-xl font-bold text-white/85">{T.noLessons}</p>
           </motion.div>
         ) : (
           <div className="space-y-6">

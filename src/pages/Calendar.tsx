@@ -74,10 +74,11 @@ export const Calendar = () => {
 
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: -30 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-kids-purple mb-4">
+          <h1 className="avk-title text-4xl sm:text-5xl md:text-6xl mb-4">
             {es ? 'Calendario de Eventos' : 'Event Calendar'}
+            <span className="avk-title-bar" aria-hidden="true" />
           </h1>
-          <p className="text-gray-500 font-semibold mb-6">
+          <p className="text-[#2A1E57]/80 font-bold text-lg mb-6">
             {es ? 'Mantente al día con todo lo que ocurre en ICGG Aviva Kids' : 'Stay up to date with everything at ICGG Aviva Kids'}
           </p>
           <div className="mb-6">
@@ -88,10 +89,10 @@ export const Calendar = () => {
             </Link>
           </div>
           {/* View toggle */}
-          <div className="inline-flex bg-white rounded-bubbly shadow-lg border border-gray-200 p-1">
+          <div className="inline-flex avk-panel rounded-bubbly p-1">
             {(['month', 'list'] as const).map(v => (
               <button key={v} onClick={() => { setView(v); setSelectedDay(null); }}
-                className={`flex items-center gap-2 px-5 py-2 rounded-bubbly font-bold text-sm transition-all ${view === v ? 'bg-kids-purple text-white shadow-md' : 'text-gray-500 hover:text-kids-purple'}`}>
+                className={`flex items-center gap-2 px-5 py-2 rounded-bubbly font-bold text-sm transition-all ${view === v ? 'bg-white text-[#2A1E57] shadow-md' : 'text-white/80 hover:text-white'}`}>
                 {v === 'month' ? <><CalendarDays className="w-4 h-4" />{es ? 'Mes' : 'Month'}</> : <><List className="w-4 h-4" />{es ? 'Lista' : 'List'}</>}
               </button>
             ))}
@@ -106,9 +107,9 @@ export const Calendar = () => {
               className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
               {/* Calendar grid */}
-              <div className="lg:col-span-2 bg-white rounded-bubbly shadow-xl border border-gray-100 overflow-hidden">
+              <div className="lg:col-span-2 avk-panel rounded-bubbly overflow-hidden">
                 {/* Month nav */}
-                <div className="bg-gradient-to-r from-kids-purple to-kids-blue p-4 flex items-center justify-between">
+                <div className="bg-[#1B2452]/60 border-b border-white/10 p-4 flex items-center justify-between">
                   <button onClick={prevMonth} className="w-9 h-9 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-all">
                     <ChevronLeft className="w-5 h-5" />
                   </button>
@@ -119,16 +120,16 @@ export const Calendar = () => {
                 </div>
 
                 {/* Day headers */}
-                <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-100">
+                <div className="grid grid-cols-7 bg-black/15 border-b border-white/10">
                   {dayLabels.map(d => (
-                    <div key={d} className="text-center py-2 text-xs font-black text-gray-400 uppercase tracking-wide">{d}</div>
+                    <div key={d} className="text-center py-2 text-xs font-black text-white/70 uppercase tracking-wide">{d}</div>
                   ))}
                 </div>
 
                 {/* Day cells */}
                 <div className="grid grid-cols-7">
                   {Array.from({ length: firstDay }).map((_, i) => (
-                    <div key={`empty-${i}`} className="border-b border-r border-gray-50 min-h-[60px] sm:min-h-[80px]" />
+                    <div key={`empty-${i}`} className="border-b border-r border-white/5 min-h-[60px] sm:min-h-[80px]" />
                   ))}
                   {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
                     const dayEvts = eventsForDay(day);
@@ -136,8 +137,8 @@ export const Calendar = () => {
                     const isTod = isToday(day);
                     return (
                       <div key={day} onClick={() => setSelectedDay(isSelected ? null : day)}
-                        className={`border-b border-r border-gray-100 min-h-[60px] sm:min-h-[80px] p-1 sm:p-2 cursor-pointer transition-all ${isSelected ? 'bg-kids-purple/10 border-kids-purple' : 'hover:bg-gray-50'}`}>
-                        <div className={`w-7 h-7 flex items-center justify-center rounded-full text-sm font-black mb-1 ${isTod ? 'bg-kids-purple text-white' : isSelected ? 'bg-kids-purple/20 text-kids-purple' : 'text-gray-700'}`}>
+                        className={`border-b border-r border-white/10 min-h-[60px] sm:min-h-[80px] p-1 sm:p-2 cursor-pointer transition-all ${isSelected ? 'bg-white/15' : 'hover:bg-white/10'}`}>
+                        <div className={`w-7 h-7 flex items-center justify-center rounded-full text-sm font-black mb-1 ${isTod ? 'bg-kids-yellow text-[#1B2452]' : isSelected ? 'bg-white text-[#2A1E57]' : 'text-white'}`}>
                           {day}
                         </div>
                         <div className="space-y-0.5">
@@ -149,7 +150,7 @@ export const Calendar = () => {
                             </div>
                           ))}
                           {dayEvts.length > 2 && (
-                            <div className="text-xs font-bold text-kids-purple">+{dayEvts.length - 2}</div>
+                            <div className="text-xs font-bold text-kids-yellow">+{dayEvts.length - 2}</div>
                           )}
                         </div>
                       </div>
@@ -161,24 +162,24 @@ export const Calendar = () => {
               {/* Side panel — selected day events or next events */}
               <div className="space-y-4">
                 {selectedDay ? (
-                  <div className="bg-white rounded-bubbly shadow-xl border border-gray-100 overflow-hidden">
-                    <div className="bg-gradient-to-r from-kids-blue to-kids-mint p-4">
+                  <div className="avk-panel rounded-bubbly overflow-hidden">
+                    <div className="bg-[#1B2452]/60 border-b border-white/10 p-4">
                       <h3 className="text-lg font-black text-white">
                         {selectedDay} {monthLabel}
                       </h3>
-                      <p className="text-white/70 text-xs font-semibold">
+                      <p className="text-white/75 text-xs font-semibold">
                         {eventsForDay(selectedDay).length} {es ? 'evento(s)' : 'event(s)'}
                       </p>
                     </div>
                     <div className="p-4 space-y-3 max-h-[500px] overflow-y-auto">
                       {eventsForDay(selectedDay).length === 0 ? (
-                        <p className="text-gray-400 font-semibold text-sm text-center py-6">
+                        <p className="text-white/75 font-semibold text-sm text-center py-6">
                           {es ? 'Sin eventos este día' : 'No events this day'}
                         </p>
                       ) : (
                         eventsForDay(selectedDay).map(evt => (
                           <motion.div key={evt.id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-                            className="rounded-bubbly overflow-hidden border border-gray-100 shadow-sm cursor-pointer hover:shadow-md transition-all"
+                            className="bg-white rounded-bubbly overflow-hidden shadow-md cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all"
                             onClick={() => setSelectedEvent(evt)}>
                             {evt.flyer_url && (
                               <img src={evt.flyer_url} alt={evt.title} className="w-full h-36 object-cover" />
@@ -209,26 +210,26 @@ export const Calendar = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-white rounded-bubbly shadow-xl border border-gray-100 overflow-hidden">
-                    <div className="bg-gradient-to-r from-kids-yellow to-kids-coral p-4">
+                  <div className="avk-panel rounded-bubbly overflow-hidden">
+                    <div className="bg-[#1B2452]/60 border-b border-white/10 p-4">
                       <h3 className="text-lg font-black text-white">{es ? 'Próximos Eventos' : 'Upcoming Events'}</h3>
                     </div>
                     <div className="p-4 space-y-3 max-h-[500px] overflow-y-auto">
                       {upcomingEvents.slice(0, 5).length === 0 ? (
-                        <p className="text-gray-400 font-semibold text-sm text-center py-6">
+                        <p className="text-white/75 font-semibold text-sm text-center py-6">
                           {es ? 'No hay eventos próximos' : 'No upcoming events'}
                         </p>
                       ) : (
                         upcomingEvents.slice(0, 5).map(evt => (
                           <div key={evt.id} onClick={() => setSelectedEvent(evt)}
-                            className="flex items-center gap-3 p-3 rounded-bubbly border border-gray-100 hover:border-kids-purple hover:shadow-md transition-all cursor-pointer">
+                            className="flex items-center gap-3 p-3 rounded-bubbly bg-white shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer">
                             <div className={`w-2 h-10 rounded-full flex-shrink-0 ${getCatStyle(evt.category).dot}`} />
                             {evt.flyer_url && (
                               <img src={evt.flyer_url} alt={evt.title} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
                             )}
                             <div className="min-w-0">
                               <p className="font-black text-gray-800 text-sm truncate">{evt.title}</p>
-                              <p className="text-xs text-gray-400 font-semibold">
+                              <p className="text-xs text-gray-500 font-bold">
                                 {new Date(evt.date + 'T12:00:00').toLocaleDateString(es ? 'es-ES' : 'en-US', { month: 'short', day: 'numeric' })}
                                 {evt.time && ` · ${evt.time}`}
                               </p>
@@ -241,13 +242,13 @@ export const Calendar = () => {
                 )}
 
                 {/* Legend */}
-                <div className="bg-white rounded-bubbly p-4 shadow border border-gray-100">
-                  <p className="text-xs font-black text-gray-400 uppercase tracking-wide mb-3">{es ? 'Categorías' : 'Categories'}</p>
+                <div className="avk-panel rounded-bubbly p-4">
+                  <p className="text-xs font-black text-white/70 uppercase tracking-wide mb-3">{es ? 'Categorías' : 'Categories'}</p>
                   <div className="space-y-2">
                     {Object.entries({ 'Actividad': 'bg-kids-blue', 'Celebracion': 'bg-kids-yellow', 'Retiro': 'bg-kids-mint', 'Especial': 'bg-kids-coral' }).map(([cat, color]) => (
                       <div key={cat} className="flex items-center gap-2">
                         <div className={`w-3 h-3 rounded-full ${color}`} />
-                        <span className="text-xs font-semibold text-gray-600">{cat}</span>
+                        <span className="text-sm font-bold text-white">{cat}</span>
                       </div>
                     ))}
                   </div>
@@ -261,9 +262,9 @@ export const Calendar = () => {
             <motion.div key="list" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
               className="space-y-4">
               {upcomingEvents.length === 0 ? (
-                <div className="text-center py-16 bg-white rounded-bubbly shadow-xl border border-gray-100">
+                <div className="text-center py-16 avk-panel rounded-bubbly">
                   <div className="text-5xl mb-4">📅</div>
-                  <p className="text-xl font-bold text-gray-400">{es ? 'No hay eventos próximos' : 'No upcoming events'}</p>
+                  <p className="text-xl font-bold text-white/80">{es ? 'No hay eventos próximos' : 'No upcoming events'}</p>
                 </div>
               ) : (
                 upcomingEvents.map((evt, idx) => (
@@ -271,7 +272,7 @@ export const Calendar = () => {
                     initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
                     transition={{ delay: idx * 0.05 }}
                     onClick={() => setSelectedEvent(evt)}
-                    className="bg-white rounded-bubbly shadow-xl border border-gray-100 overflow-hidden cursor-pointer hover:shadow-2xl hover:scale-[1.01] transition-all">
+                    className="avk-panel rounded-bubbly overflow-hidden cursor-pointer hover:scale-[1.01] transition-all">
                     <div className="flex flex-col sm:flex-row">
                       {/* Flyer */}
                       {evt.flyer_url ? (
@@ -286,21 +287,21 @@ export const Calendar = () => {
                       {/* Info */}
                       <div className="flex-1 p-5 sm:p-6">
                         <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
-                          <h3 className="text-xl sm:text-2xl font-black text-gray-800">{evt.title}</h3>
+                          <h3 className="text-xl sm:text-2xl font-black text-white">{evt.title}</h3>
                           {evt.category && (
                             <span className={`px-3 py-1 rounded-full text-sm font-black ${getCatStyle(evt.category).bg} ${getCatStyle(evt.category).text}`}>
                               {evt.category}
                             </span>
                           )}
                         </div>
-                        {evt.description && <p className="text-gray-600 font-semibold mb-4 text-sm leading-relaxed">{evt.description}</p>}
+                        {evt.description && <p className="text-white/85 font-semibold mb-4 text-sm leading-relaxed">{evt.description}</p>}
                         <div className="flex flex-wrap gap-4">
                           <div className="flex items-center gap-2 text-kids-blue font-bold text-sm">
                             <CalendarDays className="w-4 h-4" />
                             {new Date(evt.date + 'T12:00:00').toLocaleDateString(es ? 'es-ES' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                           </div>
                           {evt.time && (
-                            <div className="flex items-center gap-2 text-kids-purple font-bold text-sm">
+                            <div className="flex items-center gap-2 text-kids-yellow font-bold text-sm">
                               <Clock className="w-4 h-4" />{evt.time}
                             </div>
                           )}

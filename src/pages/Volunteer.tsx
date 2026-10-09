@@ -323,9 +323,9 @@ export const Volunteer = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-bubbly shadow-xl border border-gray-100 overflow-hidden"
+          className="avk-panel rounded-bubbly overflow-hidden"
         >
-          <div className="bg-gradient-to-r from-kids-purple to-kids-coral p-4 flex items-center justify-between">
+          <div className="bg-[#1B2452]/60 border-b border-white/10 p-4 flex items-center justify-between">
             <button
               onClick={() => setCurrentMonth(new Date(year, month - 1, 1))}
               disabled={isCurrentMonth}
@@ -346,12 +346,12 @@ export const Volunteer = () => {
             </button>
           </div>
 
-          <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-100">
+          <div className="grid grid-cols-7 bg-black/15 border-b border-white/10">
             {dayLabels.map((d, i) => (
               <div
                 key={d}
                 className={`text-center py-2 text-xs sm:text-sm font-black uppercase tracking-wide ${
-                  i === 0 ? 'text-kids-coral' : i === 4 ? 'text-kids-blue' : 'text-gray-400'
+                  i === 0 ? 'text-kids-coral' : i === 4 ? 'text-kids-blue' : 'text-white/60'
                 }`}
               >
                 {d}
@@ -361,7 +361,7 @@ export const Volunteer = () => {
 
           <div className="grid grid-cols-7">
             {Array.from({ length: firstDay }).map((_, i) => (
-              <div key={`empty-${i}`} className="border-b border-r border-gray-50 min-h-[72px] sm:min-h-[104px]" />
+              <div key={`empty-${i}`} className="border-b border-r border-white/5 min-h-[72px] sm:min-h-[104px]" />
             ))}
             {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
               const ds = toDateStr(year, month, day);
@@ -375,10 +375,10 @@ export const Volunteer = () => {
               const helpers = counts[ds] || 0;
 
               const openBg = hasSunday
-                ? 'bg-kids-coral/10 hover:bg-kids-coral/20 border-kids-coral/30'
+                ? 'bg-kids-coral/25 hover:bg-kids-coral/40'
                 : hasThursday
-                ? 'bg-kids-blue/10 hover:bg-kids-blue/20 border-kids-blue/30'
-                : 'bg-kids-yellow/15 hover:bg-kids-yellow/25 border-kids-yellow/40';
+                ? 'bg-kids-blue/25 hover:bg-kids-blue/40'
+                : 'bg-kids-yellow/20 hover:bg-kids-yellow/35';
 
               return (
                 <button
@@ -386,13 +386,13 @@ export const Volunteer = () => {
                   key={day}
                   onClick={() => openDay(ds)}
                   disabled={!isOpen}
-                  className={`relative text-left border-b border-r border-gray-100 min-h-[72px] sm:min-h-[104px] p-1 sm:p-2 transition-all ${
+                  className={`relative text-left border-b border-r border-white/10 min-h-[72px] sm:min-h-[104px] p-1 sm:p-2 transition-all ${
                     isOpen ? `${openBg} cursor-pointer hover:scale-[1.03] hover:z-10 hover:shadow-lg` : 'cursor-default'
                   } ${isPast ? 'opacity-40' : ''}`}
                 >
                   <div
                     className={`w-7 h-7 flex items-center justify-center rounded-full text-sm font-black mb-1 ${
-                      isTod ? 'bg-kids-purple text-white' : isOpen ? 'text-gray-800' : 'text-gray-400'
+                      isTod ? 'bg-kids-yellow text-[#1B2452]' : isOpen ? 'text-white' : 'text-white/45'
                     }`}
                   >
                     {day}
@@ -422,7 +422,7 @@ export const Volunteer = () => {
                         </div>
                       ))}
                       {eventSlots.length > 1 && (
-                        <div className="text-[10px] sm:text-xs font-bold text-kids-purple">+{eventSlots.length - 1}</div>
+                        <div className="text-[10px] sm:text-xs font-bold text-kids-yellow">+{eventSlots.length - 1}</div>
                       )}
                     </div>
                   )}
@@ -442,7 +442,7 @@ export const Volunteer = () => {
           </div>
         </motion.div>
 
-        <p className="text-center text-gray-500 font-semibold text-sm mt-4 flex items-center justify-center gap-2">
+        <p className="text-center text-[#2A1E57]/80 font-bold text-sm mt-4 flex items-center justify-center gap-2">
           <Users className="w-4 h-4 text-kids-mint" />
           {es ? 'El número verde muestra cuántos padres ya se anotaron ese día.' : 'The green number shows how many parents have already signed up that day.'}
         </p>

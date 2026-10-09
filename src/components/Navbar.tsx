@@ -28,17 +28,17 @@ export const Navbar = () => {
   };
 
   const navLinks = [
-    { path: '/', label: t.nav.home, icon: Home },
-    { path: '/check-in', label: t.nav.checkIn, icon: ClipboardCheck },
-    { path: '/intake-form', label: t.nav.intakeForm, icon: FileText },
-    { path: '/calendar', label: t.nav.calendar, icon: CalendarDays },
-    { path: '/birthdays', label: t.nav.birthdays, icon: Cake },
-    { path: '/faith-at-home', label: language === 'es' ? 'Fe en Casa' : 'Faith at Home', icon: Heart },
+    { path: '/', label: t.nav.home, icon: Home, color: '#FFD000' },
+    { path: '/check-in', label: t.nav.checkIn, icon: ClipboardCheck, color: '#4FC3F7' },
+    { path: '/intake-form', label: t.nav.intakeForm, icon: FileText, color: '#FF8A8A' },
+    { path: '/calendar', label: t.nav.calendar, icon: CalendarDays, color: '#00E0B8' },
+    { path: '/birthdays', label: t.nav.birthdays, icon: Cake, color: '#D7A6F5' },
+    { path: '/faith-at-home', label: language === 'es' ? 'Fe en Casa' : 'Faith at Home', icon: Heart, color: '#FF7EB6' },
   ];
 
   return (
     <>
-      <nav className="sticky top-0 z-50 bg-gradient-to-r from-kids-yellow via-kids-blue to-kids-coral shadow-lg">
+      <nav className="avk-nav-bar sticky top-0 z-50 shadow-lg">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16 lg:h-24">
             <Link to="/" aria-label="ICGG Aviva Kids" className="flex items-center flex-shrink-0 lg:ml-4">
@@ -52,24 +52,21 @@ export const Navbar = () => {
               />
             </Link>
 
-            <div className="hidden lg:flex items-center space-x-2 bg-white/10 backdrop-blur-md rounded-full px-3 py-2 border border-white/20 shadow-lg">
+            <div className="hidden lg:flex items-center gap-1 bg-white/[0.06] rounded-full px-2 py-1.5 border border-white/[0.12] shadow-lg">
               {navLinks.map((link) => {
                 const Icon = link.icon;
+                const active = isActive(link.path);
                 return (
                   <Link
                     key={link.path}
                     to={link.path}
-                    className={`relative flex items-center gap-2 px-5 py-2.5 rounded-full font-bold transition-all duration-300 overflow-hidden ${
-                      isActive(link.path)
-                        ? 'bg-white text-kids-purple shadow-lg transform scale-105'
-                        : 'text-white hover:bg-white/20 hover:scale-105'
+                    style={{ '--c': link.color } as React.CSSProperties}
+                    className={`avk-nav-link flex items-center gap-2 px-4 py-2.5 rounded-full font-bold ${
+                      active ? 'is-active bg-white text-kids-purple shadow-lg' : 'text-white'
                     }`}
                   >
-                    <Icon className={`w-5 h-5 transition-all duration-300 ${isActive(link.path) ? 'scale-110' : 'group-hover:rotate-12'}`} />
-                    <span className="relative z-10 text-sm whitespace-nowrap">{link.label}</span>
-                    {isActive(link.path) && (
-                      <div className="absolute inset-0 bg-gradient-to-r from-kids-yellow/20 via-kids-blue/20 to-kids-coral/20 animate-pulse"></div>
-                    )}
+                    <Icon className="avk-nav-icon w-5 h-5" />
+                    <span className="text-sm whitespace-nowrap">{link.label}</span>
                   </Link>
                 );
               })}
@@ -77,19 +74,20 @@ export const Navbar = () => {
                 href="https://www.icgg.us"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="relative flex items-center gap-2 px-5 py-2.5 rounded-full font-bold transition-all duration-300 overflow-hidden text-white hover:bg-white/20 hover:scale-105"
+                style={{ '--c': '#FFD000' } as React.CSSProperties}
+                className="avk-nav-link flex items-center gap-2 px-4 py-2.5 rounded-full font-bold text-white"
               >
-                <Church className="w-5 h-5 transition-all duration-300 group-hover:rotate-12" />
-                <span className="relative z-10 text-sm whitespace-nowrap">Visite ICGG</span>
+                <Church className="avk-nav-icon w-5 h-5" />
+                <span className="text-sm whitespace-nowrap">Visite ICGG</span>
               </a>
             </div>
 
             <div className="flex items-center gap-2 lg:gap-3 lg:mr-4">
               <button
                 onClick={toggleLanguage}
-                className="flex items-center space-x-1 lg:space-x-2 bg-white/90 backdrop-blur-sm px-2 py-1.5 lg:px-5 lg:py-2.5 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 hover:-translate-y-1 active:scale-95 border border-white/50"
+                className="flex items-center space-x-1 lg:space-x-2 bg-white px-2 py-1.5 lg:px-5 lg:py-2.5 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95"
               >
-                <Languages className="w-4 h-4 lg:w-5 lg:h-5 text-kids-purple transition-transform duration-300 hover:rotate-180" />
+                <Languages className="w-4 h-4 lg:w-5 lg:h-5 text-kids-purple" />
                 <span className="font-bold text-kids-purple text-sm lg:text-base">
                   {language === 'es' ? 'EN' : 'ES'}
                 </span>
@@ -102,24 +100,25 @@ export const Navbar = () => {
         </div>
       </nav>
 
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] bg-gradient-to-r from-kids-yellow via-kids-blue to-kids-coral shadow-lg border-t-4 border-white/30 pb-safe backdrop-blur-sm">
+      <div className="avk-nav-bar lg:hidden fixed bottom-0 left-0 right-0 z-[100] shadow-[0_-6px_18px_rgba(0,0,0,0.25)] border-t border-white/10 pb-safe">
         <div className="grid grid-cols-6 gap-1 px-2 py-2">
           {navLinks.map((link) => {
             const Icon = link.icon;
+            const active = isActive(link.path);
             return (
               <Link
                 key={link.path}
                 to={link.path}
-                className={`flex flex-col items-center justify-center py-2 px-1 rounded-bubbly transition-all duration-300 active:scale-95 ${
-                  isActive(link.path)
-                    ? 'bg-white text-kids-purple shadow-lg transform scale-105'
-                    : 'text-white hover:bg-white/20'
+                style={{ '--c': link.color } as React.CSSProperties}
+                className={`avk-tab flex flex-col items-center justify-center py-2 px-1 rounded-bubbly text-white transition-colors duration-300 ${
+                  active ? 'is-active bg-white/[0.12]' : ''
                 }`}
               >
-                <Icon className={`w-5 h-5 mb-1 transition-transform duration-300 ${isActive(link.path) ? 'scale-110' : ''}`} />
+                <Icon className="avk-nav-icon w-5 h-5 mb-1" />
                 <span className="text-[10px] font-semibold text-center leading-tight">
                   {link.label}
                 </span>
+                {active && <span className="avk-tab-dot" aria-hidden="true" />}
               </Link>
             );
           })}

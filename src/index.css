@@ -80,3 +80,70 @@
   animation: floatSlow 22s ease-in-out infinite;
   animation-delay: 3s;
 }
+
+/* ===== Midnight Confetti navbar: glow + icon hop ===== */
+.avk-nav-bar {
+  background: linear-gradient(90deg, #1B2452, #2A1E57);
+}
+
+.avk-nav-link {
+  transition: background-color 0.25s ease, box-shadow 0.25s ease, color 0.25s ease;
+}
+
+.avk-nav-link .avk-nav-icon,
+.avk-tab .avk-nav-icon {
+  color: var(--c, #ffffff);
+  transition: transform 0.25s ease;
+}
+
+.avk-nav-link.is-active .avk-nav-icon {
+  color: #9B59B6;
+}
+
+@keyframes avk-hop {
+  0% { transform: translateY(0) rotate(0deg) scale(1); }
+  35% { transform: translateY(-7px) rotate(-12deg) scale(1.12); }
+  65% { transform: translateY(0) rotate(6deg) scale(1.12); }
+  82% { transform: translateY(-2px) rotate(0deg) scale(1.12); }
+  100% { transform: translateY(0) rotate(0deg) scale(1.12); }
+}
+
+@media (hover: hover) {
+  .avk-nav-link:not(.is-active):hover {
+    background-color: color-mix(in srgb, var(--c, #ffffff) 22%, transparent);
+    box-shadow:
+      0 0 18px color-mix(in srgb, var(--c, #ffffff) 55%, transparent),
+      inset 0 0 0 1px color-mix(in srgb, var(--c, #ffffff) 60%, transparent);
+  }
+  .avk-nav-link:not(.is-active):hover .avk-nav-icon {
+    animation: avk-hop 0.55s ease-out;
+    transform: scale(1.12);
+  }
+}
+
+.avk-nav-link:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+/* Mobile bottom menu: tapped icon hops, active tab gets a colored dot */
+.avk-tab:active .avk-nav-icon,
+.avk-tab.is-active .avk-nav-icon {
+  animation: avk-hop 0.55s ease-out;
+}
+
+.avk-tab-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--c, #ffffff);
+  margin-top: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .avk-nav-link,
+  .avk-nav-link .avk-nav-icon {
+    transition: none !important;
+    animation: none !important;
+  }
+}

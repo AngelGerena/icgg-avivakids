@@ -764,14 +764,14 @@ export const TeacherPortal = () => {
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white/95 backdrop-blur-xl rounded-bubbly p-8 sm:p-12 shadow-2xl max-w-md w-full border-2 border-white/20"
+          className="avk-panel avk-panel-stripe rounded-bubbly p-8 sm:p-12 max-w-md w-full"
         >
           <div className="text-center mb-8">
-            <KeyRound className="w-16 h-16 text-kids-blue mx-auto mb-4" />
-            <h1 className="text-4xl font-black text-kids-blue mb-2">
+            <KeyRound className="w-16 h-16 text-kids-yellow mx-auto mb-4" />
+            <h1 className="text-4xl font-black text-white mb-2">
               Nueva Contrasena
             </h1>
-            <p className="text-gray-600 font-semibold">
+            <p className="text-white/85 font-semibold">
               Elige una contrasena segura para tu cuenta
             </p>
           </div>
@@ -794,7 +794,7 @@ export const TeacherPortal = () => {
                   setIsResettingPassword(false);
                   setResetSuccess(false);
                 }}
-                className="w-full py-4 bg-gradient-to-r from-kids-purple to-kids-blue text-white text-xl font-black rounded-bubbly shadow-lg"
+                className="avk-btn w-full py-4 text-xl font-black rounded-bubbly"
               >
                 Ir al inicio de sesion
               </motion.button>
@@ -802,7 +802,7 @@ export const TeacherPortal = () => {
           ) : (
             <form onSubmit={handleResetPassword} className="space-y-6">
               <div>
-                <label className="block text-lg font-bold text-gray-700 mb-2">
+                <label className="block text-lg font-bold text-white mb-2">
                   Nueva Contrasena
                 </label>
                 <input
@@ -812,11 +812,11 @@ export const TeacherPortal = () => {
                   required
                   minLength={6}
                   placeholder="Minimo 6 caracteres"
-                  className="w-full px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-blue focus:outline-none font-semibold"
+                  className="avk-input w-full px-4 py-3 rounded-bubbly font-semibold"
                 />
               </div>
               <div>
-                <label className="block text-lg font-bold text-gray-700 mb-2">
+                <label className="block text-lg font-bold text-white mb-2">
                   Confirmar Nueva Contrasena
                 </label>
                 <input
@@ -826,7 +826,7 @@ export const TeacherPortal = () => {
                   required
                   minLength={6}
                   placeholder="Repite la contrasena"
-                  className="w-full px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-blue focus:outline-none font-semibold"
+                  className="avk-input w-full px-4 py-3 rounded-bubbly font-semibold"
                 />
               </div>
               <motion.button
@@ -834,7 +834,7 @@ export const TeacherPortal = () => {
                 disabled={loading}
                 whileHover={{ scale: loading ? 1 : 1.05 }}
                 whileTap={{ scale: loading ? 1 : 0.95 }}
-                className="w-full py-4 bg-gradient-to-r from-kids-blue to-kids-mint text-white text-xl font-black rounded-bubbly shadow-lg disabled:opacity-60"
+                className="avk-btn w-full py-4 text-xl font-black rounded-bubbly"
               >
                 {loading ? 'Guardando...' : 'Guardar Nueva Contrasena'}
               </motion.button>
@@ -846,7 +846,7 @@ export const TeacherPortal = () => {
                   setIsResettingPassword(false);
                   setAuthenticated(false);
                 }}
-                className="w-full text-center text-gray-500 font-bold text-sm hover:text-kids-purple"
+                className="w-full text-center text-white/75 font-bold text-sm hover:text-white"
               >
                 Volver al inicio de sesion
               </button>
@@ -863,11 +863,11 @@ export const TeacherPortal = () => {
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white/95 backdrop-blur-xl rounded-bubbly p-8 sm:p-12 shadow-2xl max-w-md w-full border-2 border-white/20"
+          className="avk-panel avk-panel-stripe rounded-bubbly p-8 sm:p-12 max-w-md w-full"
         >
           {idleLoggedOut && (
-            <div className="mb-6 bg-kids-yellow/15 border-2 border-kids-yellow rounded-bubbly p-4 text-center">
-              <p className="text-sm font-bold text-gray-700">Tu sesion se cerro por inactividad. Inicia sesion de nuevo.</p>
+            <div className="mb-6 bg-kids-yellow text-[#1B2452] rounded-bubbly p-4 text-center">
+              <p className="text-sm font-bold text-white">Tu sesion se cerro por inactividad. Inicia sesion de nuevo.</p>
             </div>
           )}
           <AnimatePresence mode="wait">
@@ -880,11 +880,11 @@ export const TeacherPortal = () => {
                 transition={{ duration: 0.2 }}
               >
                 <div className="text-center mb-8">
-                  <KeyRound className="w-16 h-16 text-kids-blue mx-auto mb-4" />
-                  <h1 className="text-4xl font-black text-kids-blue mb-2">
+                  <KeyRound className="w-16 h-16 text-kids-yellow mx-auto mb-4" />
+                  <h1 className="text-4xl font-black text-white mb-2">
                     Recuperar Contrasena
                   </h1>
-                  <p className="text-gray-600 font-semibold">
+                  <p className="text-white/85 font-semibold">
                     Te enviaremos un enlace para restablecer tu contrasena
                   </p>
                 </div>
@@ -909,7 +909,7 @@ export const TeacherPortal = () => {
                         setForgotPasswordSent(false);
                         setEmail('');
                       }}
-                      className="text-kids-blue font-bold hover:underline"
+                      className="text-kids-yellow font-bold hover:underline"
                     >
                       Volver al inicio de sesion
                     </button>
@@ -917,7 +917,7 @@ export const TeacherPortal = () => {
                 ) : (
                   <form onSubmit={handleForgotPassword} className="space-y-6">
                     <div>
-                      <label className="block text-lg font-bold text-gray-700 mb-2">
+                      <label className="block text-lg font-bold text-white mb-2">
                         Email
                       </label>
                       <input
@@ -926,7 +926,7 @@ export const TeacherPortal = () => {
                         onChange={(e) => setEmail(e.target.value)}
                         required
                         placeholder="tu@email.com"
-                        className="w-full px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-blue focus:outline-none font-semibold"
+                        className="avk-input w-full px-4 py-3 rounded-bubbly font-semibold"
                       />
                     </div>
 
@@ -935,7 +935,7 @@ export const TeacherPortal = () => {
                       disabled={loading}
                       whileHover={{ scale: loading ? 1 : 1.05 }}
                       whileTap={{ scale: loading ? 1 : 0.95 }}
-                      className="w-full py-4 bg-gradient-to-r from-kids-blue to-kids-mint text-white text-xl font-black rounded-bubbly shadow-lg disabled:opacity-60"
+                      className="avk-btn w-full py-4 text-xl font-black rounded-bubbly"
                     >
                       {loading ? 'Enviando...' : 'Enviar Enlace'}
                     </motion.button>
@@ -944,7 +944,7 @@ export const TeacherPortal = () => {
                       <button
                         type="button"
                         onClick={() => setIsForgotPassword(false)}
-                        className="text-kids-blue font-bold hover:underline"
+                        className="text-kids-yellow font-bold hover:underline"
                       >
                         Volver al inicio de sesion
                       </button>
@@ -963,7 +963,7 @@ export const TeacherPortal = () => {
                 <div className="flex justify-center mb-6">
                   <a
                     href="/"
-                    className="flex items-center gap-2 text-kids-blue font-bold text-sm hover:underline"
+                    className="flex items-center gap-2 text-kids-yellow font-bold text-sm hover:underline"
                   >
                     <ChevronLeft className="w-4 h-4" />
                     Volver al sitio principal
@@ -971,11 +971,11 @@ export const TeacherPortal = () => {
                 </div>
 
                 <div className="text-center mb-8">
-                  <LogIn className="w-16 h-16 text-kids-purple mx-auto mb-4" />
-                  <h1 className="text-4xl font-black text-kids-purple mb-2">
+                  <LogIn className="w-16 h-16 text-kids-yellow mx-auto mb-4" />
+                  <h1 className="text-4xl font-black text-white mb-2">
                     {isSignUp ? 'Crear Cuenta' : t.teacherPortal.title}
                   </h1>
-                  <p className="text-gray-600 font-semibold">
+                  <p className="text-white/85 font-semibold">
                     {isSignUp
                       ? 'Registrate para acceder al portal'
                       : 'Inicia sesion para continuar'}
@@ -984,7 +984,7 @@ export const TeacherPortal = () => {
 
                 <form onSubmit={isSignUp ? handleSignUp : handleLogin} className="space-y-6">
                   <div>
-                    <label className="block text-lg font-bold text-gray-700 mb-2">
+                    <label className="block text-lg font-bold text-white mb-2">
                       Email
                     </label>
                     <input
@@ -992,13 +992,13 @@ export const TeacherPortal = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="w-full px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-purple focus:outline-none font-semibold"
+                      className="avk-input w-full px-4 py-3 rounded-bubbly font-semibold"
                     />
                   </div>
 
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <label className="block text-lg font-bold text-gray-700">
+                      <label className="block text-lg font-bold text-white">
                         {t.teacherPortal.password}
                       </label>
                       {!isSignUp && (
@@ -1008,7 +1008,7 @@ export const TeacherPortal = () => {
                             setIsForgotPassword(true);
                             setForgotPasswordSent(false);
                           }}
-                          className="text-sm font-bold text-kids-blue hover:underline"
+                          className="text-sm font-bold text-kids-yellow hover:underline"
                         >
                           Olvide mi contrasena
                         </button>
@@ -1020,13 +1020,13 @@ export const TeacherPortal = () => {
                       onChange={(e) => setPassword(e.target.value)}
                       required
                       minLength={6}
-                      className="w-full px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-purple focus:outline-none font-semibold"
+                      className="avk-input w-full px-4 py-3 rounded-bubbly font-semibold"
                     />
                   </div>
 
                   {isSignUp && (
                     <div>
-                      <label className="block text-lg font-bold text-gray-700 mb-2">
+                      <label className="block text-lg font-bold text-white mb-2">
                         Confirmar Contrasena
                       </label>
                       <input
@@ -1035,7 +1035,7 @@ export const TeacherPortal = () => {
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         required
                         minLength={6}
-                        className="w-full px-4 py-3 rounded-bubbly border-2 border-gray-300 focus:border-kids-purple focus:outline-none font-semibold"
+                        className="avk-input w-full px-4 py-3 rounded-bubbly font-semibold"
                       />
                     </div>
                   )}
@@ -1045,7 +1045,7 @@ export const TeacherPortal = () => {
                     disabled={loading}
                     whileHover={{ scale: loading ? 1 : 1.05 }}
                     whileTap={{ scale: loading ? 1 : 0.95 }}
-                    className="w-full py-4 bg-gradient-to-r from-kids-purple to-kids-blue text-white text-xl font-black rounded-bubbly shadow-lg disabled:opacity-60"
+                    className="avk-btn w-full py-4 text-xl font-black rounded-bubbly"
                   >
                     {loading
                       ? 'Cargando...'
@@ -1062,7 +1062,7 @@ export const TeacherPortal = () => {
                         setPassword('');
                         setConfirmPassword('');
                       }}
-                      className="text-kids-purple font-bold hover:underline"
+                      className="text-kids-yellow font-bold hover:underline"
                     >
                       {isSignUp
                         ? 'Ya tienes cuenta? Inicia sesion'
@@ -1082,20 +1082,21 @@ export const TeacherPortal = () => {
     <div className="min-h-screen py-8 px-4">
       <div className="container mx-auto max-w-7xl">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-kids-purple">
+          <h1 className="avk-title text-3xl sm:text-4xl md:text-5xl">
             {t.teacherPortal.dashboard}
           </h1>
           <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={() => setShowTutorial(true)}
-              className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-kids-yellow to-kids-blue text-white rounded-bubbly font-bold hover:scale-105 transition-transform shadow-lg"
+              style={{ '--c': '#FFD000' } as React.CSSProperties}
+              className="avk-nav-link avk-nav-bar flex items-center gap-2 px-6 py-3 rounded-full font-bold text-white shadow-lg"
             >
-              <BookOpen className="w-5 h-5" />
+              <BookOpen className="avk-nav-icon w-5 h-5" />
               <span>Tutorial</span>
             </button>
             <button
               onClick={handleLogout}
-              className="flex items-center space-x-2 px-6 py-3 bg-kids-coral text-white rounded-bubbly font-bold hover:scale-105 transition-transform"
+              className="avk-btn flex items-center gap-2 px-6 py-3 rounded-full font-bold"
             >
               <LogOut className="w-5 h-5" />
               <span>{t.teacherPortal.logout}</span>
@@ -1103,29 +1104,29 @@ export const TeacherPortal = () => {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-4 mb-8">
+        <div className="avk-nav-bar flex flex-wrap gap-1 mb-8 p-2 rounded-[2rem] shadow-[0_22px_44px_-18px_rgba(42,30,87,0.65)]">
           {[
-            { id: 'dashboard', label: t.teacherPortal.dashboard, icon: Users },
-            { id: 'station', label: 'Registro Rápido', icon: CheckCircle },
-            { id: 'children', label: 'Todos los Niños', icon: Users },
-            { id: 'alerts', label: t.teacherPortal.alertPanel, icon: Bell },
-            { id: 'events', label: t.teacherPortal.eventManager, icon: Calendar },
-            { id: 'birthdays', label: t.teacherPortal.birthdayManager, icon: Cake },
-            { id: 'analytics', label: 'Analíticas', icon: TrendingUp },
-            { id: 'lessons', label: 'Lecciones', icon: BookOpen },
-            { id: 'volunteers', label: 'Voluntarios', icon: HandHeart },
+            { id: 'dashboard', label: t.teacherPortal.dashboard, icon: Users, color: '#FFD000' },
+            { id: 'station', label: 'Registro Rápido', icon: CheckCircle, color: '#00E0B8' },
+            { id: 'children', label: 'Todos los Niños', icon: Users, color: '#4FC3F7' },
+            { id: 'alerts', label: t.teacherPortal.alertPanel, icon: Bell, color: '#FF8A8A' },
+            { id: 'events', label: t.teacherPortal.eventManager, icon: Calendar, color: '#00E0B8' },
+            { id: 'birthdays', label: t.teacherPortal.birthdayManager, icon: Cake, color: '#D7A6F5' },
+            { id: 'analytics', label: 'Analíticas', icon: TrendingUp, color: '#4FC3F7' },
+            { id: 'lessons', label: 'Lecciones', icon: BookOpen, color: '#FFD000' },
+            { id: 'volunteers', label: 'Voluntarios', icon: HandHeart, color: '#FF7EB6' },
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center space-x-2 px-6 py-3 rounded-bubbly font-bold transition-all ${
-                activeTab === tab.id
-                  ? 'bg-kids-blue text-white shadow-lg'
-                  : 'bg-white text-kids-blue border-2 border-kids-blue'
+              aria-current={activeTab === tab.id ? 'page' : undefined}
+              style={{ '--c': tab.color } as React.CSSProperties}
+              className={`avk-nav-link flex items-center gap-1 2xl:gap-1.5 px-2 2xl:px-4 py-2.5 rounded-full font-bold text-white border-2 border-transparent ${
+                activeTab === tab.id ? 'is-active avk-ring' : ''
               }`}
             >
-              <tab.icon className="w-5 h-5" />
-              <span>{tab.label}</span>
+              <tab.icon className="avk-nav-icon w-5 h-5" />
+              <span className="text-[13px] 2xl:text-sm whitespace-nowrap">{tab.label}</span>
             </button>
           ))}
         </div>
@@ -1137,7 +1138,8 @@ export const TeacherPortal = () => {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4 }}
-                className="bg-white rounded-bubbly p-6 shadow-xl border-4 border-kids-yellow"
+                style={{ '--c': '#FFD000' } as React.CSSProperties}
+                className="avk-panel avk-panel-stripe rounded-bubbly p-6 pt-8"
               >
                 <div className="flex items-center justify-between mb-4">
                   <Users className="w-12 h-12 text-kids-yellow" />
@@ -1145,7 +1147,7 @@ export const TeacherPortal = () => {
                     {allChildren.length}
                   </div>
                 </div>
-                <div className="text-lg font-bold text-gray-700">
+                <div className="text-lg font-bold text-white">
                   Niños Registrados
                 </div>
               </motion.div>
@@ -1154,7 +1156,8 @@ export const TeacherPortal = () => {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.1 }}
-                className="bg-white rounded-bubbly p-6 shadow-xl border-4 border-kids-mint"
+                style={{ '--c': '#00C9A7' } as React.CSSProperties}
+                className="avk-panel avk-panel-stripe rounded-bubbly p-6 pt-8"
               >
                 <div className="flex items-center justify-between mb-4">
                   <CheckCircle className="w-12 h-12 text-kids-mint" />
@@ -1162,7 +1165,7 @@ export const TeacherPortal = () => {
                     {checkedInChildren.length}
                   </div>
                 </div>
-                <div className="text-lg font-bold text-gray-700">
+                <div className="text-lg font-bold text-white">
                   Registrados Hoy
                 </div>
               </motion.div>
@@ -1171,22 +1174,23 @@ export const TeacherPortal = () => {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.2 }}
-                className="bg-white rounded-bubbly p-6 shadow-xl border-4 border-kids-blue"
+                style={{ '--c': '#4FC3F7' } as React.CSSProperties}
+                className="avk-panel avk-panel-stripe rounded-bubbly p-6 pt-8"
               >
                 <div className="flex items-center justify-between mb-4">
                   <Calendar className="w-12 h-12 text-kids-blue" />
                   <div className="text-5xl font-black text-kids-blue">
-                    {events.filter(e => new Date(e.date) >= new Date()).length}
+                    {events.filter(e => new Date(e.date + 'T23:59:59') >= new Date()).length}
                   </div>
                 </div>
-                <div className="text-lg font-bold text-gray-700">
+                <div className="text-lg font-bold text-white">
                   Próximos Eventos
                 </div>
               </motion.div>
             </div>
 
-            <div className="bg-white/95 backdrop-blur-xl rounded-bubbly p-8 shadow-xl border border-white/20">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+            <div className="avk-card">
+              <div className="avk-card-head flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
                 <h2 className="text-2xl sm:text-3xl font-black text-kids-blue flex items-center">
                   <Users className="w-8 h-8 mr-3 flex-shrink-0" />
                   {t.teacherPortal.checkInList}
@@ -1339,7 +1343,7 @@ export const TeacherPortal = () => {
               )}
             </div>
 
-            <div className="bg-white/95 backdrop-blur-xl rounded-bubbly p-8 shadow-xl border border-white/20">
+            <div className="avk-card">
               <h2 className="text-3xl font-black text-kids-purple mb-6 flex items-center">
                 <Search className="w-8 h-8 mr-3" />
                 {t.teacherPortal.searchIntake}
@@ -1399,7 +1403,7 @@ export const TeacherPortal = () => {
         )}
 
         {activeTab === 'alerts' && (
-          <div className="bg-white/95 backdrop-blur-xl rounded-bubbly p-8 shadow-xl border border-white/20">
+          <div className="avk-card">
             <h2 className="text-3xl font-black text-kids-coral mb-6 flex items-center">
               <Bell className="w-8 h-8 mr-3" />
               {t.teacherPortal.alertPanel}
@@ -1481,7 +1485,7 @@ export const TeacherPortal = () => {
               </AnimatePresence>
             </div>
 
-            <div className="bg-white/95 backdrop-blur-xl rounded-bubbly p-8 shadow-xl border border-white/20 mt-8">
+            <div className="avk-card mt-8">
               <h2 className="text-3xl font-black text-kids-purple mb-6">
                 Historial de Alertas
               </h2>
@@ -1536,7 +1540,7 @@ export const TeacherPortal = () => {
 
         {activeTab === 'events' && (
           <div className="space-y-8">
-            <div className="bg-white/95 backdrop-blur-xl rounded-bubbly p-8 shadow-xl border border-white/20">
+            <div className="avk-card">
               <h2 className="text-3xl font-black text-kids-blue mb-6 flex items-center">
                 <Plus className="w-8 h-8 mr-3" />
                 {t.calendar.addEvent}
@@ -1666,7 +1670,7 @@ export const TeacherPortal = () => {
               </form>
             </div>
 
-            <div className="bg-white/95 backdrop-blur-xl rounded-bubbly p-8 shadow-xl border border-white/20">
+            <div className="avk-card">
               <h2 className="text-3xl font-black text-kids-purple mb-6">
                 Eventos Existentes
               </h2>
@@ -1717,7 +1721,7 @@ export const TeacherPortal = () => {
         )}
 
         {activeTab === 'birthdays' && (
-          <div className="bg-white/95 backdrop-blur-xl rounded-bubbly p-8 shadow-xl border border-white/20">
+          <div className="avk-card">
             <h2 className="text-3xl font-black text-kids-yellow mb-6 flex items-center">
               <Cake className="w-8 h-8 mr-3" />
               {t.teacherPortal.birthdayManager}
@@ -1766,8 +1770,8 @@ export const TeacherPortal = () => {
         {activeTab === 'volunteers' && <VolunteerAdminTab />}
 
         {activeTab === 'children' && (
-          <div className="bg-white/95 backdrop-blur-xl rounded-bubbly p-8 shadow-xl border border-white/20">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+          <div className="avk-card">
+            <div className="avk-card-head flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
               <h2 className="text-2xl sm:text-3xl font-black text-kids-blue flex items-center">
                 <Users className="w-8 h-8 mr-3 flex-shrink-0" />
                 Todos los Niños Registrados

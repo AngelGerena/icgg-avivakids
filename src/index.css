@@ -240,3 +240,52 @@
   border: 1px solid rgba(255, 255, 255, 0.22);
   color: #ffffff;
 }
+
+/* ===== Admin portal cards: white body, purple gradient header band ===== */
+.avk-card {
+  position: relative;
+  background: #ffffff;
+  color: #1B2452;
+  border-radius: 2rem;
+  padding: 2rem;
+  overflow: hidden;
+  box-shadow: 0 22px 44px -18px rgba(42, 30, 87, 0.55);
+}
+
+.avk-card > h2:first-child,
+.avk-card > .avk-card-head {
+  margin: -2rem -2rem 1.5rem;
+  padding: 1.75rem 2rem 1.25rem;
+  background: linear-gradient(160deg, #1B2452 0%, #3A1F6E 48%, #8A4CC4 100%);
+  color: #ffffff;
+  position: relative;
+}
+
+.avk-card > h2:first-child::before,
+.avk-card > .avk-card-head::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 6px;
+  background: linear-gradient(90deg, #FFD000, #4FC3F7, #FF6B6B, #00C9A7, #D7A6F5);
+}
+
+.avk-card > .avk-card-head h2 {
+  color: #ffffff;
+}
+
+/* Card header band for components that use an h3 title */
+.avk-card > .avk-card-band {
+  margin: -2rem -2rem 1.5rem;
+  padding: 1.5rem 2rem 1.1rem;
+  background: linear-gradient(160deg, #1B2452 0%, #3A1F6E 48%, #8A4CC4 100%);
+  color: #ffffff;
+  position: relative;
+}
+.avk-card > .avk-card-band::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 6px;
+  background: linear-gradient(90deg, #FFD000, #4FC3F7, #FF6B6B, #00C9A7, #D7A6F5);
+}

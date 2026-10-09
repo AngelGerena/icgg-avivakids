@@ -210,18 +210,18 @@ export const TeacherLessons = () => {
       <div>
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div>
-            <h2 className="text-3xl font-black text-kids-purple flex items-center"><BookOpen className="w-8 h-8 mr-3" />{T.title}</h2>
-            <p className="text-gray-500 font-semibold mt-1">{T.subtitle}</p>
+            <h2 className="avk-title text-3xl md:text-4xl flex items-center"><span className="w-12 h-12 mr-3 rounded-full bg-kids-yellow flex items-center justify-center shadow-lg"><BookOpen className="w-7 h-7 text-[#1B2452]" strokeWidth={2.5} /></span>{T.title}</h2>
+            <p className="text-[#2A1E57]/80 font-bold mt-1">{T.subtitle}</p>
           </div>
-          <button onClick={openNew} className="flex items-center space-x-2 px-6 py-3 bg-kids-blue text-white rounded-bubbly font-bold hover:scale-105 transition-transform shadow-lg">
+          <button onClick={openNew} className="avk-btn flex items-center space-x-2 px-6 py-3 rounded-full font-bold">
             <Plus className="w-5 h-5" /><span>{T.newLesson}</span>
           </button>
         </div>
 
         {lessons.length === 0 ? (
-          <div className="text-center py-16 bg-white/90 rounded-bubbly shadow-xl">
-            <BookOpen className="w-16 h-16 text-kids-purple/30 mx-auto mb-4" />
-            <p className="text-xl font-bold text-gray-400">{T.noLessons}</p>
+          <div className="text-center py-16 avk-panel rounded-bubbly">
+            <BookOpen className="w-16 h-16 text-white/40 mx-auto mb-4" />
+            <p className="text-xl font-bold text-white/85">{T.noLessons}</p>
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
@@ -260,7 +260,7 @@ export const TeacherLessons = () => {
     return (
       <div>
         <button onClick={() => setView('list')} className="mb-4 text-kids-blue font-bold flex items-center gap-1"><X className="w-4 h-4" />{T.backToList}</button>
-        <h2 className="text-3xl font-black text-kids-purple flex items-center mb-6"><ClipboardList className="w-8 h-8 mr-3" />{T.submissions}</h2>
+        <h2 className="avk-title text-3xl flex items-center mb-6"><ClipboardList className="w-8 h-8 mr-3 text-[#6A2C9E]" />{T.submissions}</h2>
         {submissions.length === 0 ? (
           <div className="text-center py-16 bg-white/90 rounded-bubbly shadow-xl"><p className="text-xl font-bold text-gray-400">{T.noSubmissions}</p></div>
         ) : (

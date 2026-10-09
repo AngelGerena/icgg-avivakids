@@ -114,7 +114,7 @@ export const VolunteerAdminTab = () => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-gradient-to-r from-kids-coral via-kids-purple to-kids-blue rounded-bubbly p-6 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="avk-panel avk-panel-stripe rounded-bubbly p-6 pt-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
             <HandHeart className="w-8 h-8" />
@@ -143,13 +143,13 @@ export const VolunteerAdminTab = () => {
         </div>
       </div>
 
-      <div className="inline-flex bg-white rounded-bubbly shadow border border-gray-200 p-1">
+      <div className="inline-flex avk-panel rounded-bubbly p-1">
         {(['upcoming', 'past'] as const).map((v) => (
           <button
             key={v}
             onClick={() => setView(v)}
             className={`px-5 py-2 rounded-bubbly font-bold text-sm transition-all ${
-              view === v ? 'bg-kids-purple text-white shadow-md' : 'text-gray-500 hover:text-kids-purple'
+              view === v ? 'bg-white text-[#2A1E57] shadow-md' : 'text-white/80 hover:text-white'
             }`}
           >
             {v === 'upcoming' ? 'Próximos' : 'Pasados'}
@@ -164,18 +164,18 @@ export const VolunteerAdminTab = () => {
       ) : error ? (
         <p className="bg-kids-coral/10 text-kids-coral font-bold rounded-bubbly p-4">{error}</p>
       ) : rows.length === 0 ? (
-        <div className="bg-white rounded-bubbly shadow p-10 text-center">
-          <HandHeart className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500 font-bold">
+        <div className="avk-panel rounded-bubbly p-10 text-center">
+          <HandHeart className="w-12 h-12 text-white/40 mx-auto mb-3" />
+          <p className="text-white/85 font-bold">
             {view === 'upcoming' ? 'Todavía no hay voluntarios anotados.' : 'No hay registros pasados.'}
           </p>
         </div>
       ) : (
         <div className="space-y-5">
           {Object.entries(grouped).map(([date, list]) => (
-            <div key={date} className="bg-white rounded-bubbly shadow-lg border border-gray-100 overflow-hidden">
-              <div className="bg-gray-50 px-5 py-3 flex items-center justify-between border-b border-gray-100">
-                <h3 className="font-black text-gray-800">{prettyDate(date)}</h3>
+            <div key={date} className="bg-white rounded-bubbly shadow-[0_22px_44px_-18px_rgba(42,30,87,0.55)] overflow-hidden">
+              <div className="avk-panel border-0 shadow-none rounded-none px-5 py-3 flex items-center justify-between">
+                <h3 className="font-black text-white">{prettyDate(date)}</h3>
                 <span className="bg-kids-mint text-white text-sm font-black rounded-full px-3 py-1">
                   {list.length} {list.length === 1 ? 'voluntario' : 'voluntarios'}
                 </span>

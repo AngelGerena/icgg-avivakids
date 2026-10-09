@@ -91,7 +91,7 @@ export const CheckInStation = () => {
   );
 
   return (
-    <div className="bg-white/95 backdrop-blur-xl rounded-bubbly p-6 sm:p-8 shadow-xl border border-white/20">
+    <div className="avk-card">
       <h2 className="text-2xl sm:text-3xl font-black text-kids-blue flex items-center mb-2">
         <CheckCircle className="w-8 h-8 mr-3 flex-shrink-0" />
         Registro Rápido

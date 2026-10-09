@@ -489,8 +489,10 @@ export const Analytics = () => {
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
-        <h2 className="text-4xl font-black text-kids-purple flex items-center">
-          <TrendingUp className="w-10 h-10 mr-3" />
+        <h2 className="avk-title text-4xl flex items-center">
+          <span className="w-12 h-12 mr-3 rounded-full bg-kids-blue flex items-center justify-center shadow-lg">
+            <TrendingUp className="w-7 h-7 text-white" strokeWidth={2.5} />
+          </span>
           Analíticas
         </h2>
         <div className="flex flex-wrap gap-2">
@@ -528,9 +530,9 @@ export const Analytics = () => {
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white/95 backdrop-blur-xl rounded-bubbly p-6 shadow-xl border border-white/20"
+          className="avk-card"
         >
-          <h3 className="text-2xl font-black text-kids-blue mb-4">
+          <h3 className="avk-card-band text-2xl font-black mb-4">
             Asistencia Semanal por Sala (Últimas 4 Semanas)
           </h3>
           <ResponsiveContainer width="100%" height={300}>
@@ -552,9 +554,9 @@ export const Analytics = () => {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.1 }}
-          className="bg-white/95 backdrop-blur-xl rounded-bubbly p-6 shadow-xl border border-white/20"
+          className="avk-card"
         >
-          <h3 className="text-2xl font-black text-kids-coral mb-4">
+          <h3 className="avk-card-band text-2xl font-black mb-4">
             Distribución por Salas
           </h3>
           <ResponsiveContainer width="100%" height={300}>
@@ -588,9 +590,9 @@ export const Analytics = () => {
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.2 }}
-        className="bg-white/95 backdrop-blur-xl rounded-bubbly p-6 shadow-xl border border-white/20"
+        className="avk-card"
       >
-        <h3 className="text-2xl font-black text-kids-mint mb-4">
+        <h3 className="avk-card-band text-2xl font-black mb-4">
           Crecimiento de Asistencia Mensual
         </h3>
         <ResponsiveContainer width="100%" height={300}>
@@ -656,9 +658,9 @@ export const Analytics = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="bg-white/95 backdrop-blur-xl rounded-bubbly p-6 shadow-xl border-l-8 border-kids-coral border border-white/20"
+          className="avk-card"
         >
-          <h3 className="text-2xl font-black text-kids-coral mb-4 flex items-center">
+          <h3 className="avk-card-band text-2xl font-black mb-4 flex items-center">
             <FileText className="w-8 h-8 mr-3" />
             Niños sin Formulario de Admisión
           </h3>

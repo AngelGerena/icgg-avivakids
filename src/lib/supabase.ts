@@ -95,6 +95,7 @@ export interface Event {
   category?: string;
   color?: string;
   flyer_url?: string;
+  needs_volunteers?: boolean;
   created_at: string;
 }
 

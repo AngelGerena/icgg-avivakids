@@ -93,6 +93,7 @@ export const Volunteer = () => {
         const { data, error } = await supabase
           .from('events')
           .select('*')
+          .eq('needs_volunteers', true)
           .gte('date', todayStr)
           .order('date', { ascending: true });
         if (error) {

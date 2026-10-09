@@ -93,6 +93,7 @@ export const TeacherPortal = () => {
     category: '',
     color: '#CE93D8',
     flyer_url: '',
+    needs_volunteers: false,
   });
   const [flyerUploading, setFlyerUploading] = useState(false);
 
@@ -639,6 +640,15 @@ export const TeacherPortal = () => {
     fetchDashboardData();
   };
 
+  const toggleEventVolunteers = async (id: string, value: boolean) => {
+    const { error } = await supabase.from('events').update({ needs_volunteers: value }).eq('id', id);
+    if (error) {
+      alert(`No se pudo actualizar el evento: ${error.message}`);
+      return;
+    }
+    setEvents((prev) => prev.map((ev) => (ev.id === id ? { ...ev, needs_volunteers: value } : ev)));
+  };
+
   const addEvent = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -662,6 +672,7 @@ export const TeacherPortal = () => {
       category: '',
       color: '#CE93D8',
       flyer_url: '',
+      needs_volunteers: false,
     });
 
     fetchDashboardData();
@@ -1597,6 +1608,31 @@ export const TeacherPortal = () => {
                   <option value="Especial">Especial</option>
                 </select>
 
+                {/* Volunteer calendar opt-in */}
+                <label
+                  htmlFor="event-needs-volunteers"
+                  className={`flex items-start gap-3 p-4 rounded-bubbly border-2 cursor-pointer transition-colors ${
+                    newEvent.needs_volunteers ? 'border-kids-mint bg-kids-mint/10' : 'border-gray-200 bg-gray-50'
+                  }`}
+                >
+                  <input
+                    id="event-needs-volunteers"
+                    type="checkbox"
+                    checked={newEvent.needs_volunteers}
+                    onChange={(e) => setNewEvent({ ...newEvent, needs_volunteers: e.target.checked })}
+                    className="mt-1 w-5 h-5 accent-kids-mint flex-shrink-0"
+                  />
+                  <span>
+                    <span className="flex items-center gap-2 font-black text-gray-800">
+                      <HandHeart className="w-5 h-5 text-kids-mint" />
+                      ¿Necesita voluntarios?
+                    </span>
+                    <span className="block text-sm font-semibold text-gray-500">
+                      Si lo marca, este evento aparece en el calendario de Padres Voluntarios para que los padres se anoten.
+                    </span>
+                  </span>
+                </label>
+
                 {/* Flyer upload */}
                 <div className="border-2 border-dashed border-kids-blue/40 rounded-bubbly p-4 bg-kids-blue/5">
                   <p className="text-sm font-black text-kids-blue mb-2">📋 Flyer del Evento (opcional)</p>
@@ -1646,16 +1682,33 @@ export const TeacherPortal = () => {
                         {event.title}
                       </div>
                       <div className="text-sm font-semibold text-gray-600">
-                        {new Date(event.date).toLocaleDateString()} |{' '}
+                        {new Date(event.date + 'T12:00:00').toLocaleDateString()} |{' '}
                         {event.category}
                       </div>
                     </div>
-                    <button
-                      onClick={() => deleteEvent(event.id)}
-                      className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => toggleEventVolunteers(event.id, !event.needs_volunteers)}
+                        aria-pressed={!!event.needs_volunteers}
+                        title={event.needs_volunteers ? 'Quitar del calendario de voluntarios' : 'Mostrar en el calendario de voluntarios'}
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg font-bold text-sm transition-colors ${
+                          event.needs_volunteers
+                            ? 'bg-kids-mint text-white hover:bg-kids-mint/85'
+                            : 'bg-white text-gray-500 border-2 border-gray-200 hover:border-kids-mint hover:text-kids-mint'
+                        }`}
+                      >
+                        <HandHeart className="w-4 h-4" />
+                        {event.needs_volunteers ? 'Voluntarios: Sí' : 'Voluntarios: No'}
+                      </button>
+                      <button
+                        onClick={() => deleteEvent(event.id)}
+                        aria-label="Eliminar evento"
+                        className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

@@ -480,25 +480,16 @@ export const TeacherPortal = () => {
 
         const alertType = alertTypeMapping[alertReason] || 'general';
 
-        const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-parent-email-alert`,
-          {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              childId: childData.id,
-              alertType: alertType,
-              message: alertReason,
-            }),
-          }
-        );
+        // Sent with the teacher's own login; saves the parent notification and emails the parent on file.
+        const { data: result } = await supabase.functions.invoke('send-parent-email-alert', {
+          body: {
+            childId: childData.id,
+            alertType: alertType,
+            message: alertReason,
+          },
+        });
 
-        const result = await response.json();
-
-        if (result.success) {
+        if (result?.success) {
           await supabase
             .from('alerts')
             .update({ sms_sent: true })

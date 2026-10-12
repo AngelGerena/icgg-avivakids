@@ -461,14 +461,8 @@ export const TeacherPortal = () => {
     if (parentData?.primary_phone) {
       try {
         const smsMsg = `ICGG Aviva Kids: Por favor venga al salon de su nino/a (#${alertNumber}). Motivo: ${alertReason}.`;
-        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-sms`, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ to: parentData.primary_phone, message: smsMsg }),
-        });
+        // Sent with the teacher's own login; the function only texts numbers on file.
+          await supabase.functions.invoke('send-sms', { body: { to: parentData.primary_phone, message: smsMsg } });
         await supabase.from('alerts').update({ sms_sent: true }).eq('id', alertData.id);
       } catch (smsErr) {
         console.error('Alert SMS error (non-critical):', smsErr);
@@ -599,14 +593,8 @@ export const TeacherPortal = () => {
       if (parentPhone) {
         try {
           const smsMessage = `ICGG Aviva Kids: ${child.full_name} fue recogido/a a las ${timeStr} por ${checkoutForm.pickedUpBy}. Si tiene preguntas llame a la iglesia.`;
-          await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-sms`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ to: parentPhone, message: smsMessage }),
-          });
+          // Sent with the teacher's own login; the function only texts numbers on file.
+          await supabase.functions.invoke('send-sms', { body: { to: parentPhone, message: smsMessage } });
         } catch (smsErr) {
           console.error('SMS send error (non-critical):', smsErr);
         }

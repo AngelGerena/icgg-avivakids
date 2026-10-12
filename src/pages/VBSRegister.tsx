@@ -30,7 +30,6 @@ const GROUPS = [
   { value: 'lideres',      label: 'Líderes (12+ años)'      },
 ];
 
-const generateCode = () => 'VBS' + Math.floor(1000 + Math.random() * 9000).toString();
 
 export const VBSRegister = () => {
   const { language } = useLanguage();
@@ -80,32 +79,23 @@ export const VBSRegister = () => {
     setSubmitting(true);
     setError('');
     try {
-      let code = generateCode();
-      // ensure unique
-      let unique = false;
-      while (!unique) {
-        const { data } = await supabase.from('vbs_children').select('unique_code').eq('unique_code', code).maybeSingle();
-        if (!data) unique = true;
-        else code = generateCode();
-      }
-
       const formattedDob = form.dob ? new Date(form.dob + 'T12:00:00').toISOString().split('T')[0] : null;
-
-      const { error: insertError } = await supabase.from('vbs_children').insert({
-        full_name: form.fullName.trim(),
-        dob: formattedDob,
-        age: form.age ? parseInt(form.age) : null,
-        grade: form.grade.trim() || null,
-        group_name: form.group || null,
-        parent_name: form.parentName.trim(),
-        parent_phone: form.parentPhone.trim(),
-        parent_email: form.parentEmail.trim() || null,
-        is_first_time: form.isFirstTime,
-        registered_by: 'online',
-        unique_code: code,
+      // Secure server call assigns a unique VBS code and saves the registration.
+      const { data: newCode, error: insertError } = await supabase.rpc('kids_vbs_register', {
+        p: {
+          full_name: form.fullName.trim(),
+          dob: formattedDob || '',
+          age: form.age ? String(parseInt(form.age)) : '',
+          grade: form.grade.trim() || '',
+          group_name: form.group || '',
+          parent_name: form.parentName.trim(),
+          parent_phone: form.parentPhone.trim(),
+          parent_email: form.parentEmail.trim() || '',
+          is_first_time: form.isFirstTime,
+        },
       });
-
       if (insertError) throw insertError;
+      const code = newCode as string;
       setChildCode(code);
       setSuccess(true);
     } catch (err: unknown) {

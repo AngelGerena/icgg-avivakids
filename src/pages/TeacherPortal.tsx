@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
-import { supabase, Child, Event, Alert, isRecoveryLink } from '../lib/supabase';
+import { supabase, Child, Event, Alert, isRecoveryLink, isTeacher } from '../lib/supabase';
 import {
   ChevronLeft,
   LogIn,
@@ -34,10 +34,13 @@ import { isMobileOrTablet } from '../utils/device';
 import { CheckInStation } from '../components/CheckInStation';
 import { PhotoUpload } from '../components/PhotoUpload';
 import { VolunteerAdminTab } from '../components/VolunteerAdminTab';
+import { StaffApprovals } from '../components/StaffApprovals';
 
 export const TeacherPortal = () => {
   const { t } = useLanguage();
   const [authenticated, setAuthenticated] = useState(false);
+  // Only approved teacher accounts can see the portal; new sign-ups wait for approval.
+  const [staffCheck, setStaffCheck] = useState<'checking' | 'ok' | 'pending'>('checking');
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -109,10 +112,22 @@ export const TeacherPortal = () => {
   }, []);
 
   useEffect(() => {
-    if (authenticated) {
+    if (!authenticated) {
+      setStaffCheck('checking');
+      return;
+    }
+    let cancelled = false;
+    isTeacher().then((ok) => {
+      if (!cancelled) setStaffCheck(ok ? 'ok' : 'pending');
+    });
+    return () => { cancelled = true; };
+  }, [authenticated]);
+
+  useEffect(() => {
+    if (authenticated && staffCheck === 'ok') {
       fetchDashboardData();
     }
-  }, [authenticated]);
+  }, [authenticated, staffCheck]);
 
   // Tell the navbar whether to show its "Escanear QR" button (only while logged in here).
   useEffect(() => {
@@ -1078,6 +1093,33 @@ export const TeacherPortal = () => {
     );
   }
 
+  if (staffCheck !== 'ok') {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="avk-panel avk-panel-stripe rounded-bubbly p-8 sm:p-12 max-w-md w-full text-center">
+          {staffCheck === 'checking' ? (
+            <p className="font-bold text-gray-500">Verificando acceso...</p>
+          ) : (
+            <>
+              <h1 className="text-2xl font-black text-kids-purple mb-3">Cuenta pendiente de aprobación</h1>
+              <p className="text-gray-600 font-semibold mb-6">
+                Tu cuenta fue creada, pero un maestro/a del ministerio tiene que aprobarla antes de que puedas ver el portal.
+                Avísale a tu líder y vuelve a entrar cuando te confirmen.
+              </p>
+              <button
+                onClick={handleLogout}
+                className="avk-btn inline-flex items-center gap-2 px-6 py-3 rounded-full font-bold"
+              >
+                <LogOut className="w-5 h-5" />
+                <span>Cerrar sesión</span>
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen py-8 px-4">
       <div className="container mx-auto max-w-7xl">
@@ -1133,6 +1175,7 @@ export const TeacherPortal = () => {
 
         {activeTab === 'dashboard' && (
           <div className="space-y-8">
+            <StaffApprovals />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <motion.div
                 initial={{ opacity: 0, y: 30 }}

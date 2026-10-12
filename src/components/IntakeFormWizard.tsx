@@ -29,11 +29,15 @@ export const IntakeFormWizard = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [existingChildId, setExistingChildId] = useState<string | null>(null);
-  const [existingParentId, setExistingParentId] = useState<string | null>(null);
-  const [existingIntakeId, setExistingIntakeId] = useState<string | null>(null);
+  const [, setExistingChildId] = useState<string | null>(null);
+  const [, setExistingParentId] = useState<string | null>(null);
+  const [, setExistingIntakeId] = useState<string | null>(null);
   const [lookupNumber, setLookupNumber] = useState('');
   const [lookupStatus, setLookupStatus] = useState<'idle' | 'loading' | 'found' | 'notfound'>('idle');
+  // Number confirmed by the lookup; the secure submit uses it to update that child's record.
+  const [linkedNumber, setLinkedNumber] = useState('');
+  const [lookupFirstName, setLookupFirstName] = useState('');
+  const [lookupIsStaff, setLookupIsStaff] = useState(false);
 
   const [sectionA, setSectionA] = useState({
     fullName: '',
@@ -93,18 +97,27 @@ export const IntakeFormWizard = () => {
     const num = lookupNumber.trim();
     if (!num) return;
     setLookupStatus('loading');
-    const { data: child } = await supabase
-      .from('children')
-      .select('*')
-      .eq('unique_number', num)
-      .maybeSingle();
-    if (!child) {
+    // Secure lookup: staff get the full record to pre-fill; families only get a confirmation.
+    const { data: res, error: lookupError } = await supabase.rpc('kids_intake_lookup', { p_number: num });
+    const result = (res || {}) as { found?: boolean; staff?: boolean; first_name?: string; child?: any; parent?: any; intake_id?: string | null };
+    if (lookupError || !result.found) {
       setExistingChildId(null);
       setExistingParentId(null);
       setExistingIntakeId(null);
+      setLinkedNumber('');
+      setLookupFirstName('');
+      setLookupIsStaff(false);
       setLookupStatus('notfound');
       return;
     }
+    setLinkedNumber(num);
+    setLookupFirstName(result.first_name || result.child?.full_name?.split(' ')[0] || '');
+    setLookupIsStaff(!!result.staff);
+    if (!result.staff) {
+      setLookupStatus('found');
+      return;
+    }
+    const child = result.child;
     setExistingChildId(child.id);
     setSectionA(prev => ({
       ...prev,
@@ -115,11 +128,7 @@ export const IntakeFormWizard = () => {
       room: child.room || '',
       photoUrl: child.photo_url || '',
     }));
-    const { data: parent } = await supabase
-      .from('parents')
-      .select('*')
-      .eq('child_id', child.id)
-      .maybeSingle();
+    const parent = result.parent;
     if (parent) {
       setExistingParentId(parent.id);
       setSectionB(prev => ({
@@ -140,12 +149,7 @@ export const IntakeFormWizard = () => {
     } else {
       setExistingParentId(null);
     }
-    const { data: intake } = await supabase
-      .from('intake_forms')
-      .select('id')
-      .eq('child_id', child.id)
-      .maybeSingle();
-    setExistingIntakeId(intake?.id || null);
+    setExistingIntakeId(result.intake_id || null);
     setLookupStatus('found');
   };
 
@@ -334,19 +338,6 @@ export const IntakeFormWizard = () => {
     return URL.createObjectURL(pdfBlob);
   };
 
-  const generateUniqueNumber = async (): Promise<string> => {
-    for (let attempt = 0; attempt < 10; attempt++) {
-      const candidate = Math.floor(10000 + Math.random() * 90000).toString();
-      const { data } = await supabase
-        .from('children')
-        .select('id')
-        .eq('unique_number', candidate)
-        .maybeSingle();
-      if (!data) return candidate;
-    }
-    return Date.now().toString().slice(-5);
-  };
-
   const handleSubmit = async () => {
     if (!validateStep(5)) {
       alert('Por favor complete todos los campos requeridos');
@@ -356,118 +347,62 @@ export const IntakeFormWizard = () => {
     setLoading(true);
 
     try {
-      const childFields = {
-        full_name: sectionA.fullName,
-        nickname: sectionA.nickname || null,
-        dob: new Date(sectionA.dob).toISOString().split('T')[0],
-        gender: sectionA.gender || null,
-        photo_url: sectionA.photoUrl || null,
-        room: sectionA.room || 'general',
-      };
+      const dob = new Date(sectionA.dob).toISOString().split('T')[0];
 
-      // Resolve the child: update the record from check-in if linked, else match by
-      // name + birthdate, else create a brand-new child. One child, one record.
-      let childId = existingChildId;
-      if (!childId) {
-        const { data: match } = await supabase
-          .from('children')
-          .select('id')
-          .eq('full_name', sectionA.fullName)
-          .eq('dob', childFields.dob)
-          .maybeSingle();
-        childId = match?.id || null;
+      // One secure server call saves the child, parent and intake form together.
+      // Updating an existing child requires staff, or a parent phone/email that matches the one on file.
+      const { data: saved, error: saveError } = await supabase.rpc('kids_intake_submit', {
+        p_number: linkedNumber,
+        p_child: {
+          full_name: sectionA.fullName,
+          nickname: sectionA.nickname || '',
+          dob,
+          gender: sectionA.gender || '',
+          photo_url: sectionA.photoUrl || '',
+          room: sectionA.room || 'general',
+        },
+        p_parent: {
+          primary_name: sectionB.primaryName,
+          primary_relationship: sectionB.primaryRelationship,
+          primary_phone: sectionB.primaryPhone,
+          primary_email: sectionB.primaryEmail,
+          secondary_name: sectionB.secondaryName || '',
+          secondary_relationship: sectionB.secondaryRelationship || '',
+          secondary_phone: sectionB.secondaryPhone || '',
+          primary_photo_url: sectionB.primaryPhotoUrl || '',
+          secondary_photo_url: sectionB.secondaryPhotoUrl || '',
+          approved_pickup_name: sectionB.approvedPickupName || '',
+          approved_pickup_phone: sectionB.approvedPickupPhone || '',
+          approved_pickup_photo_url: sectionB.approvedPickupPhotoUrl || '',
+        },
+        p_intake: {
+          allergies: sectionC.allergies,
+          restricted_foods: sectionC.restrictedFoods || '',
+          medications,
+          medical_conditions: sectionC.medicalConditions || '',
+          special_needs: sectionC.specialNeeds || '',
+          doctor_name: sectionC.doctorName || '',
+          doctor_phone: sectionC.doctorPhone || '',
+          behavioral_notes: sectionD.behavioralNotes || '',
+          triggers: sectionD.triggers || '',
+          communication_notes: sectionD.communicationNotes || '',
+          photo_consent: sectionE.photoConsent,
+          medical_consent: sectionE.medicalConsent,
+          digital_signature: sectionE.digitalSignature,
+        },
+      });
+
+      if (saveError) {
+        if ((saveError.message || '').includes('contact_mismatch')) {
+          alert(language === 'es'
+            ? 'Este nino/a ya esta registrado. Para actualizar su informacion, el telefono o correo del padre/madre debe coincidir con el que tenemos. Si cambio, pide ayuda a un maestro.'
+            : 'This child is already registered. To update their info, the parent phone or email must match the one on file. If it changed, please ask a teacher for help.');
+          return;
+        }
+        throw saveError;
       }
 
-      if (childId) {
-        const { error: childError } = await supabase
-          .from('children')
-          .update(childFields)
-          .eq('id', childId);
-        if (childError) throw childError;
-      } else {
-        const uniqueNumber = await generateUniqueNumber();
-        const { data: childData, error: childError } = await supabase
-          .from('children')
-          .insert({ ...childFields, unique_number: uniqueNumber, checked_in_today: false })
-          .select()
-          .single();
-        if (childError) throw childError;
-        childId = childData.id;
-      }
-
-      const parentFields = {
-        child_id: childId,
-        primary_name: sectionB.primaryName,
-        primary_relationship: sectionB.primaryRelationship,
-        primary_phone: sectionB.primaryPhone,
-        primary_email: sectionB.primaryEmail,
-        secondary_name: sectionB.secondaryName || null,
-        secondary_relationship: sectionB.secondaryRelationship || null,
-        secondary_phone: sectionB.secondaryPhone || null,
-        primary_photo_url: sectionB.primaryPhotoUrl || null,
-        secondary_photo_url: sectionB.secondaryPhotoUrl || null,
-        approved_pickup_name: sectionB.approvedPickupName || null,
-        approved_pickup_phone: sectionB.approvedPickupPhone || null,
-        approved_pickup_photo_url: sectionB.approvedPickupPhotoUrl || null,
-      };
-
-      let parentRowId = existingParentId;
-      if (!parentRowId) {
-        const { data: existingP } = await supabase
-          .from('parents')
-          .select('id')
-          .eq('child_id', childId)
-          .maybeSingle();
-        parentRowId = existingP?.id || null;
-      }
-      if (parentRowId) {
-        const { error: parentError } = await supabase
-          .from('parents')
-          .update(parentFields)
-          .eq('id', parentRowId);
-        if (parentError) throw parentError;
-      } else {
-        const { error: parentError } = await supabase.from('parents').insert(parentFields);
-        if (parentError) throw parentError;
-      }
-
-      const intakeFields = {
-        allergies: sectionC.allergies,
-        restricted_foods: sectionC.restrictedFoods || null,
-        medications: medications.length > 0 ? medications : null,
-        medical_conditions: sectionC.medicalConditions || null,
-        special_needs: sectionC.specialNeeds || null,
-        doctor_name: sectionC.doctorName || null,
-        doctor_phone: sectionC.doctorPhone || null,
-        behavioral_notes: sectionD.behavioralNotes || null,
-        triggers: sectionD.triggers || null,
-        communication_notes: sectionD.communicationNotes || null,
-        photo_consent: sectionE.photoConsent,
-        medical_consent: sectionE.medicalConsent,
-        digital_signature: sectionE.digitalSignature,
-      };
-
-      let intakeRowId = existingIntakeId;
-      if (!intakeRowId) {
-        const { data: existingI } = await supabase
-          .from('intake_forms')
-          .select('id')
-          .eq('child_id', childId)
-          .maybeSingle();
-        intakeRowId = existingI?.id || null;
-      }
-      if (intakeRowId) {
-        const { error: intakeError } = await supabase
-          .from('intake_forms')
-          .update(intakeFields)
-          .eq('id', intakeRowId);
-        if (intakeError) throw intakeError;
-      } else {
-        const { error: intakeError } = await supabase
-          .from('intake_forms')
-          .insert({ child_id: childId, ...intakeFields });
-        if (intakeError) throw intakeError;
-      }
+      const childId = (saved as { child_id: string }).child_id;
 
       generatePDF(childId, sectionA.fullName);
 
@@ -629,9 +564,13 @@ export const IntakeFormWizard = () => {
                   )}
                   {lookupStatus === 'found' && (
                     <p className="text-sm font-bold text-green-600 mt-2">
-                      {language === 'es'
-                        ? 'Nino/a encontrado. Sus datos se completaron abajo.'
-                        : 'Child found. Their info was filled in below.'}
+                      {lookupIsStaff
+                        ? (language === 'es'
+                          ? 'Nino/a encontrado. Sus datos se completaron abajo.'
+                          : 'Child found. Their info was filled in below.')
+                        : (language === 'es'
+                          ? `Encontramos a ${lookupFirstName || 'su nino/a'}. Por su seguridad, complete los datos abajo. El telefono o correo del padre/madre debe ser el mismo que nos dio al registrarse.`
+                          : `We found ${lookupFirstName || 'your child'}. For their safety, please fill in the details below. The parent phone or email must match the one you gave at registration.`)}
                     </p>
                   )}
                   {lookupStatus === 'notfound' && (

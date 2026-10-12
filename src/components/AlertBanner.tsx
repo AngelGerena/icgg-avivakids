@@ -8,6 +8,11 @@ import { CheckCircle, User, Bell, Footprints } from 'lucide-react';
 const AUTO_DISMISS_MS = 12000;
 
 type ChildInfo = { photo_url?: string | null; full_name?: string | null };
+type BannerAlert = {
+  id: string; alert_type: string; child_number: string; reason: string; acknowledged: boolean;
+  triggered_at: string; resolved: boolean; pickup_name: string | null; pickup_photo_url: string | null;
+  child_name: string | null; child_photo_url: string | null;
+};
 
 // Pleasant Web Audio chime. 'alert' = attention (rising); 'success' = confirmation (major chord).
 function playChime(type: 'alert' | 'success') {
@@ -48,25 +53,36 @@ export const AlertBanner = () => {
   const firstLoadRef = useRef(true);
 
   useEffect(() => {
+    // Secure server call: unresolved alerts only, with just the fields this banner shows.
     const fetchActiveAlerts = async () => {
-      const { data } = await supabase
-        .from('alerts')
-        .select('*')
-        .eq('resolved', false)
-        .order('triggered_at', { ascending: false });
-      if (data) setActiveAlerts(data as Alert[]);
+      const { data } = await supabase.rpc('kids_active_alerts');
+      if (!Array.isArray(data)) return;
+      const rows = data as BannerAlert[];
+      setActiveAlerts(rows as unknown as Alert[]);
+      setChildInfo((prev) => {
+        const next = { ...prev };
+        rows.forEach((r) => {
+          next[r.id] = { photo_url: r.child_photo_url, full_name: r.child_name };
+        });
+        return next;
+      });
     };
 
     fetchActiveAlerts();
 
+    // Staff sessions still get instant updates; everyone else refreshes every 5 seconds.
     const channel = supabase
       .channel('alerts-channel')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'alerts' }, () => {
         fetchActiveAlerts();
       })
       .subscribe();
+    const poll = window.setInterval(() => {
+      if (document.visibilityState === 'visible') fetchActiveAlerts();
+    }, 5000);
 
     return () => {
+      window.clearInterval(poll);
       supabase.removeChannel(channel);
       Object.values(timersRef.current).forEach((t) => clearTimeout(t));
       timersRef.current = {};
@@ -91,28 +107,6 @@ export const AlertBanner = () => {
       seenRef.current[a.id] = isAck;
     });
     firstLoadRef.current = false;
-  }, [activeAlerts]);
-
-  // Pull the child's photo + name for classroom alerts so the banner can show them.
-  useEffect(() => {
-    const ids = activeAlerts
-      .filter((a) => a.child_id && !childInfo[a.child_id])
-      .map((a) => a.child_id as string);
-    if (ids.length === 0) return;
-    supabase
-      .from('children')
-      .select('id, full_name, photo_url')
-      .in('id', ids)
-      .then(({ data }) => {
-        if (!data) return;
-        setChildInfo((prev) => {
-          const next = { ...prev };
-          data.forEach((c: any) => {
-            next[c.id] = { photo_url: c.photo_url, full_name: c.full_name };
-          });
-          return next;
-        });
-      });
   }, [activeAlerts]);
 
   // Only checkout confirmations auto-dismiss; classroom alerts stay until handled.
@@ -149,7 +143,7 @@ export const AlertBanner = () => {
           className="fixed top-20 left-0 right-0 z-40 px-4"
         >
           {visibleAlerts.map((alert) => {
-            const info = alert.child_id ? childInfo[alert.child_id] : undefined;
+            const info = childInfo[alert.id];
 
             // Checkout confirmation: green card with the pickup person photo.
             if (alert.alert_type === 'checkout') {

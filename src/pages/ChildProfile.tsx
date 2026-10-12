@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { supabase } from '../lib/supabase';
+import { supabase, isTeacher } from '../lib/supabase';
 import { User, Hash, Home as HomeIcon, ShieldCheck, Loader, CheckCircle, RotateCcw } from 'lucide-react';
 
 const ROOMS: Record<string, string> = {
@@ -67,18 +67,31 @@ export const ChildProfile = () => {
 
   useEffect(() => {
     const load = async () => {
-      const { data: sess } = await supabase.auth.getSession();
-      const staff = !!sess.session;
+      // Staff = signed in with an approved teacher account (not just any login).
+      const staff = await isTeacher();
       setIsStaff(staff);
 
       if (!id) { setLoading(false); return; }
-      const { data: c } = await supabase.from('children').select('*').eq('id', id).maybeSingle();
+      let c: any = null;
+      let p: any = null;
+      if (staff) {
+        const { data: row } = await supabase.from('children').select('*').eq('id', id).maybeSingle();
+        c = row;
+        if (c) {
+          const { data: par } = await supabase
+            .from('parents').select('primary_name, approved_pickup_name').eq('child_id', c.id).maybeSingle();
+          p = par;
+        }
+      } else {
+        // Everyone else gets only what the badge page shows, from a secure server call.
+        const { data: badge } = await supabase.rpc('kids_badge_profile', { p_id: id });
+        c = (badge as any)?.child || null;
+        p = (badge as any)?.parent || null;
+      }
       setChild(c);
       if (c) {
         setCheckedIn(!!c.checked_in_today);
         setCheckInTime(c.check_in_time || null);
-        const { data: p } = await supabase
-          .from('parents').select('primary_name, approved_pickup_name').eq('child_id', c.id).maybeSingle();
         setParent(p);
         setLoading(false);
         // Auto check-in for staff when they scan a child who isn't checked in yet.

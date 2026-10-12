@@ -39,11 +39,11 @@ export const ParentLogin = () => {
     setLoading(true);
     try {
       // Verify the email belongs to a parent of this child before sending a link
-      const { data: child } = await supabase.from('children').select('id').eq('unique_number', childNumber.trim()).maybeSingle();
-      if (!child) { setError(T.errMatch); setLoading(false); return; }
-      const { data: parent } = await supabase
-        .from('parents').select('id').eq('child_id', child.id).ilike('primary_email', email.trim()).maybeSingle();
-      if (!parent) { setError(T.errMatch); setLoading(false); return; }
+      const { data: matches } = await supabase.rpc('kids_parent_email_matches', {
+        p_number: childNumber.trim(),
+        p_email: email.trim(),
+      });
+      if (!matches) { setError(T.errMatch); setLoading(false); return; }
 
       localStorage.setItem('aviva_pending_child', childNumber.trim());
       const { error: otpErr } = await supabase.auth.signInWithOtp({

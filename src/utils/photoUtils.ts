@@ -53,7 +53,7 @@ export const uploadPhoto = async (
     const compressed = await compressImage(file);
     const { error } = await supabase.storage
       .from(bucket)
-      .upload(path, compressed, { contentType: 'image/jpeg', upsert: true });
+      .upload(path, compressed, { contentType: 'image/jpeg', upsert: false });
 
     if (error) {
       console.error('Photo upload error:', error.message);

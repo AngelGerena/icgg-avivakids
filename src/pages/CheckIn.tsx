@@ -37,82 +37,27 @@ export const CheckIn = () => {
   const [childNumber, setChildNumber] = useState('');
   const [childId, setChildId] = useState('');
 
-  const generateUniqueNumber = async (): Promise<string> => {
-    let unique = false;
-    let number = '';
-
-    while (!unique) {
-      number = Math.floor(Math.random() * 10000)
-        .toString()
-        .padStart(4, '0');
-
-      const { data } = await supabase
-        .from('children')
-        .select('unique_number')
-        .eq('unique_number', number)
-        .maybeSingle();
-
-      if (!data) {
-        unique = true;
-      }
-    }
-
-    return number;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const uniqueNumber = await generateUniqueNumber();
-
-      const qrData = JSON.stringify({
-        childId: '',
-        childNumber: uniqueNumber,
-        childName: formData.childName,
-        type: 'child-profile',
+      // One secure server call creates the child + parent and assigns the child number.
+      const { data, error } = await supabase.rpc('kids_register_child', {
+        p_child_name: formData.childName,
+        p_dob: formData.childDob,
+        p_room: formData.room,
+        p_photo_url: formData.photoUrl || '',
+        p_parent_name: formData.parentName,
+        p_parent_phone: formData.parentPhone,
+        p_parent_email: formData.parentEmail,
       });
 
-      const { data: childData, error: childError } = await supabase
-        .from('children')
-        .insert({
-          full_name: formData.childName,
-          dob: formData.childDob,
-          room: formData.room,
-          photo_url: formData.photoUrl || null,
-          unique_number: uniqueNumber,
-          checked_in_today: true,
-          check_in_time: new Date().toISOString(),
-          qr_code_data: qrData,
-        })
-        .select()
-        .single();
+      if (error) throw error;
+      const result = data as { id: string; unique_number: string };
 
-      if (childError) throw childError;
-
-      await supabase
-        .from('children')
-        .update({
-          qr_code_data: JSON.stringify({
-            childId: childData.id,
-            childNumber: uniqueNumber,
-            childName: formData.childName,
-            type: 'child-profile',
-          }),
-        })
-        .eq('id', childData.id);
-
-      await supabase.from('parents').insert({
-        child_id: childData.id,
-        primary_name: formData.parentName,
-        primary_relationship: 'Parent',
-        primary_phone: formData.parentPhone,
-        primary_email: formData.parentEmail,
-      });
-
-      setChildNumber(uniqueNumber);
-      setChildId(childData.id);
+      setChildNumber(result.unique_number);
+      setChildId(result.id);
       setSuccess(true);
 
       confetti({

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, X, AlertCircle, Info } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -28,6 +28,11 @@ export const ParentNotifications = () => {
   const [parentEmail, setParentEmail] = useState('');
   const [showLogin, setShowLogin] = useState(false);
 
+  // Verified on the server on every call: child number + the parent email on file.
+  const [creds, setCreds] = useState<{ childNumber: string; email: string } | null>(null);
+  const seenIdsRef = useRef<Set<string>>(new Set());
+  const firstLoadRef = useRef(true);
+
   useEffect(() => {
     const savedAuth = localStorage.getItem('parentAuth');
     if (savedAuth) {
@@ -35,9 +40,9 @@ export const ParentNotifications = () => {
         const authData = JSON.parse(savedAuth);
         const hoursSinceAuth = (new Date().getTime() - authData.timestamp) / (1000 * 60 * 60);
 
-        if (hoursSinceAuth < 24) {
+        if (hoursSinceAuth < 24 && authData.childNumber && authData.email) {
+          setCreds({ childNumber: authData.childNumber, email: authData.email });
           setIsAuthenticated(true);
-          loadChildrenAndNotifications(authData.childIds);
         } else {
           localStorage.removeItem('parentAuth');
         }
@@ -47,36 +52,38 @@ export const ParentNotifications = () => {
     }
   }, []);
 
+  const loadNotifications = async (c: { childNumber: string; email: string }) => {
+    const { data, error } = await supabase.rpc('kids_parent_notifications', {
+      p_number: c.childNumber,
+      p_email: c.email,
+    });
+    if (error || !data) return false;
+    const result = data as { children: Child[]; notifications: Notification[] };
+    setChildren(result.children || []);
+    const list = result.notifications || [];
+    if (!firstLoadRef.current) {
+      list.filter((n) => !seenIdsRef.current.has(n.id)).forEach((n) => {
+        playNotificationSound();
+        showBrowserNotification(n, result.children || []);
+      });
+    }
+    seenIdsRef.current = new Set(list.map((n) => n.id));
+    firstLoadRef.current = false;
+    setNotifications(list);
+    setUnreadCount(list.filter((n) => !n.is_read).length);
+    return true;
+  };
+
+  // Check for new notifications every 15 seconds while signed in.
   useEffect(() => {
-    if (!isAuthenticated || children.length === 0) return;
-
-    const childIds = children.map((c) => c.id);
-
-    const channel = supabase
-      .channel('parent-notifications')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'parent_notifications',
-        },
-        (payload) => {
-          const newNotification = payload.new as Notification;
-          if (childIds.includes(newNotification.child_id)) {
-            setNotifications((prev) => [newNotification, ...prev]);
-            setUnreadCount((prev) => prev + 1);
-            playNotificationSound();
-            showBrowserNotification(newNotification);
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [isAuthenticated, children]);
+    if (!isAuthenticated || !creds) return;
+    firstLoadRef.current = true;
+    loadNotifications(creds);
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === 'visible') loadNotifications(creds);
+    }, 15000);
+    return () => window.clearInterval(timer);
+  }, [isAuthenticated, creds]);
 
   const authenticateParent = async () => {
     if (!childNumber.trim() || !parentEmail.trim()) {
@@ -84,73 +91,28 @@ export const ParentNotifications = () => {
       return;
     }
 
-    const { data: child, error: childError } = await supabase
-      .from('children')
-      .select('id, full_name, unique_number')
-      .eq('unique_number', childNumber.trim())
-      .maybeSingle();
+    const c = { childNumber: childNumber.trim(), email: parentEmail.trim().toLowerCase() };
+    const { data: matches } = await supabase.rpc('kids_parent_email_matches', {
+      p_number: c.childNumber,
+      p_email: c.email,
+    });
 
-    if (childError || !child) {
-      alert('Child not found. Please check the number and try again.');
+    if (!matches) {
+      alert('The child number and email do not match our records. Please use the email address you provided during registration.');
       return;
     }
 
-    const { data: parent, error: parentError } = await supabase
-      .from('parents')
-      .select('id, primary_email, child_id')
-      .eq('child_id', child.id)
-      .maybeSingle();
-
-    if (parentError || !parent) {
-      alert('Parent information not found for this child.');
-      return;
-    }
-
-    if (parent.primary_email.toLowerCase() !== parentEmail.trim().toLowerCase()) {
-      alert('Email does not match our records. Please use the email address you provided during registration.');
-      return;
-    }
-
-    const childIds = [child.id];
-    const authData = {
-      childIds,
-      email: parent.primary_email,
-      timestamp: new Date().getTime(),
-    };
-
-    localStorage.setItem('parentAuth', JSON.stringify(authData));
+    localStorage.setItem('parentAuth', JSON.stringify({ ...c, timestamp: new Date().getTime() }));
+    setCreds(c);
     setIsAuthenticated(true);
     setShowLogin(false);
     setChildNumber('');
     setParentEmail('');
-    loadChildrenAndNotifications(childIds);
-  };
-
-  const loadChildrenAndNotifications = async (childIds: string[]) => {
-    const { data: childrenData } = await supabase
-      .from('children')
-      .select('id, full_name, unique_number')
-      .in('id', childIds);
-
-    if (childrenData) {
-      setChildren(childrenData);
-
-      const { data: notificationsData } = await supabase
-        .from('parent_notifications')
-        .select('*')
-        .in('child_id', childIds)
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      if (notificationsData) {
-        setNotifications(notificationsData);
-        setUnreadCount(notificationsData.filter((n) => !n.is_read).length);
-      }
-    }
   };
 
   const logout = () => {
     localStorage.removeItem('parentAuth');
+    setCreds(null);
     setIsAuthenticated(false);
     setChildren([]);
     setNotifications([]);
@@ -162,9 +124,9 @@ export const ParentNotifications = () => {
     audio.play().catch(() => {});
   };
 
-  const showBrowserNotification = async (notification: Notification) => {
+  const showBrowserNotification = async (notification: Notification, kids: Child[] = children) => {
     if ('Notification' in window && Notification.permission === 'granted') {
-      const child = children.find((c) => c.id === notification.child_id);
+      const child = kids.find((c) => c.id === notification.child_id);
       new Notification('Children\'s Ministry Alert', {
         body: `${child?.full_name || 'Your child'}: ${notification.message}`,
         icon: '/icon.png',
@@ -179,10 +141,13 @@ export const ParentNotifications = () => {
   };
 
   const markAsRead = async (notificationId: string) => {
-    await supabase
-      .from('parent_notifications')
-      .update({ is_read: true })
-      .eq('id', notificationId);
+    if (creds) {
+      await supabase.rpc('kids_parent_notifications_read', {
+        p_number: creds.childNumber,
+        p_email: creds.email,
+        p_ids: [notificationId],
+      });
+    }
 
     setNotifications((prev) =>
       prev.map((n) => (n.id === notificationId ? { ...n, is_read: true } : n))
@@ -193,11 +158,12 @@ export const ParentNotifications = () => {
   const markAllAsRead = async () => {
     const unreadIds = notifications.filter((n) => !n.is_read).map((n) => n.id);
 
-    if (unreadIds.length > 0) {
-      await supabase
-        .from('parent_notifications')
-        .update({ is_read: true })
-        .in('id', unreadIds);
+    if (unreadIds.length > 0 && creds) {
+      await supabase.rpc('kids_parent_notifications_read', {
+        p_number: creds.childNumber,
+        p_email: creds.email,
+        p_ids: unreadIds,
+      });
 
       setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
       setUnreadCount(0);

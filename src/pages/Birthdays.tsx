@@ -34,7 +34,9 @@ export const Birthdays = () => {
   }, [todaysBirthdays]);
 
   const fetchBirthdays = async () => {
-    const { data } = await supabase.from('children').select('*');
+    // Public page: first names and birthdays only, from a secure server call.
+    const { data: rows } = await supabase.rpc('kids_birthdays');
+    const data = Array.isArray(rows) ? (rows as Child[]) : null;
 
     if (data) {
       const currentMonth = new Date().getMonth() + 1;

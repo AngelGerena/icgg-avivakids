@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Languages, Home, ClipboardCheck, FileText, CalendarDays, Cake, Church, Heart, QrCode } from 'lucide-react';
+import { Languages, Home, ClipboardCheck, FileText, CalendarDays, Cake, Church, Heart, QrCode, Palette } from 'lucide-react';
 import { ParentNotifications } from './ParentNotifications';
 import { isMobileOrTablet } from '../utils/device';
 
@@ -72,6 +72,18 @@ export const Navbar = () => {
                   </Link>
                 );
               })}
+              <Link
+                to="/coloring"
+                style={{ '--c': '#FF9F43' } as React.CSSProperties}
+                aria-current={isActive('/coloring') ? 'page' : undefined}
+                title={language === 'es' ? 'Colorear' : 'Coloring'}
+                className={`avk-nav-link flex items-center gap-1.5 2xl:gap-2 px-2.5 xl:px-2 2xl:px-4 py-2 rounded-full font-bold text-white border-2 border-transparent ${
+                  isActive('/coloring') ? 'is-active avk-ring' : ''
+                }`}
+              >
+                <Palette className="avk-nav-icon w-5 h-5" />
+                <span className="hidden xl:inline text-[13px] 2xl:text-sm whitespace-nowrap">{language === 'es' ? 'Colorear' : 'Coloring'}</span>
+              </Link>
               <a
                 href="https://www.icgg.us"
                 target="_blank"

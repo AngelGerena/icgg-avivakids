@@ -1,0 +1,149 @@
+/* Aviva Kids Coloring Book — "Crayon Box" look */
+.cb-wrap {
+  padding: 12px max(12px, env(safe-area-inset-left, 0px)) 24px max(12px, env(safe-area-inset-right, 0px));
+  display: flex;
+  justify-content: center;
+  overflow-x: hidden;
+}
+.cb-app {
+  width: 100%;
+  max-width: 540px;
+  min-width: 0;
+  background: #fff6d6;
+  color: #1b2452;
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow: 0 18px 40px -20px rgba(0, 0, 0, 0.45);
+  font-family: 'Baloo 2', system-ui, sans-serif;
+}
+.cb-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #ffd000;
+  padding: 10px 14px 12px;
+  border-bottom: 3px solid #1b2452;
+}
+.cb-back {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #fff;
+  border: 2px solid #1b2452;
+  box-shadow: 0 3px 0 #1b2452;
+  color: #1b2452;
+}
+.cb-title { margin: 0; font-size: 24px; font-weight: 800; line-height: 1.05; }
+.cb-sub { margin: 2px 0 0; font-size: 14px; font-weight: 600; line-height: 1.25; }
+
+.cb-stories {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 14px 14px 10px;
+  scrollbar-width: none;
+}
+.cb-stories::-webkit-scrollbar { display: none; }
+.cb-chip,
+.cb-tool {
+  border: 2px solid #1b2452;
+  box-shadow: 0 3px 0 #1b2452;
+  background: #fff;
+  color: #1b2452;
+  font: 700 14px 'Baloo 2', system-ui, sans-serif;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.cb-chip { flex: none; white-space: nowrap; padding: 6px 14px; border-radius: 999px; }
+.cb-chip[aria-pressed='true'],
+.cb-tool[aria-pressed='true'] { background: #ff6b6b; color: #fff; }
+.cb-chip:active,
+.cb-tool:active,
+.cb-action:active { transform: translateY(2px); box-shadow: 0 1px 0 #1b2452; }
+
+.cb-page {
+  margin: 0 12px;
+  background: #fff;
+  border: 3px solid #1b2452;
+  border-radius: 12px;
+  box-shadow: 6px 6px 0 #00e0b8;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+.cb-art { width: 100%; height: auto; display: block; border-radius: 8px; touch-action: manipulation; }
+.cb-region { cursor: pointer; transition: fill 0.15s; }
+.cb-line { pointer-events: none; }
+.cb-caption { display: grid; gap: 2px; padding: 0 4px 2px; }
+.cb-caption h2 { margin: 0; font-size: 20px; font-weight: 800; line-height: 1.15; }
+.cb-caption p { margin: 0; font: 600 15px/1.4 'Baloo 2', system-ui, sans-serif; }
+.cb-caption cite { font-style: normal; font-weight: 800; font-size: 13px; opacity: 0.75; }
+
+.cb-tools {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  padding: 16px 12px 6px;
+}
+.cb-tool {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 7px 2px;
+  border-radius: 14px;
+  font-size: 12.5px;
+  min-width: 0;
+}
+.cb-tool svg { width: 22px; height: 22px; }
+.cb-tool span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
+.cb-swatches {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px 8px;
+  padding: 18px 14px 6px;
+}
+.cb-crayon {
+  height: 56px;
+  border: 2px solid #1b2452;
+  border-radius: 10px 10px 4px 4px;
+  clip-path: polygon(25% 0, 75% 0, 100% 22%, 100% 100%, 0 100%, 0 22%);
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.cb-crayon[aria-pressed='true'] { transform: translateY(-10px); }
+
+.cb-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 14px 14px 4px; }
+.cb-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 2px solid #1b2452;
+  box-shadow: 0 3px 0 #1b2452;
+  border-radius: 999px;
+  padding: 10px 12px;
+  font: 800 16px 'Baloo 2', system-ui, sans-serif;
+  cursor: pointer;
+}
+.cb-save { background: #00e0b8; color: #1b2452; }
+.cb-print { background: #fff; color: #1b2452; }
+.cb-action:disabled { opacity: 0.6; cursor: wait; }
+
+.cb-toast { margin: 8px 14px 0; min-height: 1.3em; text-align: center; font-weight: 700; font-size: 14px; color: #4b5070; }
+.cb-note { margin: 4px 16px 16px; text-align: center; font-size: 12.5px; font-weight: 600; color: #6b6f8c; line-height: 1.35; }
+
+.cb-chip:focus-visible,
+.cb-tool:focus-visible,
+.cb-crayon:focus-visible,
+.cb-action:focus-visible,
+.cb-back:focus-visible { outline: 3px solid #9b59b6; outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cb-region, .cb-crayon { transition: none; }
+}

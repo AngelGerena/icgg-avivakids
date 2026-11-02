@@ -1,10 +1,11 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Heart, Users, BookOpen, Calendar, Baby, HandHeart, Sun, Moon, Sparkles, ArrowRight } from 'lucide-react';
+import { Heart, Users, BookOpen, Calendar, Baby, HandHeart, Sun, Moon, Sparkles, ArrowRight, Palette } from 'lucide-react';
 
 export const Home = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const es = language === 'es';
 
   const features = [
     {
@@ -209,6 +210,38 @@ export const Home = () => {
               </motion.div>
             ))}
           </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.6 }}
+          className="mb-10"
+        >
+          <Link
+            to="/coloring"
+            className="group relative flex flex-col sm:flex-row items-center gap-5 sm:gap-8 overflow-hidden rounded-bubbly bg-[#FFF6D6] border-4 border-[#1B2452] p-6 sm:p-8 shadow-[8px_8px_0_#00E0B8] text-[#1B2452] text-center sm:text-left"
+          >
+            <div className="flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24 bg-kids-yellow rounded-full border-4 border-[#1B2452] flex items-center justify-center group-hover:rotate-12 transition-transform">
+              <Palette className="w-11 h-11 sm:w-12 sm:h-12" strokeWidth={2.4} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="inline-block bg-kids-coral text-white text-xs sm:text-sm font-black uppercase tracking-wider rounded-full px-4 py-1 mb-2">
+                {es ? '¡Nuevo!' : 'New!'}
+              </p>
+              <h2 className="text-3xl sm:text-4xl font-black mb-2">{es ? 'Libro para Colorear' : 'Bible Coloring Book'}</h2>
+              <p className="text-base sm:text-lg font-semibold leading-relaxed">
+                {es
+                  ? 'Colorea historias de la Biblia en tu teléfono o imprime la página para colorear en casa.'
+                  : 'Color Bible stories right on your phone, or print the page and color it at home.'}
+              </p>
+            </div>
+            <span className="flex-shrink-0 inline-flex items-center gap-2 bg-[#1B2452] text-white text-lg font-black rounded-full px-6 py-3 group-hover:bg-kids-coral transition-colors">
+              {es ? 'A colorear' : "Let's color"}
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </span>
+          </Link>
         </motion.div>
 
         <motion.div

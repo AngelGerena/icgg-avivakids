@@ -14,15 +14,16 @@ import { TeacherPortal } from './pages/TeacherPortal';
 import { FaithAtHome } from './pages/FaithAtHome';
 import { ChildProfile } from './pages/ChildProfile';
 import { Volunteer } from './pages/Volunteer';
+import { ColoringBook } from './pages/ColoringBook';
 
 function AppContent() {
   const location = useLocation();
-  const hideFloatingShapes = location.pathname === '/intake-form' || location.pathname === '/faith-at-home';
+  const hideFloatingShapes = location.pathname === '/intake-form' || location.pathname === '/faith-at-home' || location.pathname === '/coloring';
 
   return (
     <>
       {!hideFloatingShapes && <FloatingShapes />}
-      <MouseTrail />
+      {location.pathname !== '/coloring' && <MouseTrail />}
       <AlertBanner />
       <Navbar />
       <div className="pb-24 lg:pb-0">
@@ -44,6 +45,7 @@ function AppContent() {
               <Route path="/faith-at-home" element={<FaithAtHome />} />
               <Route path="/child/:id" element={<ChildProfile />} />
               <Route path="/volunteer" element={<Volunteer />} />
+              <Route path="/coloring" element={<ColoringBook />} />
             </Routes>
           </motion.div>
         </AnimatePresence>
